@@ -6,8 +6,8 @@ import Features from "../public/Features";
 import ContactPage from "../public/Contact";
 import FAQ from "../public/FAQ";
 import Jobs from "../pages/Jobs/Jobs";
-import { Login } from "../components/auth/Login";
-import { Register } from "../components/auth/Register";
+import JobDetails from "../pages/Job/JobDetails";
+import { Login, Register, RecruiterRegister } from "../components/auth";
 import Unauthorized from "../pages/status/Unauthorized";
 import NotFound from "../pages/status/NotFound";
 import DashboardLayout from "../components/layout/DashboardLayout";
@@ -49,6 +49,22 @@ export const router = createBrowserRouter([
         element: <HomePage />,
       },
       {
+        path: "login",
+        element: <Login />,
+      },
+      {
+        path: "register",
+        element: <Navigate to="/register/candidate" replace />,
+      },
+      {
+        path: "register/candidate",
+        element: <Register />,
+      },
+      {
+        path: "register/recruiter",
+        element: <RecruiterRegister />,
+      },
+      {
         path: "about",
         element: <About />,
       },
@@ -68,17 +84,19 @@ export const router = createBrowserRouter([
         path: "jobs",
         element: <Jobs />,
       },
+      {
+        path: "jobs/:id",
+        element: <JobDetails />,
+      },
+      {
+        path: "unauthorized",
+        element: <Unauthorized />,
+      },
+      {
+        path: "*",
+        element: <NotFound />,
+      },
     ],
-  },
-
-  // Authentication Routes (No Layout)
-  {
-    path: "/login",
-    element: <Login />,
-  },
-  {
-    path: "/register",
-    element: <Register />,
   },
 
   // Admin Routes (DashboardLayout)
@@ -120,15 +138,6 @@ export const router = createBrowserRouter([
     element: <Navigate to="/candidate" replace />,
   },
 
-  // Status Routes (No Layout)
-  {
-    path: "/unauthorized",
-    element: <Unauthorized />,
-  },
-  {
-    path: "*",
-    element: <NotFound />,
-  },
 ]);
 
 export default router;

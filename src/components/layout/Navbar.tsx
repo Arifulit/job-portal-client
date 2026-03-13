@@ -1,313 +1,376 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Bell, Briefcase, ChevronDown, FileText, LayoutDashboard, LogOut, Mail, Menu, Moon, Sun, User, X } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { 
-  Briefcase, 
-  User, 
-  LogOut, 
-  Menu, 
-  X, 
-  LayoutDashboard,
-  Search,
-  FileText,
-  Settings,
-  ChevronDown,
-  Building2,
-  Users,
-  Bell
-} from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../../hooks/useTheme';
+
+const NAV_ITEMS = [
+  { label: 'My bdjobs', href: '/jobs' },
+  { label: 'Jobs', href: '/jobs' },
+];
+
+const EMPLOYER_ITEMS = [
+  { label: 'Recruiter Login', href: '/login' },
+  { label: 'Recruiter Register', href: '/register/recruiter' },
+];
+
+const roleToDashboard: Record<string, string> = {
+  admin: '/admin/dashboard',
+  recruiter: '/recruiter/dashboard',
+  candidate: '/candidate/dashboard',
+  job_seeker: '/candidate/dashboard',
+};
 
 export const Navbar = () => {
-  const { user, logout, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+  const { isAuthenticated, logout, user } = useAuth();
+  const { resolvedTheme, setTheme } = useTheme();
   const location = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
 
-  // Handle scroll effect
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [employerOpen, setEmployerOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [language, setLanguage] = useState<'ENG' | 'বাংলা'>('ENG');
+
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const onScroll = () => setIsScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  const dashboardLink = useMemo(() => {
+    const normalizedRole = (user?.role || '').toLowerCase();
+    return roleToDashboard[normalizedRole] || '/candidate/dashboard';
+  }, [user?.role]);
+
+  const normalizedRole = (user?.role || '').toLowerCase();
+
+  const profileLink = useMemo(() => {
+    if (normalizedRole === 'admin') return '/admin/profile';
+    if (normalizedRole === 'recruiter') return '/recruiter/profile';
+    return '/candidate/profile';
+  }, [normalizedRole]);
+
+  const jobsLink = useMemo(() => {
+    if (normalizedRole === 'recruiter') return '/recruiter/jobs';
+    return '/candidate/jobs';
+  }, [normalizedRole]);
+
+  const appliedJobsLink = useMemo(() => {
+    if (normalizedRole === 'candidate' || normalizedRole === 'job_seeker') {
+      return '/candidate/applications';
+    }
+    return dashboardLink;
+  }, [dashboardLink, normalizedRole]);
+
+  const accountMenuItems = useMemo(
+    () => [
+      { label: 'Bdjobs Profile', href: profileLink, icon: User },
+      { label: 'Video CV', href: dashboardLink, icon: Briefcase },
+      { label: 'Email CV', href: dashboardLink, icon: Mail },
+      { label: 'Shortlisted Jobs', href: jobsLink, icon: Bell },
+      { label: 'Following Employer', href: dashboardLink, icon: LayoutDashboard },
+      { label: 'Applied Jobs', href: appliedJobsLink, icon: FileText },
+    ],
+    [appliedJobsLink, dashboardLink, jobsLink, profileLink]
+  );
+
+  const profileName = user?.name || 'Account';
+  const avatarSource = (user as { profileImage?: string; avatar?: string } | null)?.profileImage ||
+    (user as { profileImage?: string; avatar?: string } | null)?.avatar ||
+    '';
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    setProfileOpen(false);
     setMobileMenuOpen(false);
+    navigate('/');
   };
 
-  const getDashboardLink = () => {
-    if (!user) return null;
-    const roleStr = (user.role || '').toLowerCase();
-    
-    if (roleStr === 'admin') return '/admin/dashboard';
-    if (roleStr === 'recruiter') return '/recruiter/dashboard';
-    if (roleStr === 'job_seeker' || roleStr === 'candidate') return '/candidate/dashboard';
-    return null;
+  const closeAllMenus = () => {
+    setEmployerOpen(false);
+    setProfileOpen(false);
   };
 
-  const isActiveLink = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path);
+  const isActive = (href: string) => {
+    return location.pathname === href || location.pathname.startsWith(`${href}/`);
   };
 
-  const getRoleLinks = () => {
-    if (!user) return null;
-    const roleStr = (user.role || '').toLowerCase();
-    const dashboardLink = getDashboardLink();
-
-    if (roleStr === 'admin') {
-      return (
-        <>
-          {dashboardLink && (
-            <Link 
-              to={dashboardLink}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                isActiveLink(dashboardLink)
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'
-              }`}
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              Dashboard
-            </Link>
-          )}
-          <Link 
-            to="/admin/users"
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              isActiveLink('/admin/users')
-                ? 'bg-indigo-50 text-indigo-600'
-                : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            Users
-          </Link>
-          <Link 
-            to="/admin/jobs"
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              isActiveLink('/admin/jobs')
-                ? 'bg-indigo-50 text-indigo-600'
-                : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'
-            }`}
-          >
-            <Briefcase className="w-4 h-4" />
-            Jobs
-          </Link>
-        </>
-      );
-    }
-
-    if (roleStr === 'recruiter') {
-      return (
-        <>
-          {dashboardLink && (
-            <Link 
-              to={dashboardLink}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                isActiveLink(dashboardLink)
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'
-              }`}
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              Dashboard
-            </Link>
-          )}
-          <Link 
-            to="/recruiter/jobs/create"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all shadow-sm hover:shadow-md"
-          >
-            <Briefcase className="w-4 h-4" />
-            Post q Job
-          </Link>
-          <Link 
-            to="/recruiter/jobs"
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              isActiveLink('/recruiter/jobs')
-                ? 'bg-indigo-50 text-indigo-600'
-                : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            My Jobs
-          </Link>
-        </>
-      );
-    }
-
-    if (roleStr === 'job_seeker' || roleStr === 'candidate') {
-      return (
-        <>
-          <Link 
-            to="/jobs"
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              isActiveLink('/jobs')
-                ? 'bg-indigo-50 text-indigo-600'
-                : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'
-            }`}
-          >
-            <Search className="w-4 h-4" />
-            Browse Jobs
-          </Link>
-          {dashboardLink && (
-            <Link 
-              to={dashboardLink}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                isActiveLink(dashboardLink)
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'
-              }`}
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              Dashboard
-            </Link>
-          )}
-          <Link 
-            to="/candidate/applications"
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              isActiveLink('/candidate/applications')
-                ? 'bg-indigo-50 text-indigo-600'
-                : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            Applications
-          </Link>
-        </>
-      );
-    }
-
-    return null;
-  };
+  const isDark = resolvedTheme === 'dark';
 
   return (
-    <nav className={`sticky top-0 z-50 transition-all duration-300 ${
-      scrolled 
-        ? 'bg-white/95 backdrop-blur-md shadow-lg' 
-        : 'bg-white shadow-sm'
-    }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all">
-              <Briefcase className="w-6 h-6 text-white" />
+    <header
+      className={`sticky top-0 z-50 border-b transition-all ${
+        isScrolled
+          ? isDark
+            ? 'border-slate-800 bg-slate-950/95 backdrop-blur-md shadow-sm'
+            : 'border-slate-200 bg-white/95 backdrop-blur-md shadow-sm'
+          : isDark
+            ? 'border-slate-800 bg-slate-950'
+            : 'border-slate-200 bg-white'
+      }`}
+    >
+      <div className="mx-auto max-w-[1300px] px-4 md:px-6">
+        <div className="flex h-[88px] items-center justify-between gap-4">
+          <Link to="/" className="shrink-0 flex items-center gap-2">
+            <div className="h-10 w-10 rounded-md bg-[#0E5EA8] flex items-center justify-center">
+              <Briefcase className="h-5 w-5 text-white" />
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              CareerCode
-            </span>
+            <div className="leading-none">
+              <p className="text-[26px] font-extrabold tracking-tight text-[#0E5EA8]">bdjobs</p>
+              <p className={`-mt-0.5 text-[8px] font-semibold tracking-[0.12em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                LARGEST JOB SITE IN BANGLADESH
+              </p>
+            </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-1">
+          <nav className="hidden lg:flex items-center gap-3">
+            {NAV_ITEMS.map((item) => (
+              <Link
+                key={item.label}
+                to={item.href}
+                className={`inline-flex items-center gap-1 rounded-md px-2 py-2 text-[15px] font-semibold transition-colors ${
+                  isActive(item.href)
+                    ? isDark
+                      ? 'text-white'
+                      : 'text-slate-900'
+                    : isDark
+                      ? 'text-slate-300 hover:text-white'
+                      : 'text-slate-700 hover:text-slate-900'
+                }`}
+              >
+                {item.label}
+                <ChevronDown className={`h-4 w-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
+              </Link>
+            ))}
+
+            <span className={`px-1 ${isDark ? 'text-slate-700' : 'text-slate-300'}`}>|</span>
+            <button
+              type="button"
+              className={`inline-flex items-center gap-2 rounded-md px-2 py-2 text-[15px] font-semibold ${
+                isDark ? 'text-slate-300 hover:text-white' : 'text-slate-700 hover:text-slate-900'
+              }`}
+            >
+              bdjobs
+              <span className="rounded bg-[#0dad5f] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">PRO</span>
+            </button>
+          </nav>
+
+          <div className="hidden lg:flex items-center gap-4">
+            <div className={`inline-flex items-center rounded-full border p-1 shadow-sm ${
+              isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'
+            }`}>
+              <button
+                type="button"
+                onClick={() => setLanguage('ENG')}
+                className={`rounded-full px-4 py-1.5 text-xs font-bold transition-colors ${
+                  language === 'ENG' ? 'bg-[#cf2f92] text-white' : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                ENG
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage('বাংলা')}
+                className={`rounded-full px-4 py-1.5 text-xs font-bold transition-colors ${
+                  language === 'বাংলা' ? 'bg-[#cf2f92] text-white' : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                বাংলা
+              </button>
+            </div>
+
+            <div className={`inline-flex items-center rounded-full border p-1 ${
+              isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'
+            }`}>
+              <button
+                type="button"
+                onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                className={`inline-flex h-10 items-center gap-2 rounded-full px-3 text-sm font-semibold transition-colors ${
+                  isDark ? 'text-slate-100 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                <span>{isDark ? 'Light' : 'Dark'}</span>
+              </button>
+            </div>
+
             {isAuthenticated ? (
               <>
-                {getRoleLinks()}
-                
-                {/* Notifications */}
-                <button className="relative p-2 text-gray-600 hover:text-indigo-600 hover:bg-gray-50 rounded-lg transition-all">
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                <button
+                  type="button"
+                  className={`relative inline-flex h-10 w-10 items-center justify-center rounded-full ${
+                    isDark ? 'text-slate-300 hover:bg-slate-800 hover:text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+                  }`}
+                  aria-label="Messages"
+                >
+                  <Mail className="h-5 w-5" />
                 </button>
 
-                {/* User Menu */}
-                <div className="relative group ml-3">
-                  <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-all">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-sm">
-                      {(user as any)?.avatar ? (
-                        <img 
-                          src={(user as any)?.avatar} 
-                          alt={(user as any)?.name || 'User'} 
-                          className="w-full h-full rounded-full object-cover"
-                        />
+                <button
+                  type="button"
+                  className={`relative inline-flex h-10 w-10 items-center justify-center rounded-full ${
+                    isDark ? 'text-slate-300 hover:bg-slate-800 hover:text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+                  }`}
+                  aria-label="Notifications"
+                >
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute right-1 top-0 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#ef2d62] px-1 text-[11px] font-bold text-white">
+                    3
+                  </span>
+                </button>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileOpen((prev) => !prev);
+                      setEmployerOpen(false);
+                    }}
+                    className={`inline-flex items-center gap-3 rounded-full py-1 pl-1 pr-2 ${
+                      isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className={`flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border ${
+                      isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-100'
+                    }`}>
+                      {avatarSource ? (
+                        <img src={avatarSource} alt={profileName} className="h-full w-full object-cover" />
                       ) : (
-                        <User className="w-5 h-5 text-white" />
+                        <User className="h-5 w-5 text-slate-500" />
                       )}
-                    </div>
-                    <div className="hidden xl:block text-left">
-                      <p className="text-sm font-semibold text-gray-900">
-                        {(user as any)?.name || (user as any)?.full_name || 'User'}
-                      </p>
-                      <p className="text-xs text-gray-500 capitalize">
-                        {user?.role?.replace('_', ' ')}
-                      </p>
-                    </div>
-                    <ChevronDown className="w-4 h-4 text-gray-400 hidden xl:block" />
+                    </span>
+                    <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{profileName}</span>
+                    <ChevronDown className={`h-4 w-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
                   </button>
 
-                  {/* Dropdown Menu */}
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 py-2">
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-semibold text-gray-900">
-                        {(user as any)?.name || (user as any)?.full_name || 'User'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {(user as any)?.email}
-                      </p>
-                    </div>
-                    
-                    <Link 
-                      to="/profile"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
-                    >
-                      <Settings className="w-4 h-4" />
-                      Profile Settings
-                    </Link>
-                    
-                    <div className="border-t border-gray-100 mt-2 pt-2">
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 w-full transition-colors"
+                  <AnimatePresence>
+                    {profileOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.15 }}
+                        className={`absolute right-0 top-full mt-2 w-72 rounded-xl border p-2 shadow-lg ${
+                          isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'
+                        }`}
                       >
-                        <LogOut className="w-4 h-4" />
-                        Logout
-                      </button>
-                    </div>
-                  </div>
+                        <div className={`mb-2 rounded-lg px-3 py-2 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                          <p className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{profileName}</p>
+                          <span className="mt-1 inline-flex items-center rounded-full border border-[#6fd1a2] bg-[#dff6e8] px-2 py-0.5 text-xs font-semibold text-[#0b7d4f]">
+                            Get Bdjobs Pro
+                          </span>
+                        </div>
+
+                        {accountMenuItems.map((item) => {
+                          const ItemIcon = item.icon;
+                          return (
+                            <Link
+                              key={item.label}
+                              to={item.href}
+                              onClick={() => setProfileOpen(false)}
+                              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${
+                                isDark ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-50'
+                              }`}
+                            >
+                              <ItemIcon className="h-4 w-4" />
+                              {item.label}
+                            </Link>
+                          );
+                        })}
+
+                        <div className={`my-1 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`} />
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Logout
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </>
             ) : (
               <>
-                <Link 
-                  to="/jobs"
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-all"
+                <Link
+                  to="/register/candidate"
+                  className={`inline-flex h-12 items-center rounded-xl border px-8 text-sm font-bold text-[#bd2c87] ${
+                    isDark ? 'border-[#7b4565] hover:bg-[#3a2030]' : 'border-[#e4bbd7] hover:bg-[#fff6fb]'
+                  }`}
                 >
-                  <Search className="w-4 h-4" />
-                  Browse Jobs
+                  Create Account
                 </Link>
-                <Link 
+                <Link
                   to="/login"
-                  className="px-6 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                  className="inline-flex h-12 items-center rounded-xl bg-[#cf2f92] px-8 text-sm font-bold text-white hover:bg-[#b92882]"
                 >
-                  Login
+                  Sign In
                 </Link>
-                <Link 
-                  to="/register"
-                  className="px-6 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
-                >
-                  Get Started
-                </Link>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmployerOpen((prev) => !prev);
+                      setProfileOpen(false);
+                    }}
+                    className={`inline-flex items-center gap-1 px-1 py-2 text-sm font-semibold ${
+                      isDark ? 'text-slate-300 hover:text-white' : 'text-slate-700 hover:text-slate-900'
+                    }`}
+                  >
+                    For Employer
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+
+                  <AnimatePresence>
+                    {employerOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.15 }}
+                        className={`absolute right-0 top-full mt-2 w-52 rounded-xl border p-2 shadow-lg ${
+                          isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'
+                        }`}
+                      >
+                        {EMPLOYER_ITEMS.map((item) => (
+                          <Link
+                            key={item.label}
+                            to={item.href}
+                            onClick={closeAllMenus}
+                            className={`block rounded-lg px-3 py-2 text-sm font-medium ${
+                              isDark ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            {item.label}
+                          </Link>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 text-gray-600 hover:text-indigo-600 hover:bg-gray-50 rounded-lg transition-all"
+            type="button"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border lg:hidden ${
+              isDark ? 'border-slate-700 text-slate-200' : 'border-slate-200 text-slate-700'
+            }`}
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -315,83 +378,103 @@ export const Navbar = () => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="lg:hidden border-t border-gray-100 bg-white"
+            className={`border-t lg:hidden ${isDark ? 'border-slate-800 bg-slate-950' : 'border-slate-200 bg-white'}`}
           >
-            <div className="px-4 py-4 space-y-2">
-              {isAuthenticated ? (
-                <>
-                  {/* User Info */}
-                  <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg mb-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-sm">
-                      {(user as any)?.avatar ? (
-                        <img 
-                          src={(user as any)?.avatar} 
-                          alt={(user as any)?.name || 'User'} 
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      ) : (
-                        <User className="w-5 h-5 text-white" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {(user as any)?.name || (user as any)?.full_name || 'User'}
-                      </p>
-                      <p className="text-xs text-gray-500 capitalize">
-                        {user?.role?.replace('_', ' ')}
-                      </p>
-                    </div>
-                  </div>
+            <div className="space-y-2 px-4 py-4">
+              <button
+                type="button"
+                onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                className={`flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold ${
+                  isDark
+                    ? 'border-slate-700 text-slate-100 hover:bg-slate-900'
+                    : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                <span>{isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</span>
+              </button>
 
-                  {getRoleLinks()}
-                  
-                  <Link 
-                    to="/profile"
+              {NAV_ITEMS.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`block rounded-lg px-3 py-2 text-sm font-semibold ${
+                    isDark ? 'text-slate-200 hover:bg-slate-900' : 'text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+
+              {!isAuthenticated ? (
+                <>
+                  <Link
+                    to="/register/candidate"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                    className={`block rounded-lg border px-3 py-2 text-center text-sm font-semibold text-[#bd2c87] ${
+                      isDark ? 'border-[#7b4565]' : 'border-[#e4bbd7]'
+                    }`}
                   >
-                    <Settings className="w-4 h-4" />
-                    Profile Settings
+                    Create Account
                   </Link>
-                  
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 w-full transition-all"
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block rounded-lg bg-[#cf2f92] px-3 py-2 text-center text-sm font-semibold text-white"
                   >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </button>
+                    Sign In
+                  </Link>
+
+                  <div className={`pt-2 ${isDark ? 'border-t border-slate-800' : 'border-t border-slate-100'}`}>
+                    <p className={`px-3 py-1 text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>For Employer</p>
+                    {EMPLOYER_ITEMS.map((item) => (
+                      <Link
+                        key={item.label}
+                        to={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`block rounded-lg px-3 py-2 text-sm font-medium ${
+                          isDark ? 'text-slate-200 hover:bg-slate-900' : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
                 </>
               ) : (
                 <>
-                  <Link 
-                    to="/jobs"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                  {accountMenuItems.map((item) => {
+                    const ItemIcon = item.icon;
+                    return (
+                      <Link
+                        key={item.label}
+                        to={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold ${
+                          isDark ? 'text-slate-200 hover:bg-slate-900' : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <ItemIcon className="h-4 w-4" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+
+                  <div className={`my-1 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`} />
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-600 hover:bg-red-50"
                   >
-                    <Search className="w-4 h-4" />
-                    Browse Jobs
-                  </Link>
-                  <Link 
-                    to="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
-                  >
-                    Login
-                  </Link>
-                  <Link 
-                    to="/register"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md"
-                  >
-                    Get Started
-                  </Link>
+                    Logout
+                  </button>
                 </>
               )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </header>
   );
 };

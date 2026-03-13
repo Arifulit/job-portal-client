@@ -3,12 +3,16 @@ import { useMyApplications } from '../../services/applicationService';
 import { Loader } from '../../components/Loader';
 import { Link } from 'react-router-dom';
 import {
+  ArrowUpRight,
+  CalendarDays,
   Briefcase,
-  FileText,
+  Eye,
   CheckCircle,
   Clock,
+  FileText,
+  Flame,
   TrendingUp,
-  Bookmark,
+  User,
 } from 'lucide-react';
 import { formatRelativeTime, getStatusColor } from '../../utils/helpers';
 
@@ -22,95 +26,126 @@ export const CandidateDashboard = () => {
   const recentApplications = applications.slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Candidate Dashboard</h1>
-          <p className="text-gray-600 mt-2">Track your job search progress</p>
+    <div className="min-h-screen bg-slate-50 py-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-8 rounded-2xl bg-gradient-to-r from-[#194f90] via-[#2a67b0] to-[#4a84ca] p-6 text-white shadow-lg">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-100">Candidate Workspace</p>
+              <h1 className="mt-1 text-3xl font-extrabold">Track Your Job Search Progress</h1>
+              <p className="mt-2 text-blue-100">Manage applications, shortlist updates, and profile growth in one place.</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/candidate/jobs"
+                className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-[#194f90]"
+              >
+                Browse Jobs
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+              <Link
+                to="/candidate/profile"
+                className="inline-flex items-center gap-2 rounded-lg border border-white/60 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+              >
+                Update Profile
+              </Link>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+        <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Total Applications</p>
-                <p className="text-3xl font-bold text-gray-800 mt-2">
+                <p className="text-sm font-semibold text-slate-500">Total Applications</p>
+                <p className="mt-2 text-3xl font-extrabold text-slate-900">
                   {stats?.totalApplications || 0}
                 </p>
               </div>
-              <FileText className="w-12 h-12 text-blue-500 opacity-80" />
+              <span className="rounded-lg bg-blue-100 p-3 text-blue-700">
+                <FileText className="h-6 w-6" />
+              </span>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Pending</p>
-                <p className="text-3xl font-bold text-gray-800 mt-2">
+                <p className="text-sm font-semibold text-slate-500">Pending Review</p>
+                <p className="mt-2 text-3xl font-extrabold text-slate-900">
                   {stats?.pendingApplications || 0}
                 </p>
               </div>
-              <Clock className="w-12 h-12 text-yellow-500 opacity-80" />
+              <span className="rounded-lg bg-amber-100 p-3 text-amber-700">
+                <Clock className="h-6 w-6" />
+              </span>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Shortlisted</p>
-                <p className="text-3xl font-bold text-gray-800 mt-2">
+                <p className="text-sm font-semibold text-slate-500">Shortlisted</p>
+                <p className="mt-2 text-3xl font-extrabold text-slate-900">
                   {stats?.shortlistedCount || 0}
                 </p>
               </div>
-              <CheckCircle className="w-12 h-12 text-green-500 opacity-80" />
+              <span className="rounded-lg bg-emerald-100 p-3 text-emerald-700">
+                <CheckCircle className="h-6 w-6" />
+              </span>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Profile Views</p>
-                <p className="text-3xl font-bold text-gray-800 mt-2">
+                <p className="text-sm font-semibold text-slate-500">Profile Views</p>
+                <p className="mt-2 text-3xl font-extrabold text-slate-900">
                   {stats?.views || 0}
                 </p>
               </div>
-              <TrendingUp className="w-12 h-12 text-purple-500 opacity-80" />
+              <span className="rounded-lg bg-violet-100 p-3 text-violet-700">
+                <Eye className="h-6 w-6" />
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 bg-white rounded-lg shadow">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-semibold flex items-center">
-                <FileText className="w-6 h-6 mr-2 text-blue-600" />
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-200 p-6">
+              <h2 className="flex items-center text-xl font-bold text-slate-900">
+                <FileText className="mr-2 h-5 w-5 text-blue-600" />
                 Recent Applications
               </h2>
+              <Link to="/candidate/applications" className="text-sm font-semibold text-blue-700 hover:text-blue-900">
+                View all
+              </Link>
             </div>
 
-            <div className="divide-y">
+            <div className="divide-y divide-slate-200">
               {recentApplications.length > 0 ? (
                 recentApplications.map((application) => (
-                  <div key={application._id} className="p-6 hover:bg-gray-50 transition">
+                  <div key={application._id} className="p-6 transition hover:bg-slate-50">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h3 className="font-semibold text-lg text-gray-800">
+                        <h3 className="text-lg font-semibold text-slate-900">
                           {application.job?.title}
                         </h3>
-                        <p className="text-gray-600">{application.job?.company}</p>
+                        <p className="text-slate-600">{application.job?.company}</p>
                       </div>
-                      <span className={`badge ${getStatusColor(application.status)}`}>
-                        {application.status}
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusColor(application.status)}`}>
+                        {application.status || 'pending'}
                       </span>
                     </div>
-                    <div className="flex items-center text-sm text-gray-500 space-x-4">
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500">
                       <span className="flex items-center">
-                        <Clock className="w-4 h-4 mr-1" />
+                        <CalendarDays className="mr-1 h-4 w-4" />
                         {formatRelativeTime(application.appliedAt)}
                       </span>
                       <Link
                         to={`/jobs/${application.jobId}`}
-                        className="text-blue-600 hover:underline"
+                        className="font-semibold text-blue-700 hover:text-blue-900"
                       >
                         View Job
                       </Link>
@@ -119,52 +154,77 @@ export const CandidateDashboard = () => {
                 ))
               ) : (
                 <div className="p-12 text-center">
-                  <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-600">No applications yet</p>
-                  <Link to="/jobs" className="btn btn-primary mt-4">
+                  <FileText className="mx-auto mb-4 h-16 w-16 text-slate-300" />
+                  <p className="text-slate-600">No applications yet</p>
+                  <Link
+                    to="/candidate/jobs"
+                    className="mt-4 inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  >
                     Browse Jobs
                   </Link>
                 </div>
               )}
             </div>
-
-            {recentApplications.length > 0 && (
-              <div className="p-4 border-t text-center">
-                <Link to="/applications" className="text-blue-600 hover:underline font-medium">
-                  View All Applications
-                </Link>
-              </div>
-            )}
           </div>
 
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center">
-                <Briefcase className="w-6 h-6 mr-2 text-blue-600" />
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-4 flex items-center text-xl font-bold text-slate-900">
+                <Briefcase className="mr-2 h-5 w-5 text-blue-600" />
                 Quick Actions
               </h2>
               <div className="space-y-3">
-                <Link to="/jobs" className="btn btn-primary w-full">
+                <Link
+                  to="/candidate/jobs"
+                  className="inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+                >
                   Browse Jobs
                 </Link>
-                <Link to="/profile" className="btn btn-outline w-full">
+                <Link
+                  to="/candidate/profile"
+                  className="inline-flex w-full items-center justify-center rounded-md border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
                   Update Profile
                 </Link>
-                <Link to="/saved-jobs" className="btn btn-outline w-full">
-                  <Bookmark className="w-4 h-4 mr-2" />
-                  Saved Jobs
+                <Link
+                  to="/candidate/applications"
+                  className="inline-flex w-full items-center justify-center rounded-md border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Track Applications
                 </Link>
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg shadow p-6 text-white">
-              <h3 className="text-lg font-semibold mb-2">Complete Your Profile</h3>
-              <p className="text-sm opacity-90 mb-4">
+            <div className="rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 p-6 text-white shadow-md">
+              <h3 className="mb-2 flex items-center text-lg font-semibold">
+                <Flame className="mr-2 h-5 w-5" />
+                Complete Your Profile
+              </h3>
+              <p className="mb-4 text-sm text-blue-100">
                 Increase your chances of getting hired by completing your profile
               </p>
-              <Link to="/profile" className="btn btn-sm bg-white text-blue-600 hover:bg-gray-100">
+              <Link
+                to="/candidate/profile"
+                className="inline-flex items-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+              >
                 Update Now
               </Link>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-3 flex items-center text-base font-bold text-slate-900">
+                <TrendingUp className="mr-2 h-5 w-5 text-violet-600" />
+                This Week Insight
+              </h3>
+              <p className="text-sm text-slate-600">
+                Keep applying consistently. Candidates with 5+ targeted applications per week typically receive more interview calls.
+              </p>
+              <div className="mt-4 rounded-lg bg-violet-50 p-3 text-sm text-violet-700">
+                <p className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Profile views this week: <span className="font-bold">{stats?.views || 0}</span>
+                </p>
+              </div>
             </div>
           </div>
         </div>

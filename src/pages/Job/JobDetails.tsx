@@ -7,40 +7,40 @@ import { Button } from '../../components/ui/button';
 import Badge from '../../components/ui/badge';
 import { useState } from 'react';
 import { useApplyJob } from '../../services/applicationService';
-import { MapPin, Briefcase, DollarSign, Clock, Building, Calendar, FileText } from 'lucide-react';
+import { MapPin, Briefcase, DollarSign, Clock, Building, Calendar } from 'lucide-react';
 
 const JobDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { data: job, isLoading, error } = useJob(id);
   const { user } = useAuth();
-  const [isApplying, setIsApplying] = useState(false);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
-  const [resume, setResume] = useState<File | null>(null);
+  const [resumeUrl, setResumeUrl] = useState('');
   const [coverLetter, setCoverLetter] = useState('');
 
   const { mutate: applyForJob, isLoading: isSubmitting } = useApplyJob();
 
   const handleApply = () => {
-    if (!resume) {
-      alert('Please upload your resume');
+    if (!id) {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('jobId', id!);
-    formData.append('resume', resume);
-    if (coverLetter) {
-      formData.append('coverLetter', coverLetter);
+    if (!resumeUrl.trim()) {
+      alert('Please provide your resume URL');
+      return;
     }
 
-    applyForJob(formData, {
+    applyForJob({
+      jobId: id,
+      coverLetter,
+      resumeUrl: resumeUrl.trim(),
+    }, {
       onSuccess: () => {
         setShowApplicationModal(false);
-        // Show success message
+        setResumeUrl('');
+        setCoverLetter('');
       },
       onError: (error) => {
         console.error('Error applying for job:', error);
-        // Show error message
       },
     });
   };
@@ -262,23 +262,17 @@ const JobDetails = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Resume
+                  Resume URL
                 </label>
                 <input
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  onChange={(e) => setResume(e.target.files?.[0] || null)}
-                  className="block w-full text-sm text-gray-500
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-md file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-blue-50 file:text-blue-700
-                    hover:file:bg-blue-100
-                    dark:file:bg-blue-900/30 dark:file:text-blue-300
-                    dark:hover:file:bg-blue-900/50"
+                  type="url"
+                  value={resumeUrl}
+                  onChange={(e) => setResumeUrl(e.target.value)}
+                  placeholder="https://example.com/my-resume.pdf"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                 />
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  PDF, DOC, or DOCX (Max. 5MB)
+                  Public resume link (PDF/Doc link from Drive, Dropbox, etc.)
                 </p>
               </div>
 
@@ -306,7 +300,7 @@ const JobDetails = () => {
                 </Button>
                 <Button
                   onClick={handleApply}
-                  disabled={!resume || isSubmitting}
+                  disabled={!resumeUrl.trim() || isSubmitting}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
                   {isSubmitting ? 'Applying...' : 'Submit Application'}

@@ -60,10 +60,10 @@ const DashboardLayout: React.FC = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
+      navigate('/');
     } catch (error) {
       console.error('Logout failed:', error);
-      navigate('/login');
+      navigate('/');
     } finally {
       setDropdownOpen(false);
     }
@@ -125,9 +125,9 @@ const DashboardLayout: React.FC = () => {
   }, [dropdownOpen]);
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-white border-r border-gray-200">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800">
       {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 border-b border-gray-200 dark:border-slate-800">
         <Link to="/" className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
             <Home className="w-6 h-6 text-white" />
@@ -142,7 +142,7 @@ const DashboardLayout: React.FC = () => {
       <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
         {sidebarItems.map((section, i) => (
           <div key={i} className="space-y-2">
-            <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <h3 className="px-3 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
               {section.title}
             </h3>
             <div className="space-y-1">
@@ -156,11 +156,11 @@ const DashboardLayout: React.FC = () => {
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                       active
-                        ? 'bg-blue-50 text-blue-700 shadow-sm'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm'
+                        : 'text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800'
                     }`}
                   >
-                    {Icon && <Icon className={`w-5 h-5 ${active ? 'text-blue-600' : 'text-gray-500'}`} />}
+                    {Icon && <Icon className={`w-5 h-5 ${active ? 'text-blue-600 dark:text-blue-300' : 'text-gray-500 dark:text-slate-400'}`} />}
                     <span>{item.title}</span>
                     {active && <div className="ml-auto w-2 h-2 bg-blue-600 rounded-full" />}
                   </Link>
@@ -172,8 +172,8 @@ const DashboardLayout: React.FC = () => {
       </nav>
 
       {/* User Info */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+      <div className="p-4 border-t border-gray-200 dark:border-slate-800">
+        <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
           <Avatar className="h-10 w-10 ring-2 ring-blue-100">
             <ControlledAvatarImage src={user?.profileImage} alt={getUserFullName()} />
             <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-700 text-white font-bold">
@@ -181,8 +181,8 @@ const DashboardLayout: React.FC = () => {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">{getUserFullName()}</p>
-            <p className="text-xs text-gray-500 flex items-center gap-1">
+            <p className="text-sm font-semibold text-gray-900 dark:text-slate-100 truncate">{getUserFullName()}</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400 flex items-center gap-1">
               <span className="w-2 h-2 bg-green-500 rounded-full" />
               {user?.role}
             </p>
@@ -194,17 +194,17 @@ const DashboardLayout: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-300 border-t-blue-600 mx-auto mb-4" />
-          <p className="bg-white font-medium">Loading your workspace...</p>
+          <p className="bg-white dark:bg-slate-900 dark:text-slate-100 font-medium">Loading your workspace...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-slate-950">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-30">
         <SidebarContent />
@@ -212,7 +212,7 @@ const DashboardLayout: React.FC = () => {
 
       {/* Mobile Sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="w-64 p-0 bg-white border-r-0">
+        <SheetContent side="left" className="w-64 p-0 bg-white dark:bg-slate-900 border-r-0">
           <SidebarContent />
         </SheetContent>
       </Sheet>
@@ -220,7 +220,7 @@ const DashboardLayout: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 lg:pl-64 flex flex-col">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-20">
+        <header className="bg-white dark:bg-slate-900 shadow-sm border-b border-gray-200 dark:border-slate-800 sticky top-0 z-20">
           <div className="flex items-center justify-between px-4 py-3 lg:px-8">
             <div className="flex items-center gap-4 flex-1">
               <Button
@@ -231,7 +231,7 @@ const DashboardLayout: React.FC = () => {
               >
                 <Menu className="h-5 w-5" />
               </Button>
-              <p className="text-sm text-gray-600 hidden sm:block">
+              <p className="text-sm text-gray-600 dark:text-slate-400 hidden sm:block">
                 Welcome back, <span className="font-medium">{getUserFullName()}</span>
               </p>
             </div>
@@ -261,28 +261,28 @@ const DashboardLayout: React.FC = () => {
                 </Button>
 
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56  rounded-lg shadow-xl border border-gray-200 z-50">
-                    <div className="p-4 border-b border-gray-200">
-                      <p className="font-semibold text-gray-900 truncate">{getUserFullName()}</p>
-                      <p className="text-sm text-gray-500 truncate">{user?.email}</p>
+                  <div className="absolute right-0 mt-2 w-56 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 z-50">
+                    <div className="p-4 border-b border-gray-200 dark:border-slate-700">
+                      <p className="font-semibold text-gray-900 dark:text-slate-100 truncate">{getUserFullName()}</p>
+                      <p className="text-sm text-gray-500 dark:text-slate-400 truncate">{user?.email}</p>
                     </div>
                     <div className="py-2">
                       <Link
                         to="/profile"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-100"
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800"
                       >
                         <User className="w-4 h-4" /> Profile
                       </Link>
                       <Link
                         to="/settings"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-100"
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800"
                       >
                         <Settings className="w-4 h-4" /> Settings
                       </Link>
                     </div>
-                    <div className="border-t border-gray-200 pt-2">
+                    <div className="border-t border-gray-200 dark:border-slate-700 pt-2">
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50"

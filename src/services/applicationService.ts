@@ -31,7 +31,7 @@ export const useApplyJob = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { jobId: string; resume: string; coverLetter?: string }) => {
+    mutationFn: async (data: { jobId: string; resumeUrl: string; coverLetter?: string }) => {
       const response = await api.post<ApiResponse<Application>>('/applications', data);
       return response.data.data;
     },

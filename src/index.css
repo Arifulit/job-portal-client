@@ -1,3 +1,80 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+	html {
+		@apply scroll-smooth;
+	}
+
+	body {
+		@apply bg-white text-slate-900 antialiased transition-colors duration-200;
+	}
+
+	.dark body {
+		@apply bg-slate-950 text-slate-100;
+	}
+
+	.theme-transitioning *,
+	.theme-transitioning *::before,
+	.theme-transitioning *::after {
+		transition-property: color, background-color, border-color, fill, stroke, box-shadow;
+		transition-duration: 150ms;
+		transition-timing-function: ease-out;
+	}
+
+	/* Global dark compatibility layer for existing utility-heavy pages */
+	.dark .bg-white {
+		background-color: rgb(15 23 42) !important;
+	}
+
+	.dark .bg-gray-50,
+	.dark .bg-slate-50 {
+		background-color: rgb(2 6 23) !important;
+	}
+
+	.dark .bg-gray-100,
+	.dark .bg-slate-100 {
+		background-color: rgb(30 41 59) !important;
+	}
+
+	.dark .border-gray-100,
+	.dark .border-gray-200,
+	.dark .border-gray-300,
+	.dark .border-slate-200,
+	.dark .border-slate-300 {
+		border-color: rgb(51 65 85) !important;
+	}
+
+	.dark .text-gray-900,
+	.dark .text-slate-900,
+	.dark .text-black {
+		color: rgb(241 245 249) !important;
+	}
+
+	.dark .text-gray-800,
+	.dark .text-slate-800,
+	.dark .text-gray-700,
+	.dark .text-slate-700,
+	.dark .text-gray-600,
+	.dark .text-slate-600,
+	.dark .text-gray-500,
+	.dark .text-slate-500 {
+		color: rgb(148 163 184) !important;
+	}
+
+	.dark .hover\:bg-gray-50:hover,
+	.dark .hover\:bg-slate-50:hover {
+		background-color: rgb(30 41 59) !important;
+	}
+
+	.dark .bg-red-50,
+	.dark .bg-green-50,
+	.dark .bg-blue-50,
+	.dark .bg-yellow-50,
+	.dark .bg-indigo-50,
+	.dark .bg-violet-50,
+	.dark .bg-emerald-50 {
+		background-color: rgb(30 41 59) !important;
+	}
+}

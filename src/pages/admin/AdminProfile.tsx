@@ -248,7 +248,7 @@ export default function AdminProfile(): JSX.Element {
             variant="outline"
             onClick={() => {
               logout();
-              navigate("/login");
+              navigate("/");
             }}
             className="text-red-600 border-red-300 hover:bg-red-50"
           >

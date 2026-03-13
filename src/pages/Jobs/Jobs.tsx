@@ -13,15 +13,15 @@ const Jobs = () => {
   // Loading State - Professional
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 py-12 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-10">
-            <h1 className="text-4xl font-bold text-gray-900">Browse Jobs</h1>
-            <p className="text-lg text-gray-600 mt-2">Finding your dream job...</p>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-slate-100">Browse Jobs</h1>
+            <p className="text-lg text-gray-600 dark:text-slate-400 mt-2">Finding your dream job...</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
+              <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl shadow-md border border-gray-200 dark:border-slate-800 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <Skeleton className="h-7 w-64 mb-2" />
@@ -46,13 +46,13 @@ const Jobs = () => {
   // Error State
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-20">
-        <div className="text-center bg-white rounded-3xl shadow-xl p-12 border border-gray-200 max-w-md">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center py-20">
+        <div className="text-center bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-12 border border-gray-200 dark:border-slate-800 max-w-md">
           <div className="bg-red-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
             <Briefcase className="w-10 h-10 text-red-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Oops! Something went wrong</h2>
-          <p className="text-gray-600">We couldn't load the jobs. Please try again later.</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-3">Oops! Something went wrong</h2>
+          <p className="text-gray-600 dark:text-slate-400">We couldn't load the jobs. Please try again later.</p>
         </div>
       </div>
     );
@@ -63,13 +63,13 @@ const Jobs = () => {
   // Empty State
   if (jobs.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center py-20 px-4">
-        <div className="text-center bg-white rounded-3xl shadow-2xl p-16 border border-gray-200 max-w-2xl">
-          <div className="bg-gray-100 w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-8">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-950 dark:to-slate-900 flex items-center justify-center py-20 px-4">
+        <div className="text-center bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-16 border border-gray-200 dark:border-slate-800 max-w-2xl">
+          <div className="bg-gray-100 dark:bg-slate-800 w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-8">
             <Briefcase className="w-14 h-14 text-gray-400" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">No Jobs Available Right Now</h2>
-          <p className="text-xl text-gray-600 mb-8">New opportunities are posted daily. Check back soon!</p>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-slate-100 mb-4">No Jobs Available Right Now</h2>
+          <p className="text-xl text-gray-600 dark:text-slate-400 mb-8">New opportunities are posted daily. Check back soon!</p>
           <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-xl shadow-lg transition-all">
             Refresh Page
           </button>
@@ -79,13 +79,13 @@ const Jobs = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 py-12 px-4">
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">Find Your Dream Job</h1>
-          <p className="text-xl text-gray-600">Discover {jobs.length} amazing opportunities waiting for you</p>
+          <h1 className="text-5xl font-bold text-gray-900 dark:text-slate-100 mb-4">Find Your Dream Job</h1>
+          <p className="text-xl text-gray-600 dark:text-slate-400">Discover {jobs.length} amazing opportunities waiting for you</p>
         </div>
 
         {/* Jobs Grid */}
@@ -96,17 +96,17 @@ const Jobs = () => {
               to={`/jobs/${job._id}`}
               className="group block transform transition-all duration-300 hover:scale-105"
             >
-              <div className="bg-white rounded-3xl shadow-lg hover:shadow-2xl border border-gray-200 overflow-hidden h-full flex flex-col transition-all duration-300 group-hover:border-blue-300">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-lg hover:shadow-2xl border border-gray-200 dark:border-slate-800 overflow-hidden h-full flex flex-col transition-all duration-300 group-hover:border-blue-300 dark:group-hover:border-blue-700">
 
                 {/* Card Header */}
                 <div className="p-6 pb-4 flex-1">
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors line-clamp-2">
                         {job.title}
                       </h3>
-                      <div className="flex items-center gap-2 mt-2 text-gray-700">
-                        <Building2 className="w-4 h-4 text-gray-500" />
+                      <div className="flex items-center gap-2 mt-2 text-gray-700 dark:text-slate-300">
+                        <Building2 className="w-4 h-4 text-gray-500 dark:text-slate-400" />
                         <span className="font-medium">
                           {job.company?.name || job.company || 'Confidential Company'}
                         </span>
@@ -116,7 +116,7 @@ const Jobs = () => {
                       <img
                         src={job.companyLogo}
                         alt="Company logo"
-                        className="h-14 w-14 object-contain rounded-xl border border-gray-200 shadow-sm"
+                        className="h-14 w-14 object-contain rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm"
                       />
                     ) : (
                       <div className="h-14 w-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md">
@@ -125,7 +125,7 @@ const Jobs = () => {
                     )}
                   </div>
 
-                  <p className="text-gray-600 line-clamp-2 mb-5 leading-relaxed">
+                  <p className="text-gray-600 dark:text-slate-400 line-clamp-2 mb-5 leading-relaxed">
                     {job.description ? job.description.substring(0, 110) + '...' : 'No description available'}
                   </p>
 
@@ -141,7 +141,7 @@ const Jobs = () => {
                       </Badge>
                     )}
                     {job.location && (
-                      <Badge variant="outline" className="border-gray-400 text-gray-700">
+                      <Badge variant="outline" className="border-gray-400 dark:border-slate-600 text-gray-700 dark:text-slate-300">
                         <MapPin className="w-3.5 h-3.5 mr-1" />
                         {job.location}
                       </Badge>
@@ -150,7 +150,7 @@ const Jobs = () => {
 
                   {/* Footer */}
                   <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2 text-gray-500">
+                    <div className="flex items-center gap-2 text-gray-500 dark:text-slate-400">
                       <Clock className="w-4 h-4" />
                       <span>
                         {job.createdAt ? new Date(job.createdAt).toLocaleDateString('en-US', {

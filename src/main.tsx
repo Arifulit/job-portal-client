@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { router } from "./routes/index";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./components/providers/theme.provider";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -25,12 +26,12 @@ if (!root) throw new Error("Root element not found");
 ReactDOM.createRoot(root).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <div className="light">
+      <ThemeProvider defaultTheme="light" storageKey="job-portal-theme">
+        <AuthProvider>
           <RouterProvider router={router} />
           <Toaster richColors position="top-right" />
-        </div>
-      </AuthProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   </React.StrictMode>
 );

@@ -1,4 +1,3 @@
-/* eslint-disable no-empty */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useState } from "react";
@@ -10,36 +9,24 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Eye, EyeOff, Briefcase, Mail, Lock, ArrowRight } from "lucide-react";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000/api/v1";
-
 export function Login() {
   const navigate = useNavigate();
   const { login, loading } = useAuth();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     
     try {
-      const user = await login(formData.email, formData.password);
+      await login(formData.email, formData.password);
       
       // Show success message
       toast.success("Welcome back! Login successful");
-      
-      // Redirect based on user role
-      const role = user.role?.toLowerCase() || 'candidate';
-      if (role === 'admin') {
-        navigate('/admin/dashboard');
-      } else if (role === 'recruiter') {
-        navigate('/recruiter/dashboard');
-      } else {
-        navigate('/candidate/dashboard');
-      }
+
+      // Redirect to home after successful login
+      navigate('/');
     } catch (error: any) {
-      setError(error.message);
       toast.error(error.message);
     }
   };
@@ -49,16 +36,7 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-3xl" />
-      </div>
-
-      {/* Grid Pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:50px_50px]" />
+    <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
 
       <div className="w-full max-w-md relative z-10">
         {/* Header */}
@@ -67,17 +45,17 @@ export function Login() {
             <Briefcase className="w-8 h-8 text-white" strokeWidth={2.5} />
           </div>
           
-          <h1 className="text-4xl font-extrabold text-white mb-2">
+          <h1 className="text-4xl font-extrabold text-slate-900 dark:text-slate-100 mb-2">
             Welcome Back
           </h1>
           
-          <p className="text-slate-300 text-lg">
+          <p className="text-slate-600 dark:text-slate-400 text-lg">
             Sign in to continue your journey
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
           {/* Card Header */}
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
             <h2 className="text-xl font-bold text-white">Sign In</h2>
@@ -88,7 +66,7 @@ export function Login() {
           <form onSubmit={handleSubmit} className="p-6 space-y-5">
             {/* Email Field */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-slate-300">
                 Email Address
               </Label>
               <div className="relative">
@@ -102,14 +80,14 @@ export function Login() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="you@example.com"
-                  className="w-full h-11 pl-10 pr-4 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white text-gray-900"
+                  className="w-full h-11 pl-10 pr-4 border border-gray-300 dark:border-slate-700 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white dark:bg-slate-950 text-gray-900 dark:text-slate-100"
                 />
               </div>
             </div>
 
             {/* Password Field */}
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-slate-300">
                 Password
               </Label>
               <div className="relative">
@@ -123,7 +101,7 @@ export function Login() {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
-                  className="w-full h-11 pl-10 pr-12 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white text-gray-900"
+                  className="w-full h-11 pl-10 pr-12 border border-gray-300 dark:border-slate-700 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white dark:bg-slate-950 text-gray-900 dark:text-slate-100"
                 />
                 <button
                   type="button"
@@ -169,7 +147,7 @@ export function Login() {
 
             {/* Register Link */}
             <div className="text-center pt-3">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-slate-400">
                 Don't have an account?{" "}
                 <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
                   Create Account
@@ -180,7 +158,7 @@ export function Login() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-slate-400 mt-6 flex items-center justify-center gap-2">
+        <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-6 flex items-center justify-center gap-2">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
