@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/button';
 import Badge from '../../components/ui/badge';
 import { useState } from 'react';
 import { useApplyJob } from '../../services/applicationService';
+import ApplicationForm from '../../components/ApplicationForm';
 import { MapPin, Briefcase, DollarSign, Clock, Building, Calendar } from 'lucide-react';
 
 const JobDetails = () => {
@@ -14,33 +15,26 @@ const JobDetails = () => {
   const { data: job, isLoading, error } = useJob(id);
   const { user } = useAuth();
   const [showApplicationModal, setShowApplicationModal] = useState(false);
-  const [resumeUrl, setResumeUrl] = useState('');
-  const [coverLetter, setCoverLetter] = useState('');
+  const [hasApplied, setHasApplied] = useState(false);
 
-  const { mutate: applyForJob, isLoading: isSubmitting } = useApplyJob();
+  const { mutate: applyForJob, isPending: isSubmitting } = useApplyJob();
 
-  const handleApply = () => {
+  const roleValue = String(user?.role || '').toLowerCase();
+  const canApply = roleValue === 'candidate' || roleValue === 'seeker' || roleValue === 'job_seeker';
+
+  const handleApply = (values: { resumeFile: File; coverLetter?: string }) => {
     if (!id) {
-      return;
-    }
-
-    if (!resumeUrl.trim()) {
-      alert('Please provide your resume URL');
       return;
     }
 
     applyForJob({
       jobId: id,
-      coverLetter,
-      resumeUrl: resumeUrl.trim(),
+      coverLetter: values.coverLetter,
+      resumeFile: values.resumeFile,
     }, {
       onSuccess: () => {
+        setHasApplied(true);
         setShowApplicationModal(false);
-        setResumeUrl('');
-        setCoverLetter('');
-      },
-      onError: (error) => {
-        console.error('Error applying for job:', error);
       },
     });
   };
@@ -159,12 +153,18 @@ const JobDetails = () => {
                 </div>
               </div>
               <div className="flex flex-col space-y-2">
-                {user?.role === 'candidate' && (
+                {canApply && (
                   <Button
                     onClick={() => setShowApplicationModal(true)}
+                    disabled={hasApplied}
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
-                    Apply Now
+                    {hasApplied ? 'Applied' : 'Apply Now'}
+                  </Button>
+                )}
+                {!user && (
+                  <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Link to="/login">Login to Apply</Link>
                   </Button>
                 )}
                 <Button variant="outline" asChild>
@@ -258,55 +258,12 @@ const JobDetails = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
             <h2 className="text-xl font-semibold mb-4">Apply for {job.title}</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Resume URL
-                </label>
-                <input
-                  type="url"
-                  value={resumeUrl}
-                  onChange={(e) => setResumeUrl(e.target.value)}
-                  placeholder="https://example.com/my-resume.pdf"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Public resume link (PDF/Doc link from Drive, Dropbox, etc.)
-                </p>
-              </div>
 
-              <div>
-                <label htmlFor="coverLetter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Cover Letter (Optional)
-                </label>
-                <textarea
-                  id="coverLetter"
-                  rows={4}
-                  value={coverLetter}
-                  onChange={(e) => setCoverLetter(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                  placeholder="Write a cover letter or leave it blank..."
-                />
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowApplicationModal(false)}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleApply}
-                  disabled={!resumeUrl.trim() || isSubmitting}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {isSubmitting ? 'Applying...' : 'Submit Application'}
-                </Button>
-              </div>
-            </div>
+            <ApplicationForm
+              onSubmit={handleApply}
+              onCancel={() => setShowApplicationModal(false)}
+              isSubmitting={isSubmitting}
+            />
           </div>
         </div>
       )}

@@ -66,11 +66,13 @@ export interface Application {
   job?: Job;
   seekerId: string;
   seeker?: User;
+  candidate?: User;
   recruiterId: string;
   status: ApplicationStatus;
   resume: string;
   coverLetter?: string;
   appliedAt: string;
+  createdAt?: string;
   statusHistory: {
     status: ApplicationStatus;
     date: string;

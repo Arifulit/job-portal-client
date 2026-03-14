@@ -126,15 +126,51 @@
 
 // export default CandidateProfile;
 
-import React from 'react';
-import { useCandidateProfile } from '../../services/candidateService';
+import React, { useState } from 'react';
+import { useCandidateProfile, useUpdateCandidateProfile } from '../../services/candidateService';
 import { Badge } from '../../components/ui/badge';
 import { Skeleton } from '../../components/ui/skeleton';
-import { Mail, Phone, Calendar, Briefcase, MapPin, Award, User } from 'lucide-react';
+import { Mail, Phone, Calendar, Briefcase, MapPin, Award, User, Pencil, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 const CandidateProfile = () => {
   const { data, isLoading, error } = useCandidateProfile();
   const profile = data?.data;
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [form, setForm] = useState({ name: '', phone: '', headline: '', location: '', experienceLevel: '', summary: '', skills: [] as string[] });
+  const [skillInput, setSkillInput] = useState('');
+  const { mutate: updateProfile, isPending: isUpdating } = useUpdateCandidateProfile();
+
+  const openEdit = () => {
+    if (!profile) return;
+    setForm({
+      name: profile.name || '',
+      phone: profile.phone || '',
+      headline: profile.headline || '',
+      location: profile.location || '',
+      experienceLevel: profile.experienceLevel || '',
+      summary: profile.summary || '',
+      skills: [...(profile.skills || [])],
+    });
+    setIsEditing(true);
+  };
+
+  const addSkill = () => {
+    const s = skillInput.trim();
+    if (s && !form.skills.includes(s)) setForm(f => ({ ...f, skills: [...f.skills, s] }));
+    setSkillInput('');
+  };
+
+  const removeSkill = (skill: string) => setForm(f => ({ ...f, skills: f.skills.filter(s => s !== skill) }));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateProfile(form, {
+      onSuccess: () => { setIsEditing(false); toast.success('Profile updated successfully!'); },
+      onError: (err) => { toast.error(err.message); },
+    });
+  };
 
   // Loading State
   if (isLoading) {
@@ -224,11 +260,18 @@ const CandidateProfile = () => {
                 </div>
               </div>
 
-              {/* Role Badge */}
-              <div>
+              {/* Role Badge & Edit */}
+              <div className="flex flex-col items-end gap-3">
                 <Badge className="bg-white/20 text-white border-white/30 text-lg px-6 py-3 backdrop-blur-sm">
                   {profile.user.role.charAt(0).toUpperCase() + profile.user.role.slice(1)}
                 </Badge>
+                <button
+                  onClick={openEdit}
+                  className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white text-sm font-medium px-4 py-2 rounded-full backdrop-blur-sm transition-all"
+                >
+                  <Pencil className="w-4 h-4" />
+                  Edit Profile
+                </button>
               </div>
             </div>
           </div>
@@ -324,6 +367,122 @@ const CandidateProfile = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900">Edit Profile</h2>
+              <button onClick={() => setIsEditing(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Name</label>
+                <input
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Phone</label>
+                <input
+                  value={form.phone}
+                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Headline</label>
+                <input
+                  value={form.headline}
+                  onChange={e => setForm(f => ({ ...f, headline: e.target.value }))}
+                  placeholder="e.g. Full Stack Developer"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Location</label>
+                <input
+                  value={form.location}
+                  onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
+                  placeholder="e.g. Dhaka, Bangladesh"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Experience Level</label>
+                <select
+                  value={form.experienceLevel}
+                  onChange={e => setForm(f => ({ ...f, experienceLevel: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="">Select level</option>
+                  <option value="entry">Entry Level</option>
+                  <option value="mid">Mid Level</option>
+                  <option value="senior">Senior Level</option>
+                  <option value="lead">Lead</option>
+                  <option value="expert">Expert</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Professional Summary</label>
+                <textarea
+                  rows={4}
+                  value={form.summary}
+                  onChange={e => setForm(f => ({ ...f, summary: e.target.value }))}
+                  placeholder="Write a short bio about yourself..."
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Skills</label>
+                <div className="flex gap-2 mb-3">
+                  <input
+                    value={skillInput}
+                    onChange={e => setSkillInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSkill(); } }}
+                    placeholder="Type a skill and press Enter or Add"
+                    className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button type="button" onClick={addSkill} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium transition-colors">
+                    Add
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {form.skills.map(skill => (
+                    <span key={skill} className="flex items-center gap-1.5 bg-blue-100 text-blue-800 text-sm px-3 py-1.5 rounded-full font-medium">
+                      {skill}
+                      <button type="button" onClick={() => removeSkill(skill)} className="text-blue-500 hover:text-red-600 transition-colors">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="flex-1 border border-gray-300 text-gray-700 font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
+                >
+                  {isUpdating ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

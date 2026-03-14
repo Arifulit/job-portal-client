@@ -65,6 +65,8 @@ cp .env.example .env
 ```env
 VITE_API_URL=http://localhost:5000/api
 VITE_APP_NAME=Career-Code
+VITE_CLOUDINARY_CLOUD_NAME=your-cloud-name
+VITE_CLOUDINARY_UPLOAD_PRESET=career-code
 ```
 
 5. Start development server:
@@ -169,6 +171,8 @@ netlify deploy --prod
 |----------|-------------|---------|
 | VITE_API_URL | Backend API URL | http://localhost:5000/api |
 | VITE_APP_NAME | Application name | Career-Code |
+| VITE_CLOUDINARY_CLOUD_NAME | Cloudinary cloud name for resume uploads | - |
+| VITE_CLOUDINARY_UPLOAD_PRESET | Cloudinary upload preset | career-code |
 
 ## Contributing
 

@@ -99,9 +99,9 @@ export const RecruiterDashboard = () => {
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-500">Hired</p>
+                <p className="text-sm font-semibold text-slate-500">Hired Candidates</p>
                 <p className="mt-2 text-3xl font-extrabold text-slate-900">
-                  {stats?.hiredCount || 0}
+                  {stats?.hiredCount ?? 0}
                 </p>
               </div>
               <span className="rounded-lg bg-amber-100 p-3 text-amber-700">

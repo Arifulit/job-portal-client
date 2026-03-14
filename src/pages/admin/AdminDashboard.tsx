@@ -1,5 +1,3 @@
-// import { useDashboardStats } from '../services/userService';
-// import { Loader } from '../components/Loader';
 import { Link } from 'react-router-dom';
 import {
   ArrowUpRight,
@@ -123,9 +121,9 @@ export const AdminDashboard = () => {
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-500">Success Rate</p>
+                <p className="text-sm font-semibold text-slate-500">Hired</p>
                 <p className="mt-2 text-3xl font-extrabold text-slate-900">
-                  {stats?.hiredCount || 0}%
+                  {stats?.hiredCount ?? 0}
                 </p>
               </div>
               <span className="rounded-lg bg-teal-100 p-3 text-teal-700">

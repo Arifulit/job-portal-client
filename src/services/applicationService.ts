@@ -3,6 +3,36 @@ import { api, handleApiError } from '../utils/api';
 import { Application, ApplicationStatus, ApiResponse, PaginatedResponse } from '../types';
 import { toast } from 'sonner';
 
+const allowedStatuses: ApplicationStatus[] = [
+  'applied',
+  'shortlisted',
+  'interview',
+  'offered',
+  'hired',
+  'rejected',
+];
+
+const normalizeApplicationStatus = (status: unknown): ApplicationStatus => {
+  const value = String(status || '').toLowerCase() as ApplicationStatus;
+  return allowedStatuses.includes(value) ? value : 'applied';
+};
+
+const normalizeApplication = (application: Partial<Application> & Record<string, any>): Application => {
+  return {
+    ...application,
+    status: normalizeApplicationStatus(application.status),
+    jobId: application.jobId || application.job?._id || '',
+    seekerId: application.seekerId || application.candidate?._id || application.candidate || '',
+    recruiterId: application.recruiterId || application.job?.createdBy || '',
+    resume: application.resume || '',
+    appliedAt:
+      application.appliedAt ||
+      application.createdAt ||
+      application.updatedAt ||
+      new Date().toISOString(),
+  } as Application;
+};
+
 export const useApplications = () => {
   return useQuery({
     queryKey: ['applications'],
@@ -21,9 +51,22 @@ export const useJobApplications = (jobId: string | undefined) => {
       const response = await api.get<ApiResponse<Application[]>>(
         `/applications/job/${jobId}`
       );
-      return response.data.data;
+      return (response.data.data || []).map(normalizeApplication);
     },
     enabled: !!jobId,
+  });
+};
+
+export const useRecruiterAllApplications = () => {
+  return useQuery({
+    queryKey: ['recruiter-all-applications'],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<Application[]>>(
+        '/applications/recruiter/all-applications'
+      );
+
+      return (response.data.data || []).map(normalizeApplication);
+    },
   });
 };
 
@@ -31,9 +74,39 @@ export const useApplyJob = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { jobId: string; resumeUrl: string; coverLetter?: string }) => {
-      const response = await api.post<ApiResponse<Application>>('/applications', data);
-      return response.data.data;
+    mutationFn: async (data: {
+      jobId: string;
+      coverLetter?: string;
+      resumeUrl?: string;
+      resumeFile?: File;
+    }) => {
+      let response;
+
+      if (data.resumeFile) {
+        const formData = new FormData();
+        // Some backends expect `job` while others expect `jobId`; send both for compatibility.
+        formData.append('job', data.jobId);
+        formData.append('jobId', data.jobId);
+        formData.append('resume', data.resumeFile);
+
+        if (data.coverLetter) {
+          formData.append('coverLetter', data.coverLetter);
+        }
+
+        // Let Axios/browser set multipart boundary automatically.
+        response = await api.post<ApiResponse<Application>>('/applications', formData);
+      } else {
+        response = await api.post<ApiResponse<Application>>('/applications', {
+          jobId: data.jobId,
+          coverLetter: data.coverLetter,
+          resumeUrl: data.resumeUrl,
+        });
+      }
+
+      if (!response.data.data) {
+        throw new Error(response.data.message || 'Application submission failed');
+      }
+      return normalizeApplication(response.data.data as Application);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
@@ -53,21 +126,23 @@ export const useUpdateApplicationStatus = () => {
     mutationFn: async ({
       id,
       status,
-      note,
     }: {
       id: string;
       status: ApplicationStatus;
-      note?: string;
     }) => {
-      const response = await api.patch<ApiResponse<Application>>(
-        `/applications/${id}/status`,
-        { status, note }
+      const response = await api.put<ApiResponse<Application>>(
+        `/applications/${id}`,
+        { status }
       );
-      return response.data.data;
+      if (!response.data.data) {
+        throw new Error(response.data.message || 'Failed to update application status');
+      }
+      return normalizeApplication(response.data.data as Application);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
       queryClient.invalidateQueries({ queryKey: ['job-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['recruiter-all-applications'] });
       toast.success('Application status updated!');
     },
     onError: (error) => {
@@ -98,10 +173,14 @@ export const useMyApplications = () => {
   return useQuery({
     queryKey: ['my-applications'],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Application>>(
-        '/applications/my-applications'
+      const response = await api.get<ApiResponse<Application[]>>(
+        '/applications/me'
       );
-      return response.data;
+
+      return {
+        ...response.data,
+        data: (response.data.data || []).map(normalizeApplication),
+      };
     },
   });
 };

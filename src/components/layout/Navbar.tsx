@@ -1,16 +1,30 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, Briefcase, ChevronDown, FileText, LayoutDashboard, LogOut, Mail, Menu, Moon, Sun, User, X } from 'lucide-react';
+import {
+  Bell,
+  Briefcase,
+  ChevronDown,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Moon,
+  Sun,
+  User,
+  X,
+} from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../hooks/useTheme';
 
-const NAV_ITEMS = [
-  { label: 'My bdjobs', href: '/jobs' },
+const NAV_LINKS = [
+  { label: 'Home', href: '/' },
   { label: 'Jobs', href: '/jobs' },
+  { label: 'About', href: '/about' },
+  { label: 'Contact', href: '/contact' },
 ];
 
-const EMPLOYER_ITEMS = [
+const RECRUITER_LINKS = [
   { label: 'Recruiter Login', href: '/login' },
   { label: 'Recruiter Register', href: '/register/recruiter' },
 ];
@@ -28,24 +42,41 @@ export const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [employerOpen, setEmployerOpen] = useState(false);
+  const [recruiterOpen, setRecruiterOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [language, setLanguage] = useState<'ENG' | 'বাংলা'>('ENG');
 
+  const profileRef = useRef<HTMLDivElement>(null);
+  const recruiterRef = useRef<HTMLDivElement>(null);
+
+  /* scroll shadow */
   useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', onScroll);
+    const onScroll = () => setIsScrolled(window.scrollY > 8);
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const dashboardLink = useMemo(() => {
-    const normalizedRole = (user?.role || '').toLowerCase();
-    return roleToDashboard[normalizedRole] || '/candidate/dashboard';
-  }, [user?.role]);
+  /* click-outside to close dropdowns */
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+      if (recruiterRef.current && !recruiterRef.current.contains(e.target as Node)) {
+        setRecruiterOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const normalizedRole = (user?.role || '').toLowerCase();
+
+  const dashboardLink = useMemo(
+    () => roleToDashboard[normalizedRole] || '/candidate/dashboard',
+    [normalizedRole]
+  );
 
   const profileLink = useMemo(() => {
     if (normalizedRole === 'admin') return '/admin/profile';
@@ -53,244 +84,250 @@ export const Navbar = () => {
     return '/candidate/profile';
   }, [normalizedRole]);
 
-  const jobsLink = useMemo(() => {
-    if (normalizedRole === 'recruiter') return '/recruiter/jobs';
-    return '/candidate/jobs';
-  }, [normalizedRole]);
-
-  const appliedJobsLink = useMemo(() => {
-    if (normalizedRole === 'candidate' || normalizedRole === 'job_seeker') {
-      return '/candidate/applications';
-    }
-    return dashboardLink;
-  }, [dashboardLink, normalizedRole]);
+  const appliedJobsLink =
+    normalizedRole === 'recruiter' ? '/recruiter/applications' : '/candidate/applications';
 
   const accountMenuItems = useMemo(
     () => [
-      { label: 'Bdjobs Profile', href: profileLink, icon: User },
-      { label: 'Video CV', href: dashboardLink, icon: Briefcase },
-      { label: 'Email CV', href: dashboardLink, icon: Mail },
-      { label: 'Shortlisted Jobs', href: jobsLink, icon: Bell },
-      { label: 'Following Employer', href: dashboardLink, icon: LayoutDashboard },
-      { label: 'Applied Jobs', href: appliedJobsLink, icon: FileText },
+      { label: 'Dashboard', href: dashboardLink, icon: LayoutDashboard },
+      { label: 'My Profile', href: profileLink, icon: User },
+      { label: 'Applications', href: appliedJobsLink, icon: FileText },
     ],
-    [appliedJobsLink, dashboardLink, jobsLink, profileLink]
+    [dashboardLink, profileLink, appliedJobsLink]
   );
 
   const profileName = user?.name || 'Account';
-  const avatarSource = (user as { profileImage?: string; avatar?: string } | null)?.profileImage ||
+  const userEmail = user?.email || '';
+  const avatarSource =
+    (user as { profileImage?: string; avatar?: string } | null)?.profileImage ||
     (user as { profileImage?: string; avatar?: string } | null)?.avatar ||
     '';
 
   const handleLogout = () => {
     logout();
     setProfileOpen(false);
-    setMobileMenuOpen(false);
+    setMobileOpen(false);
     navigate('/');
   };
 
-  const closeAllMenus = () => {
-    setEmployerOpen(false);
-    setProfileOpen(false);
-  };
-
-  const isActive = (href: string) => {
-    return location.pathname === href || location.pathname.startsWith(`${href}/`);
-  };
+  const isActive = (href: string) =>
+    href === '/'
+      ? location.pathname === '/'
+      : location.pathname === href || location.pathname.startsWith(`${href}/`);
 
   const isDark = resolvedTheme === 'dark';
 
+  /* ── role badge ── */
+  const roleBadge = useMemo(() => {
+    const map: Record<string, { label: string; cls: string }> = {
+      admin: { label: 'Admin', cls: 'bg-purple-100 text-purple-700' },
+      recruiter: { label: 'Recruiter', cls: 'bg-emerald-100 text-emerald-700' },
+      candidate: { label: 'Candidate', cls: 'bg-blue-100 text-blue-700' },
+      job_seeker: { label: 'Candidate', cls: 'bg-blue-100 text-blue-700' },
+    };
+    return map[normalizedRole] || { label: 'User', cls: 'bg-slate-100 text-slate-600' };
+  }, [normalizedRole]);
+
+  /* ── avatar initials ── */
+  const initials = profileName
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
     <header
-      className={`sticky top-0 z-50 border-b transition-all ${
+      className={`sticky top-0 z-50 transition-all duration-300 ${
         isScrolled
           ? isDark
-            ? 'border-slate-800 bg-slate-950/95 backdrop-blur-md shadow-sm'
-            : 'border-slate-200 bg-white/95 backdrop-blur-md shadow-sm'
+            ? 'bg-slate-950/95 shadow-lg shadow-black/20 backdrop-blur-md'
+            : 'bg-white/95 shadow-md shadow-slate-200/80 backdrop-blur-md'
           : isDark
-            ? 'border-slate-800 bg-slate-950'
-            : 'border-slate-200 bg-white'
-      }`}
+          ? 'bg-slate-950'
+          : 'bg-white'
+      } border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}
     >
-      <div className="mx-auto max-w-[1300px] px-4 md:px-6">
-        <div className="flex h-[88px] items-center justify-between gap-4">
-          <Link to="/" className="shrink-0 flex items-center gap-2">
-            <div className="h-10 w-10 rounded-md bg-[#0E5EA8] flex items-center justify-center">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between gap-6">
+
+          {/* ── Logo ── */}
+          <Link to="/" className="flex shrink-0 items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0E5EA8] shadow-sm">
               <Briefcase className="h-5 w-5 text-white" />
             </div>
-            <div className="leading-none">
-              <p className="text-[26px] font-extrabold tracking-tight text-[#0E5EA8]">bdjobs</p>
-              <p className={`-mt-0.5 text-[8px] font-semibold tracking-[0.12em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                LARGEST JOB SITE IN BANGLADESH
-              </p>
-            </div>
+            <span className="text-xl font-extrabold tracking-tight text-[#0E5EA8]">
+              Job<span className={isDark ? 'text-white' : 'text-slate-900'}>Portal</span>
+            </span>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-3">
-            {NAV_ITEMS.map((item) => (
+          {/* ── Desktop Nav ── */}
+          <nav className="hidden items-center gap-1 lg:flex">
+            {NAV_LINKS.map((item) => (
               <Link
                 key={item.label}
                 to={item.href}
-                className={`inline-flex items-center gap-1 rounded-md px-2 py-2 text-[15px] font-semibold transition-colors ${
+                className={`relative rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
                   isActive(item.href)
                     ? isDark
                       ? 'text-white'
-                      : 'text-slate-900'
+                      : 'text-[#0E5EA8]'
                     : isDark
-                      ? 'text-slate-300 hover:text-white'
-                      : 'text-slate-700 hover:text-slate-900'
+                    ? 'text-slate-400 hover:text-white'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {item.label}
-                <ChevronDown className={`h-4 w-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
+                {isActive(item.href) && (
+                  <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-[#0E5EA8]" />
+                )}
               </Link>
             ))}
-
-            <span className={`px-1 ${isDark ? 'text-slate-700' : 'text-slate-300'}`}>|</span>
-            <button
-              type="button"
-              className={`inline-flex items-center gap-2 rounded-md px-2 py-2 text-[15px] font-semibold ${
-                isDark ? 'text-slate-300 hover:text-white' : 'text-slate-700 hover:text-slate-900'
-              }`}
-            >
-              bdjobs
-              <span className="rounded bg-[#0dad5f] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">PRO</span>
-            </button>
           </nav>
 
-          <div className="hidden lg:flex items-center gap-4">
-            <div className={`inline-flex items-center rounded-full border p-1 shadow-sm ${
-              isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'
-            }`}>
-              <button
-                type="button"
-                onClick={() => setLanguage('ENG')}
-                className={`rounded-full px-4 py-1.5 text-xs font-bold transition-colors ${
-                  language === 'ENG' ? 'bg-[#cf2f92] text-white' : 'text-slate-600 hover:text-slate-800'
-                }`}
-              >
-                ENG
-              </button>
-              <button
-                type="button"
-                onClick={() => setLanguage('বাংলা')}
-                className={`rounded-full px-4 py-1.5 text-xs font-bold transition-colors ${
-                  language === 'বাংলা' ? 'bg-[#cf2f92] text-white' : 'text-slate-600 hover:text-slate-800'
-                }`}
-              >
-                বাংলা
-              </button>
-            </div>
+          {/* ── Right Section ── */}
+          <div className="hidden items-center gap-3 lg:flex">
 
-            <div className={`inline-flex items-center rounded-full border p-1 ${
-              isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'
-            }`}>
-              <button
-                type="button"
-                onClick={() => setTheme(isDark ? 'light' : 'dark')}
-                aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-                className={`inline-flex h-10 items-center gap-2 rounded-full px-3 text-sm font-semibold transition-colors ${
-                  isDark ? 'text-slate-100 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                <span>{isDark ? 'Light' : 'Dark'}</span>
-              </button>
-            </div>
+            {/* Dark / Light Toggle */}
+            <button
+              type="button"
+              onClick={() => setTheme(isDark ? 'light' : 'dark')}
+              aria-label="Toggle theme"
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                isDark
+                  ? 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              {isDark ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
+            </button>
 
             {isAuthenticated ? (
               <>
+                {/* Notifications */}
                 <button
                   type="button"
-                  className={`relative inline-flex h-10 w-10 items-center justify-center rounded-full ${
-                    isDark ? 'text-slate-300 hover:bg-slate-800 hover:text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
-                  }`}
-                  aria-label="Messages"
-                >
-                  <Mail className="h-5 w-5" />
-                </button>
-
-                <button
-                  type="button"
-                  className={`relative inline-flex h-10 w-10 items-center justify-center rounded-full ${
-                    isDark ? 'text-slate-300 hover:bg-slate-800 hover:text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
-                  }`}
                   aria-label="Notifications"
+                  className={`relative inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                    isDark
+                      ? 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
                 >
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute right-1 top-0 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#ef2d62] px-1 text-[11px] font-bold text-white">
-                    3
-                  </span>
+                  <Bell className="h-4.5 w-4.5" />
+                  <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
                 </button>
 
-                <div className="relative">
+                {/* Profile Dropdown */}
+                <div ref={profileRef} className="relative">
                   <button
                     type="button"
-                    onClick={() => {
-                      setProfileOpen((prev) => !prev);
-                      setEmployerOpen(false);
-                    }}
-                    className={`inline-flex items-center gap-3 rounded-full py-1 pl-1 pr-2 ${
-                      isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'
+                    onClick={() => setProfileOpen((p) => !p)}
+                    className={`flex items-center gap-2.5 rounded-xl border px-3 py-1.5 transition-colors ${
+                      isDark
+                        ? 'border-slate-700 hover:border-slate-600 hover:bg-slate-800'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    <span className={`flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border ${
-                      isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-100'
-                    }`}>
+                    <span
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold ${
+                        isDark ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-700'
+                      }`}
+                    >
                       {avatarSource ? (
                         <img src={avatarSource} alt={profileName} className="h-full w-full object-cover" />
                       ) : (
-                        <User className="h-5 w-5 text-slate-500" />
+                        initials
                       )}
                     </span>
-                    <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{profileName}</span>
-                    <ChevronDown className={`h-4 w-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
+                    <div className="text-left leading-none">
+                      <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        {profileName.split(' ')[0]}
+                      </p>
+                      <p className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        {roleBadge.label}
+                      </p>
+                    </div>
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 transition-transform ${
+                        profileOpen ? 'rotate-180' : ''
+                      } ${isDark ? 'text-slate-400' : 'text-slate-400'}`}
+                    />
                   </button>
 
                   <AnimatePresence>
                     {profileOpen && (
                       <motion.div
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.15 }}
-                        className={`absolute right-0 top-full mt-2 w-72 rounded-xl border p-2 shadow-lg ${
-                          isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'
+                        initial={{ opacity: 0, scale: 0.96, y: -4 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                        transition={{ duration: 0.12 }}
+                        className={`absolute right-0 top-full mt-2 w-64 overflow-hidden rounded-xl border shadow-xl ${
+                          isDark
+                            ? 'border-slate-700 bg-slate-900'
+                            : 'border-slate-200 bg-white'
                         }`}
                       >
-                        <div className={`mb-2 rounded-lg px-3 py-2 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
-                          <p className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{profileName}</p>
-                          <span className="mt-1 inline-flex items-center rounded-full border border-[#6fd1a2] bg-[#dff6e8] px-2 py-0.5 text-xs font-semibold text-[#0b7d4f]">
-                            Get Bdjobs Pro
-                          </span>
-                        </div>
-
-                        {accountMenuItems.map((item) => {
-                          const ItemIcon = item.icon;
-                          return (
-                            <Link
-                              key={item.label}
-                              to={item.href}
-                              onClick={() => setProfileOpen(false)}
-                              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${
-                                isDark ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-50'
+                        {/* User info header */}
+                        <div className={`px-4 py-3 ${isDark ? 'border-b border-slate-800 bg-slate-800/50' : 'border-b border-slate-100 bg-slate-50'}`}>
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-bold ${
+                                isDark ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-700'
                               }`}
                             >
-                              <ItemIcon className="h-4 w-4" />
-                              {item.label}
-                            </Link>
-                          );
-                        })}
+                              {avatarSource ? (
+                                <img src={avatarSource} alt={profileName} className="h-full w-full object-cover" />
+                              ) : (
+                                initials
+                              )}
+                            </span>
+                            <div className="min-w-0">
+                              <p className={`truncate text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                                {profileName}
+                              </p>
+                              <p className={`truncate text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                {userEmail}
+                              </p>
+                              <span className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${roleBadge.cls}`}>
+                                {roleBadge.label}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
 
-                        <div className={`my-1 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`} />
-                        <button
-                          type="button"
-                          onClick={handleLogout}
-                          className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50"
-                        >
-                          <LogOut className="h-4 w-4" />
-                          Logout
-                        </button>
+                        {/* Links */}
+                        <div className="p-1.5">
+                          {accountMenuItems.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                              <Link
+                                key={item.label}
+                                to={item.href}
+                                onClick={() => setProfileOpen(false)}
+                                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                                  isDark
+                                    ? 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                    : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                                }`}
+                              >
+                                <Icon className={`h-4 w-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                                {item.label}
+                              </Link>
+                            );
+                          })}
+                        </div>
+
+                        <div className={`border-t p-1.5 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                          <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                          >
+                            <LogOut className="h-4 w-4" />
+                            Sign Out
+                          </button>
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -298,54 +335,41 @@ export const Navbar = () => {
               </>
             ) : (
               <>
-                <Link
-                  to="/register/candidate"
-                  className={`inline-flex h-12 items-center rounded-xl border px-8 text-sm font-bold text-[#bd2c87] ${
-                    isDark ? 'border-[#7b4565] hover:bg-[#3a2030]' : 'border-[#e4bbd7] hover:bg-[#fff6fb]'
-                  }`}
-                >
-                  Create Account
-                </Link>
-                <Link
-                  to="/login"
-                  className="inline-flex h-12 items-center rounded-xl bg-[#cf2f92] px-8 text-sm font-bold text-white hover:bg-[#b92882]"
-                >
-                  Sign In
-                </Link>
-
-                <div className="relative">
+                {/* For Recruiter dropdown */}
+                <div ref={recruiterRef} className="relative">
                   <button
                     type="button"
-                    onClick={() => {
-                      setEmployerOpen((prev) => !prev);
-                      setProfileOpen(false);
-                    }}
-                    className={`inline-flex items-center gap-1 px-1 py-2 text-sm font-semibold ${
-                      isDark ? 'text-slate-300 hover:text-white' : 'text-slate-700 hover:text-slate-900'
+                    onClick={() => setRecruiterOpen((p) => !p)}
+                    className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                      isDark
+                        ? 'text-slate-400 hover:text-white'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    For Employer
-                    <ChevronDown className="h-4 w-4" />
+                    For Recruiter
+                    <ChevronDown className={`h-4 w-4 transition-transform ${recruiterOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   <AnimatePresence>
-                    {employerOpen && (
+                    {recruiterOpen && (
                       <motion.div
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.15 }}
-                        className={`absolute right-0 top-full mt-2 w-52 rounded-xl border p-2 shadow-lg ${
+                        initial={{ opacity: 0, scale: 0.96, y: -4 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                        transition={{ duration: 0.12 }}
+                        className={`absolute right-0 top-full mt-2 w-52 overflow-hidden rounded-xl border p-1.5 shadow-xl ${
                           isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'
                         }`}
                       >
-                        {EMPLOYER_ITEMS.map((item) => (
+                        {RECRUITER_LINKS.map((item) => (
                           <Link
                             key={item.label}
                             to={item.href}
-                            onClick={closeAllMenus}
-                            className={`block rounded-lg px-3 py-2 text-sm font-medium ${
-                              isDark ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-50'
+                            onClick={() => setRecruiterOpen(false)}
+                            className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                              isDark
+                                ? 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
                             }`}
                           >
                             {item.label}
@@ -355,120 +379,186 @@ export const Navbar = () => {
                     )}
                   </AnimatePresence>
                 </div>
+
+                <Link
+                  to="/register/candidate"
+                  className={`inline-flex h-9 items-center rounded-lg border px-4 text-sm font-semibold transition-colors ${
+                    isDark
+                      ? 'border-slate-700 text-slate-300 hover:border-slate-600 hover:bg-slate-800 hover:text-white'
+                      : 'border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50'
+                  }`}
+                >
+                  Register
+                </Link>
+                <Link
+                  to="/login"
+                  className="inline-flex h-9 items-center rounded-lg bg-[#0E5EA8] px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#0a4d8f]"
+                >
+                  Sign In
+                </Link>
               </>
             )}
           </div>
 
+          {/* ── Mobile Hamburger ── */}
           <button
             type="button"
-            onClick={() => setMobileMenuOpen((prev) => !prev)}
-            className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border lg:hidden ${
-              isDark ? 'border-slate-700 text-slate-200' : 'border-slate-200 text-slate-700'
+            onClick={() => setMobileOpen((p) => !p)}
+            aria-label="Toggle menu"
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-colors lg:hidden ${
+              isDark
+                ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
+                : 'border-slate-200 text-slate-700 hover:bg-slate-50'
             }`}
           >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={mobileOpen ? 'close' : 'open'}
+                initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
+                animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
+                transition={{ duration: 0.15 }}
+              >
+                {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </motion.span>
+            </AnimatePresence>
           </button>
         </div>
       </div>
 
+      {/* ── Mobile Menu ── */}
       <AnimatePresence>
-        {mobileMenuOpen && (
+        {mobileOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className={`border-t lg:hidden ${isDark ? 'border-slate-800 bg-slate-950' : 'border-slate-200 bg-white'}`}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className={`overflow-hidden border-t lg:hidden ${
+              isDark ? 'border-slate-800 bg-slate-950' : 'border-slate-200 bg-white'
+            }`}
           >
-            <div className="space-y-2 px-4 py-4">
-              <button
-                type="button"
-                onClick={() => setTheme(isDark ? 'light' : 'dark')}
-                className={`flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold ${
-                  isDark
-                    ? 'border-slate-700 text-slate-100 hover:bg-slate-900'
-                    : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                <span>{isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</span>
-              </button>
+            <div className="space-y-1 px-4 pb-5 pt-3">
 
-              {NAV_ITEMS.map((item) => (
+              {/* Nav links */}
+              {NAV_LINKS.map((item) => (
                 <Link
                   key={item.label}
                   to={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`block rounded-lg px-3 py-2 text-sm font-semibold ${
-                    isDark ? 'text-slate-200 hover:bg-slate-900' : 'text-slate-700 hover:bg-slate-50'
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${
+                    isActive(item.href)
+                      ? isDark
+                        ? 'bg-blue-900/40 text-blue-300'
+                        : 'bg-blue-50 text-[#0E5EA8]'
+                      : isDark
+                      ? 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                      : 'text-slate-700 hover:bg-slate-50'
                   }`}
                 >
                   {item.label}
                 </Link>
               ))}
 
-              {!isAuthenticated ? (
-                <>
-                  <Link
-                    to="/register/candidate"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`block rounded-lg border px-3 py-2 text-center text-sm font-semibold text-[#bd2c87] ${
-                      isDark ? 'border-[#7b4565]' : 'border-[#e4bbd7]'
-                    }`}
-                  >
-                    Create Account
-                  </Link>
-                  <Link
-                    to="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block rounded-lg bg-[#cf2f92] px-3 py-2 text-center text-sm font-semibold text-white"
-                  >
-                    Sign In
-                  </Link>
+              <div className={`my-2 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`} />
 
-                  <div className={`pt-2 ${isDark ? 'border-t border-slate-800' : 'border-t border-slate-100'}`}>
-                    <p className={`px-3 py-1 text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>For Employer</p>
-                    {EMPLOYER_ITEMS.map((item) => (
+              {/* Theme toggle */}
+              <button
+                type="button"
+                onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${
+                  isDark
+                    ? 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                {isDark ? 'Light Mode' : 'Dark Mode'}
+              </button>
+
+              <div className={`my-2 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`} />
+
+              {isAuthenticated ? (
+                <>
+                  {/* User info */}
+                  <div className={`mb-2 flex items-center gap-3 rounded-xl px-3 py-3 ${isDark ? 'bg-slate-800/60' : 'bg-slate-50'}`}>
+                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${isDark ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-700'}`}>
+                      {avatarSource ? (
+                        <img src={avatarSource} alt={profileName} className="h-full w-full rounded-full object-cover" />
+                      ) : (
+                        initials
+                      )}
+                    </span>
+                    <div className="min-w-0">
+                      <p className={`truncate text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{profileName}</p>
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${roleBadge.cls}`}>{roleBadge.label}</span>
+                    </div>
+                  </div>
+
+                  {accountMenuItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
                       <Link
                         key={item.label}
                         to={item.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`block rounded-lg px-3 py-2 text-sm font-medium ${
-                          isDark ? 'text-slate-200 hover:bg-slate-900' : 'text-slate-700 hover:bg-slate-50'
+                        onClick={() => setMobileOpen(false)}
+                        className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${
+                          isDark ? 'text-slate-300 hover:bg-slate-800 hover:text-white' : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="block rounded-lg bg-[#0E5EA8] px-3 py-2.5 text-center text-sm font-semibold text-white hover:bg-[#0a4d8f]"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/register/candidate"
+                    onClick={() => setMobileOpen(false)}
+                    className={`block rounded-lg border px-3 py-2.5 text-center text-sm font-semibold transition-colors ${
+                      isDark
+                        ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
+                        : 'border-slate-300 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    Register
+                  </Link>
+
+                  <div className={`pt-1 ${isDark ? 'border-t border-slate-800' : 'border-t border-slate-100'}`}>
+                    <p className={`px-3 py-2 text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      For Recruiter
+                    </p>
+                    {RECRUITER_LINKS.map((item) => (
+                      <Link
+                        key={item.label}
+                        to={item.href}
+                        onClick={() => setMobileOpen(false)}
+                        className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                          isDark ? 'text-slate-300 hover:bg-slate-800 hover:text-white' : 'text-slate-600 hover:bg-slate-50'
                         }`}
                       >
                         {item.label}
                       </Link>
                     ))}
                   </div>
-                </>
-              ) : (
-                <>
-                  {accountMenuItems.map((item) => {
-                    const ItemIcon = item.icon;
-                    return (
-                      <Link
-                        key={item.label}
-                        to={item.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold ${
-                          isDark ? 'text-slate-200 hover:bg-slate-900' : 'text-slate-700 hover:bg-slate-50'
-                        }`}
-                      >
-                        <ItemIcon className="h-4 w-4" />
-                        {item.label}
-                      </Link>
-                    );
-                  })}
-
-                  <div className={`my-1 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`} />
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-600 hover:bg-red-50"
-                  >
-                    Logout
-                  </button>
                 </>
               )}
             </div>

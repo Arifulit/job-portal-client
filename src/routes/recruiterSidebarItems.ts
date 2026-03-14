@@ -5,6 +5,7 @@ import { RecruiterDashboard } from "../pages/Recruiter/RecruiterDashboard";
 import RecruiterProfile from "../pages/Recruiter/RecruiterProfile";
 import JobPost from "../pages/Recruiter/JobPost";
 import MyJob from "@/pages/Recruiter/MyJob";
+import RecruiterApplications from "@/pages/Recruiter/RecruiterApplications";
 
 interface ISidebarItem {
   title: string;
@@ -37,6 +38,12 @@ export const recruiterSidebarItems: ISidebarItem[] = [
         url: "/recruiter/jobs",
         icon: FileText,
         component: MyJob, // Replace with actual component
+      },
+      {
+        title: "Applications",
+        url: "/recruiter/applications",
+        icon: FileText,
+        component: RecruiterApplications,
       },
     ],
   },

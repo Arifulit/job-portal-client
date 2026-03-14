@@ -4,6 +4,7 @@ import { LayoutDashboard, User, Briefcase, FileText } from "lucide-react";
 import { CandidateDashboard } from "../pages/Candidate/CandidateDashboard";
 import CandidateProfile from "../pages/Candidate/CandidateProfile";
 import Jobs from "@/pages/Jobs/Jobs";
+import MyApplications from "@/pages/Candidate/MyApplications";
 
 interface ISidebarItem {
   title: string;
@@ -35,7 +36,7 @@ export const userSidebarItems: ISidebarItem[] = [
         title: "My Applications",
         url: "/candidate/applications",
         icon: FileText,
-        component: CandidateDashboard, // Replace with actual component
+        component: MyApplications,
       },
     ],
   },

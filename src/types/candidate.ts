@@ -3,6 +3,8 @@ export interface User {
   name: string;
   email: string;
   role: string;
+  isEmailVerified?: boolean;
+  isSuspended?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -11,7 +13,7 @@ export interface CandidateProfile {
   _id: string;
   user: User;
   name: string;
-  phone: string;
+  phone?: string;
   skills: string[];
   location?: string;
   headline?: string;

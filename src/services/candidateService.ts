@@ -1,6 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, handleApiError } from '../utils/api';
 import { CandidateProfileResponse } from '../types/candidate';
+
+export interface UpdateCandidateProfileData {
+  name?: string;
+  phone?: string;
+  headline?: string;
+  location?: string;
+  experienceLevel?: string;
+  summary?: string;
+  skills?: string[];
+}
 
 export interface RecommendedJob {
   _id: string;
@@ -32,8 +42,25 @@ export const useCandidateProfile = () => {
         const response = await api.get<CandidateProfileResponse>('/candidate/profile');
         return response.data;
       } catch (error) {
-        throw handleApiError(error);
+        throw new Error(handleApiError(error));
       }
+    },
+  });
+};
+
+export const useUpdateCandidateProfile = () => {
+  const queryClient = useQueryClient();
+  return useMutation<CandidateProfileResponse, Error, UpdateCandidateProfileData>({
+    mutationFn: async (data) => {
+      try {
+        const response = await api.put<CandidateProfileResponse>('/candidate/profile', data);
+        return response.data;
+      } catch (error) {
+        throw new Error(handleApiError(error));
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['candidate-profile'] });
     },
   });
 };
