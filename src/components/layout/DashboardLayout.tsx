@@ -1,5 +1,4 @@
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Outlet,
@@ -7,8 +6,10 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Menu, Search, Bell, User, Settings, LogOut, Home } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { api } from '../../utils/api';
 import {
   Avatar,
   AvatarFallback,
@@ -36,6 +37,7 @@ interface ISidebarItem {
 const DashboardLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -88,6 +90,48 @@ const DashboardLayout: React.FC = () => {
 
   const getUserFullName = () => {
     return user?.name || user?.email?.split('@')[0] || 'User';
+  };
+
+  const normalizedRole = String(user?.role || '').toLowerCase();
+  const profileLink =
+    normalizedRole === 'admin'
+      ? '/admin/profile'
+      : normalizedRole === 'recruiter'
+      ? '/recruiter/profile'
+      : '/candidate/profile';
+
+  const avatarSource =
+    (user as { profileImage?: string; avatar?: string } | null)?.profileImage ||
+    (user as { profileImage?: string; avatar?: string } | null)?.avatar ||
+    '';
+
+  const prefetchProfileData = async () => {
+    if (normalizedRole === 'candidate' || normalizedRole === 'job_seeker' || normalizedRole === 'seeker') {
+      await queryClient.prefetchQuery({
+        queryKey: ['candidate-profile'],
+        queryFn: async () => {
+          const response = await api.get('/candidate/profile');
+          return response.data;
+        },
+      });
+      return;
+    }
+
+    if (normalizedRole === 'admin' || normalizedRole === 'recruiter') {
+      await queryClient.prefetchQuery({
+        queryKey: ['profile'],
+        queryFn: async () => {
+          const response = await api.get('/users/profile');
+          return response.data?.data;
+        },
+      });
+    }
+  };
+
+  const handleProfileNavigate = () => {
+    setDropdownOpen(false);
+    setSidebarOpen(false);
+    navigate(profileLink);
   };
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
@@ -154,7 +198,7 @@ const DashboardLayout: React.FC = () => {
                     key={j}
                     to={item.url}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                       active
                         ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm'
                         : 'text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800'
@@ -162,7 +206,8 @@ const DashboardLayout: React.FC = () => {
                   >
                     {Icon && <Icon className={`w-5 h-5 ${active ? 'text-blue-600 dark:text-blue-300' : 'text-gray-500 dark:text-slate-400'}`} />}
                     <span>{item.title}</span>
-                    {active && <div className="ml-auto w-2 h-2 bg-blue-600 rounded-full" />}
+                    <span className="ml-auto w-2 h-2 shrink-0 rounded-full bg-transparent" />
+                    {active && <span className="absolute right-3 h-2 w-2 rounded-full bg-blue-600" />}
                   </Link>
                 );
               })}
@@ -173,9 +218,19 @@ const DashboardLayout: React.FC = () => {
 
       {/* User Info */}
       <div className="p-4 border-t border-gray-200 dark:border-slate-800">
-        <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+        <button
+          type="button"
+          onMouseEnter={() => {
+            void prefetchProfileData();
+          }}
+          onFocus={() => {
+            void prefetchProfileData();
+          }}
+          onClick={handleProfileNavigate}
+          className="flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-slate-800"
+        >
           <Avatar className="h-10 w-10 ring-2 ring-blue-100">
-            <ControlledAvatarImage src={user?.profileImage} alt={getUserFullName()} />
+            <ControlledAvatarImage src={avatarSource} alt={getUserFullName()} />
             <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-700 text-white font-bold">
               {getUserInitials()}
             </AvatarFallback>
@@ -187,7 +242,7 @@ const DashboardLayout: React.FC = () => {
               {user?.role}
             </p>
           </div>
-        </div>
+        </button>
       </div>
     </div>
   );
@@ -253,7 +308,7 @@ const DashboardLayout: React.FC = () => {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                 >
                   <Avatar className="h-9 w-9">
-                    <ControlledAvatarImage src={user?.profileImage} alt={getUserFullName()} />
+                    <ControlledAvatarImage src={avatarSource} alt={getUserFullName()} />
                     <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-700 text-white text-sm font-bold">
                       {getUserInitials()}
                     </AvatarFallback>
@@ -267,13 +322,19 @@ const DashboardLayout: React.FC = () => {
                       <p className="text-sm text-gray-500 dark:text-slate-400 truncate">{user?.email}</p>
                     </div>
                     <div className="py-2">
-                      <Link
-                        to="/profile"
-                        onClick={() => setDropdownOpen(false)}
+                      <button
+                        type="button"
+                        onMouseEnter={() => {
+                          void prefetchProfileData();
+                        }}
+                        onFocus={() => {
+                          void prefetchProfileData();
+                        }}
+                        onClick={handleProfileNavigate}
                         className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800"
                       >
                         <User className="w-4 h-4" /> Profile
-                      </Link>
+                      </button>
                       <Link
                         to="/settings"
                         onClick={() => setDropdownOpen(false)}

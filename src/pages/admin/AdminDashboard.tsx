@@ -7,8 +7,7 @@ import {
   Users,
   Briefcase,
   FileText,
-  TrendingUp,
-  Shield,
+  Sparkles,
   Activity,
 } from 'lucide-react';
 import { useDashboardStats } from '../../services/userService';
@@ -19,27 +18,45 @@ export const AdminDashboard = () => {
 
   if (isLoading) return <Loader />;
 
+  const totalUsers = stats?.totalUsers ?? 0;
+  const totalJobs = stats?.totalJobs ?? 0;
+  const totalApplications = stats?.totalApplications ?? 0;
+  const activeJobs = stats?.activeJobs ?? 0;
+  const pendingReviews = stats?.pendingApplications ?? 0;
+  const hired = stats?.hiredCount ?? 0;
+
+  const approvalRate = totalApplications > 0 ? Math.round((hired / totalApplications) * 100) : 0;
+
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-violet-50/40 py-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 rounded-2xl bg-gradient-to-r from-[#4b2d8f] via-[#5b38a6] to-[#7a4ec9] p-6 text-white shadow-lg">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative mb-8 overflow-hidden rounded-3xl border border-violet-200 bg-gradient-to-r from-[#4b2d8f] via-[#5b38a6] to-[#7a4ec9] p-6 text-white shadow-xl sm:p-8">
+          <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-white/15 blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-14 left-28 h-40 w-40 rounded-full bg-fuchsia-300/20 blur-2xl" />
+
+          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-100">Admin Control Center</p>
-              <h1 className="mt-1 text-3xl font-extrabold">Platform Overview & Governance</h1>
-              <p className="mt-2 text-violet-100">Monitor growth, moderate content, and keep platform health at peak performance.</p>
+              <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-violet-100">
+                <Sparkles className="h-3.5 w-3.5" />
+                Admin Control Center
+              </p>
+              <h1 className="mt-3 text-2xl font-black sm:text-3xl">Platform Governance With Real-Time Oversight</h1>
+              <p className="mt-2 max-w-2xl text-sm text-violet-100 sm:text-base">
+                Monitor platform growth, moderate critical resources, and keep operational quality consistently high.
+              </p>
             </div>
+
             <div className="flex flex-wrap gap-3">
               <Link
                 to="/admin/users"
-                className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-[#4b2d8f]"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#4b2d8f] shadow-sm transition hover:bg-violet-50"
               >
                 Manage Users
                 <ArrowUpRight className="h-4 w-4" />
               </Link>
               <Link
                 to="/admin/jobs"
-                className="inline-flex items-center gap-2 rounded-lg border border-white/60 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/60 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
               >
                 Moderate Jobs
               </Link>
@@ -48,85 +65,79 @@ export const AdminDashboard = () => {
         </div>
 
         <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-500">Total Users</p>
-                <p className="mt-2 text-3xl font-extrabold text-slate-900">
-                  {stats?.totalUsers || 0}
-                </p>
+                <p className="mt-2 text-3xl font-black text-slate-900">{totalUsers}</p>
+                <p className="mt-1 text-xs text-slate-500">Registered platform accounts</p>
               </div>
-              <span className="rounded-lg bg-blue-100 p-3 text-blue-700">
+              <span className="rounded-xl bg-blue-100 p-3 text-blue-700">
                 <Users className="h-6 w-6" />
               </span>
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-500">Total Jobs</p>
-                <p className="mt-2 text-3xl font-extrabold text-slate-900">
-                  {stats?.totalJobs || 0}
-                </p>
+                <p className="mt-2 text-3xl font-black text-slate-900">{totalJobs}</p>
+                <p className="mt-1 text-xs text-slate-500">Published and draft roles</p>
               </div>
-              <span className="rounded-lg bg-emerald-100 p-3 text-emerald-700">
+              <span className="rounded-xl bg-emerald-100 p-3 text-emerald-700">
                 <Briefcase className="h-6 w-6" />
               </span>
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-500">Total Applications</p>
-                <p className="mt-2 text-3xl font-extrabold text-slate-900">
-                  {stats?.totalApplications || 0}
-                </p>
+                <p className="mt-2 text-3xl font-black text-slate-900">{totalApplications}</p>
+                <p className="mt-1 text-xs text-slate-500">All candidate submissions</p>
               </div>
-              <span className="rounded-lg bg-violet-100 p-3 text-violet-700">
+              <span className="rounded-xl bg-violet-100 p-3 text-violet-700">
                 <FileText className="h-6 w-6" />
               </span>
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-500">Active Jobs</p>
-                <p className="mt-2 text-3xl font-extrabold text-slate-900">
-                  {stats?.activeJobs || 0}
-                </p>
+                <p className="mt-2 text-3xl font-black text-slate-900">{activeJobs}</p>
+                <p className="mt-1 text-xs text-slate-500">Currently visible to candidates</p>
               </div>
-              <span className="rounded-lg bg-amber-100 p-3 text-amber-700">
+              <span className="rounded-xl bg-amber-100 p-3 text-amber-700">
                 <Activity className="h-6 w-6" />
               </span>
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-500">Pending Reviews</p>
-                <p className="mt-2 text-3xl font-extrabold text-slate-900">
-                  {stats?.pendingApplications || 0}
-                </p>
+                <p className="mt-2 text-3xl font-black text-slate-900">{pendingReviews}</p>
+                <p className="mt-1 text-xs text-slate-500">Items needing moderation</p>
               </div>
-              <span className="rounded-lg bg-red-100 p-3 text-red-700">
+              <span className="rounded-xl bg-red-100 p-3 text-red-700">
                 <Clock3 className="h-6 w-6" />
               </span>
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-500">Hired</p>
-                <p className="mt-2 text-3xl font-extrabold text-slate-900">
-                  {stats?.hiredCount ?? 0}
-                </p>
+                <p className="mt-2 text-3xl font-black text-slate-900">{hired}</p>
+                <p className="mt-1 text-xs text-slate-500">Completed hiring outcomes</p>
               </div>
-              <span className="rounded-lg bg-teal-100 p-3 text-teal-700">
+              <span className="rounded-xl bg-teal-100 p-3 text-teal-700">
                 <CheckCircle2 className="h-6 w-6" />
               </span>
             </div>
@@ -134,7 +145,7 @@ export const AdminDashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 flex items-center text-xl font-bold text-slate-900">
               <Users className="mr-2 h-5 w-5 text-blue-600" />
               User Management
@@ -145,7 +156,7 @@ export const AdminDashboard = () => {
             <div className="space-y-3">
               <Link
                 to="/admin/users"
-                className="inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+                className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
               >
                 View All Users
               </Link>
@@ -163,7 +174,7 @@ export const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 flex items-center text-xl font-bold text-slate-900">
               <Briefcase className="mr-2 h-5 w-5 text-emerald-600" />
               Job Moderation
@@ -174,7 +185,7 @@ export const AdminDashboard = () => {
             <div className="space-y-3">
               <Link
                 to="/admin/jobs"
-                className="inline-flex w-full items-center justify-center rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
+                className="inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
               >
                 View All Jobs
               </Link>
@@ -192,7 +203,7 @@ export const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 flex items-center text-xl font-bold text-slate-900">
               <FileText className="mr-2 h-5 w-5 text-violet-600" />
               Application Overview
@@ -202,13 +213,13 @@ export const AdminDashboard = () => {
             </p>
             <Link
               to="/admin/users"
-              className="inline-flex w-full items-center justify-center rounded-md bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700"
+              className="inline-flex w-full items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-700"
             >
               View Applications
             </Link>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 flex items-center text-xl font-bold text-slate-900">
               <BarChart3 className="mr-2 h-5 w-5 text-amber-600" />
               Analytics & Reports
@@ -216,13 +227,13 @@ export const AdminDashboard = () => {
             <p className="mb-6 text-slate-600">
               Generate insights and export platform data
             </p>
-            <button className="inline-flex w-full items-center justify-center rounded-md bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700">
+            <button className="inline-flex w-full items-center justify-center rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700">
               Generate Reports
             </button>
           </div>
         </div>
 
-        <div className="mt-8 rounded-xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 p-8 text-white shadow-lg">
+        <div className="mt-8 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 p-8 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-2xl font-bold mb-2">Platform Health</h3>
@@ -244,8 +255,8 @@ export const AdminDashboard = () => {
               <p className="text-sm opacity-80">Daily Active</p>
             </div>
             <div>
-              <p className="text-3xl font-bold">98%</p>
-              <p className="text-sm opacity-80">Satisfaction</p>
+              <p className="text-3xl font-bold">{approvalRate}%</p>
+              <p className="text-sm opacity-80">Hire Rate</p>
             </div>
           </div>
         </div>
