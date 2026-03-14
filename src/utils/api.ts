@@ -37,9 +37,22 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
+      const hadToken = !!localStorage.getItem('token');
+      const currentPath = window.location.pathname;
+      const isProtectedRoute =
+        currentPath.startsWith('/admin') ||
+        currentPath.startsWith('/recruiter') ||
+        currentPath.startsWith('/candidate') ||
+        currentPath.startsWith('/user');
+
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+
+      // Redirect only when an existing session becomes invalid.
+      // Public pages can receive 401 for guest requests and should not force-login.
+      if (hadToken && isProtectedRoute) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
