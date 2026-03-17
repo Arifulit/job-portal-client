@@ -8,7 +8,7 @@ import {
   Bookmark,
   BookmarkCheck,
 } from 'lucide-react';
-import { formatRelativeTime, formatSalary, getStatusColor } from '../utils/helpers';
+import { formatRelativeTime } from '../utils/helpers';
 import { useSaveJob, useUnsaveJob } from '../services/jobService';
 import { useAuth } from '../context/AuthContext';
 import { useState } from 'react';
@@ -41,6 +41,23 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
     }
   };
 
+  const formatSalary = (min?: number, max?: number, currency?: string) => {
+    if (!min && !max) return 'Negotiable';
+    const currencySymbol = currency === 'BDT' ? '৳' : currency || '$';
+    if (min && max) {
+      return `${currencySymbol}${min.toLocaleString()} - ${currencySymbol}${max.toLocaleString()}`;
+    }
+    if (min) {
+      return `${currencySymbol}${min.toLocaleString()}+`;
+    }
+    return 'Negotiable';
+  };
+
+  const companyName =
+    typeof job.company === 'string'
+      ? job.company
+      : job.company?.name || 'Confidential Company';
+
   return (
     <Link
       to={`/jobs/${job._id}`}
@@ -48,23 +65,24 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
     >
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-start space-x-4">
-          {job.companyLogo && (
-            <img
-              src={job.companyLogo}
-              alt={job.company}
-              className="w-16 h-16 rounded-lg object-cover"
-            />
-          )}
           <div>
             <h3 className="text-xl font-semibold text-gray-800 hover:text-blue-600 mb-1">
               {job.title}
             </h3>
-            <p className="text-gray-600 font-medium">{job.company}</p>
+            <p className="text-gray-600 font-medium">
+              {companyName}
+            </p>
           </div>
         </div>
 
         <div className="flex items-center space-x-2">
-          <span className={`badge ${getStatusColor(job.status)}`}>{job.status}</span>
+          {job.status && (
+            <span className={`badge ${
+              job.status === 'approved' ? 'badge-success' : 
+              job.status === 'pending' ? 'badge-warning' : 
+              'badge-neutral'
+            }`}>{job.status}</span>
+          )}
           {user?.role === 'seeker' && (
             <button
               onClick={handleSaveToggle}
@@ -88,11 +106,11 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
         </div>
         <div className="flex items-center text-sm text-gray-600">
           <Briefcase className="w-4 h-4 mr-1" />
-          {job.jobType}
+          {job.jobType?.replace('-', ' ') || 'Full Time'}
         </div>
         <div className="flex items-center text-sm text-gray-600">
           <DollarSign className="w-4 h-4 mr-1" />
-          {formatSalary(job.salary.min, job.salary.max, job.salary.currency)}
+          {formatSalary(job.salaryMin, job.salaryMax, job.currency)}
         </div>
         <div className="flex items-center text-sm text-gray-600">
           <Clock className="w-4 h-4 mr-1" />
@@ -100,17 +118,19 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
         </div>
       </div>
 
-      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{job.description}</p>
+      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+        {job.description ? job.description.substring(0, 150) + '...' : 'No description available'}
+      </p>
 
       <div className="flex flex-wrap gap-2 mb-4">
-        <span className="badge badge-outline">{job.category}</span>
-        <span className="badge badge-outline capitalize">{job.experienceLevel}</span>
-        {job.isPremium && <span className="badge badge-warning">Premium</span>}
-      </div>
-
-      <div className="flex justify-between items-center text-sm text-gray-500">
-        <span>{job.applicantsCount} applicants</span>
-        <span>{job.views} views</span>
+        {job.experienceLevel && (
+          <span className="badge badge-outline capitalize">{job.experienceLevel}</span>
+        )}
+        {job.skills && job.skills.length > 0 && (
+          job.skills.slice(0, 3).map((skill, index) => (
+            <span key={index} className="badge badge-outline">{skill}</span>
+          ))
+        )}
       </div>
     </Link>
   );

@@ -35,29 +35,56 @@ export interface User {
 export interface Job {
   _id: string;
   title: string;
-  company: string;
-  companyLogo?: string;
-  location: string;
-  jobType: 'full-time' | 'part-time' | 'contract' | 'internship' | 'remote';
-  category: string;
-  salary: {
-    min: number;
-    max: number;
-    currency: string;
-  };
   description: string;
   requirements: string[];
-  responsibilities: string[];
-  benefits?: string[];
-  experienceLevel: 'internship' | 'entry' | 'mid' | 'senior' | 'lead';
-  status: JobStatus;
-  postedBy: string;
-  applicationDeadline: string;
-  applicantsCount: number;
-  views: number;
-  isPremium: boolean;
+  location: string;
+  jobType: 'full-time' | 'part-time' | 'contract' | 'internship' | 'remote';
+  salary?: number;
+  salaryMin?: number;
+  salaryMax?: number;
+  currency?: string;
+  experience?: string;
+  experienceLevel?: 'internship' | 'entry' | 'mid' | 'senior' | 'lead';
+  deadline?: string;
+  vacancies?: number;
+  skills?: string[];
+  createdBy?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  company?: any;
+  status?: string;
+  isApproved?: boolean;
+  statusHistory?: any[];
   createdAt: string;
   updatedAt: string;
+  __v?: number;
+  approvedAt?: string;
+  approvedBy?: string;
+}
+
+export interface RecommendedJob {
+  _id: string;
+  title: string;
+  location: string;
+  jobType: 'full-time' | 'part-time' | 'contract' | 'internship' | 'remote';
+  experienceLevel?: 'internship' | 'entry' | 'mid' | 'senior' | 'lead' | 'mid-level';
+  skills?: string[];
+  salaryMin?: number;
+  salaryMax?: number;
+  currency?: string;
+  deadline?: string;
+  relevanceScore?: number;
+  company?:
+    | {
+        _id?: string;
+        name?: string;
+        industry?: string;
+        logo?: string;
+      }
+    | string
+    | null;
 }
 
 export interface Application {
@@ -127,7 +154,7 @@ export interface PaginatedResponse<T> {
 }
 
 export interface JobFilters {
-  search?: string;
+  keyword?: string;
   category?: string;
   location?: string;
   jobType?: string;

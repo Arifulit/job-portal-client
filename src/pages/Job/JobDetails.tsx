@@ -21,6 +21,10 @@ const JobDetails = () => {
 
   const roleValue = String(user?.role || '').toLowerCase();
   const canApply = roleValue === 'candidate' || roleValue === 'seeker' || roleValue === 'job_seeker';
+  const companyName =
+    typeof job?.company === 'string'
+      ? job.company
+      : job?.company?.name || 'Company not specified';
 
   const handleApply = (values: { resumeFile: File; coverLetter?: string }) => {
     if (!id) {
@@ -125,7 +129,7 @@ const JobDetails = () => {
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{job.title}</h1>
                 <div className="flex items-center text-gray-600 dark:text-gray-300 mb-4">
                   <Building className="h-4 w-4 mr-2" />
-                  <span>{job.company?.name || job.company || 'Company not specified'}</span>
+                  <span>{companyName}</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="outline" className="flex items-center">

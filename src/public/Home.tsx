@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { useJobs } from "@/services/jobService";
+import { useJobRecommendations } from "@/services/jobService";
 
 type FeaturedJobItem = {
   title: string;
@@ -31,51 +31,15 @@ type FeaturedJobItem = {
   routeId: string;
 };
 
-const FALLBACK_FEATURED_JOBS: FeaturedJobItem[] = [
-  {
-    title: "Senior Frontend Engineer (React)",
-    company: "Apex Digital Labs",
-    location: "Dhaka",
-    type: "Full Time",
-    salary: "BDT 90,000 - 140,000",
-    deadline: "Deadline: 27 Mar 2026",
-    routeId: "",
-  },
-  {
-    title: "Backend Developer (Node.js)",
-    company: "Cloudverse Limited",
-    location: "Remote",
-    type: "Full Time",
-    salary: "BDT 70,000 - 120,000",
-    deadline: "Deadline: 30 Mar 2026",
-    routeId: "",
-  },
-  {
-    title: "UI/UX Designer",
-    company: "Pixel Forge Studio",
-    location: "Chattogram",
-    type: "Full Time",
-    salary: "BDT 50,000 - 85,000",
-    deadline: "Deadline: 01 Apr 2026",
-    routeId: "",
-  },
-  {
-    title: "Jr. Software Engineer",
-    company: "NextGen Systems",
-    location: "Dhaka",
-    type: "Entry Level",
-    salary: "BDT 35,000 - 55,000",
-    deadline: "Deadline: 04 Apr 2026",
-    routeId: "",
-  },
-];
+
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");
   const [jobTypeFilter, setJobTypeFilter] = useState("");
+  const [locationFilter, setLocationFilter] = useState("");
 
-  const { data: jobsResponse } = useJobs({ page: 1, limit: 10 });
+  const { data: recommendedJobs, isLoading: isLoadingRecommendations } = useJobRecommendations(10);
 
   type HomeApiJob = {
     _id: string;
@@ -88,12 +52,34 @@ const HomePage: React.FC = () => {
     currency?: string;
     deadline?: string;
     company?: { name?: string } | string | null;
+    relevanceScore?: number;
   };
 
   const backendJobs = useMemo(
-    () => (jobsResponse?.data || []) as unknown as HomeApiJob[],
-    [jobsResponse?.data]
+    () => (recommendedJobs || []) as unknown as HomeApiJob[],
+    [recommendedJobs]
   );
+
+  const formatSalary = (job: HomeApiJob) => {
+    if (typeof job.salaryMin === "number" && typeof job.salaryMax === "number") {
+      return `${job.currency || "BDT"} ${job.salaryMin.toLocaleString()} - ${job.salaryMax.toLocaleString()}`;
+    }
+
+    if (typeof job.salary === "object" && job.salary !== null) {
+      return `${job.salary.currency || "BDT"} ${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()}`;
+    }
+
+    if (typeof job.salary === "number") {
+      return `${job.currency || "BDT"} ${job.salary.toLocaleString()}`;
+    }
+
+    return "Salary Negotiable";
+  };
+
+  const getCompanyName = (company: HomeApiJob["company"]) => {
+    if (typeof company === "string") return company;
+    return company?.name || "Confidential Company";
+  };
 
   const dashboardStats = useMemo(() => {
     const total = backendJobs.length;
@@ -153,6 +139,9 @@ const HomePage: React.FC = () => {
     if (jobTypeFilter) {
       params.append("jobType", jobTypeFilter);
     }
+    if (locationFilter.trim()) {
+      params.append("location", locationFilter.trim());
+    }
 
     navigate(`/jobs${params.toString() ? `?${params.toString()}` : ""}`);
   };
@@ -184,32 +173,22 @@ const HomePage: React.FC = () => {
   const featuredJobs: FeaturedJobItem[] = useMemo(
     () =>
       backendJobs.length > 0
-      ? backendJobs.slice(0, 4).map((job): FeaturedJobItem => ({
+        ? backendJobs.slice(0, 4).map((job): FeaturedJobItem => ({
           title: job.title,
-          company:
-            typeof job.company === "string"
-              ? job.company
-              : job.company?.name || "Confidential Company",
+          company: getCompanyName(job.company),
           location: job.location || "Bangladesh",
           type: job.jobType || "full-time",
-          salary:
-            typeof job.salaryMin === "number" && typeof job.salaryMax === "number"
-              ? `${job.currency || "BDT"} ${job.salaryMin.toLocaleString()} - ${job.salaryMax.toLocaleString()}`
-              : typeof job.salary === "object" && job.salary !== null
-                ? `${job.salary.currency || "BDT"} ${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()}`
-              : typeof job.salary === "number"
-                ? `${job.currency || "BDT"} ${job.salary.toLocaleString()}`
-              : "Salary Negotiable",
+          salary: formatSalary(job),
           deadline: job.deadline
             ? `Deadline: ${new Date(job.deadline).toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })}`
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}`
             : "Deadline: Not specified",
           routeId: job._id,
         }))
-      : FALLBACK_FEATURED_JOBS,
+        : [],
     [backendJobs]
   );
 
@@ -273,7 +252,7 @@ const HomePage: React.FC = () => {
             </div>
 
             <div className="mt-7 rounded-md bg-[#1f4f93] p-3 shadow-lg">
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_300px_160px]">
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_300px_160px_160px]">
                 <label className="relative">
                   <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                   <input
@@ -281,6 +260,17 @@ const HomePage: React.FC = () => {
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                     placeholder="Search by keyword"
+                    className="h-14 w-full rounded-md border-0 bg-white dark:bg-slate-900 dark:text-slate-100 pl-12 pr-4 text-lg outline-none ring-0"
+                  />
+                </label>
+
+                <label className="relative">
+                  <MapPin className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={locationFilter}
+                    onChange={(e) => setLocationFilter(e.target.value)}
+                    placeholder="Location"
                     className="h-14 w-full rounded-md border-0 bg-white dark:bg-slate-900 dark:text-slate-100 pl-12 pr-4 text-lg outline-none ring-0"
                   />
                 </label>
@@ -324,7 +314,7 @@ const HomePage: React.FC = () => {
               ))}
             </div>
 
-       
+
           </motion.div>
 
           <motion.aside
@@ -390,9 +380,12 @@ const HomePage: React.FC = () => {
           <div>
             <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100" style={{ fontFamily: "Montserrat, sans-serif" }}>Featured Jobs</h3>
             <p className="text-slate-600 dark:text-slate-400">
-              {backendJobs.length > 0
-                ? "Live opportunities from backend"
-                : "Fresh opportunities selected for you"}
+              {isLoadingRecommendations
+                ? "Loading personalized recommendations..."
+                : backendJobs.length > 0
+                  ? "Live opportunities from backend"
+                  : "No jobs available at the moment"
+              }
             </p>
           </div>
           <Link to="/jobs" className="inline-flex items-center gap-2 text-sm font-semibold text-[#1f4f93] hover:text-[#153a6f]">
@@ -402,28 +395,45 @@ const HomePage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {featuredJobs.map((job) => (
-            <article key={job.title} className="rounded-xl border border-blue-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-[#e9f2ff] px-3 py-1 text-xs font-bold uppercase text-[#1f4f93]">{job.type}</span>
-                <span className="rounded-full bg-[#ffeaf7] px-3 py-1 text-xs font-bold uppercase text-[#b42880]">Featured</span>
+          {isLoadingRecommendations ? (
+            // Loading skeletons
+            Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="rounded-xl border border-blue-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-3"></div>
+                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
               </div>
+            ))
+          ) : (
+            featuredJobs.map((job) => (
+              <article key={job.routeId} className="rounded-xl border border-blue-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-[#e9f2ff] px-3 py-1 text-xs font-bold uppercase text-[#1f4f93]">{job.type}</span>
+                  <span className="rounded-full bg-[#ffeaf7] px-3 py-1 text-xs font-bold uppercase text-[#b42880]">Featured</span>
+                </div>
 
-              <h4 className="mt-3 text-xl font-bold text-slate-900 dark:text-slate-100">{job.title}</h4>
-              <p className="mt-1 text-sm font-semibold text-slate-700 dark:text-slate-300">{job.company}</p>
+                <h4 className="mt-3 text-xl font-bold text-slate-900 dark:text-slate-100">{job.title}</h4>
+                <p className="mt-1 text-sm font-semibold text-slate-700 dark:text-slate-300">{job.company}</p>
 
-              <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600 dark:text-slate-400">
-                <p className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-slate-400" />{job.location}</p>
-                <p className="inline-flex items-center gap-2"><Briefcase className="h-4 w-4 text-slate-400" />{job.salary}</p>
-                <p className="col-span-2 inline-flex items-center gap-2"><CalendarClock className="h-4 w-4 text-slate-400" />{job.deadline}</p>
-              </div>
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600 dark:text-slate-400">
+                  <p className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-slate-400" />{job.location}</p>
+                  <p className="inline-flex items-center gap-2"><Briefcase className="h-4 w-4 text-slate-400" />{job.salary}</p>
+                  <p className="col-span-2 inline-flex items-center gap-2"><CalendarClock className="h-4 w-4 text-slate-400" />{job.deadline}</p>
+                </div>
 
-              <div className="mt-4 flex items-center justify-between">
-                <Link to={job.routeId ? `/jobs/${job.routeId}` : "/jobs"} className="text-sm font-semibold text-[#1f4f93] hover:text-[#153a6f]">See details</Link>
-                <Button className="h-10 rounded-md bg-[#cf2f92] px-4 text-sm text-white hover:bg-[#b42880]">Apply Now</Button>
-              </div>
-            </article>
-          ))}
+                <div className="mt-4 flex items-center justify-between">
+                  <Link to={job.routeId ? `/jobs/${job.routeId}` : "/jobs"} className="text-sm font-semibold text-[#1f4f93] hover:text-[#153a6f]">See details</Link>
+                  <Button className="h-10 rounded-md bg-[#cf2f92] px-4 text-sm text-white hover:bg-[#b42880]">Apply Now</Button>
+                </div>
+              </article>
+            ))
+          )}
         </div>
       </section>
 
@@ -519,3 +529,4 @@ const HomePage: React.FC = () => {
 };
 
 export default HomePage;
+

@@ -1,5 +1,5 @@
 import { useDashboardStats } from '../../services/userService';
-import { userecruiterJobs } from '../../services/jobService';
+import { useRecruiterJobs } from '../../services/jobService';
 import { Loader } from '../../components/Loader';
 import { Link } from 'react-router-dom';
 import {
@@ -19,7 +19,7 @@ import { formatRelativeTime, getStatusColor } from '../../utils/helpers';
 
 export const RecruiterDashboard = () => {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
-  const { data: jobsData, isLoading: jobsLoading } = userecruiterJobs();
+  const { data: jobsData, isLoading: jobsLoading } = useRecruiterJobs();
 
   if (statsLoading || jobsLoading) return <Loader />;
 

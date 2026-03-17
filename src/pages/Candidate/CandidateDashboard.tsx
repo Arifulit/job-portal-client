@@ -15,8 +15,12 @@ import {
   TrendingUp,
   Target,
   MessageCircle,
+  Stars,
+  MapPin,
+  BadgeDollarSign,
 } from 'lucide-react';
 import { formatRelativeTime } from '../../utils/helpers';
+import { useJobRecommendations } from '../../services/jobService';
 
 const statusClassMap: Record<string, string> = {
   applied: 'bg-blue-100 text-blue-700 border border-blue-200',
@@ -29,9 +33,23 @@ const statusClassMap: Record<string, string> = {
 
 const toTitleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
+const getCompanyDisplayName = (company: unknown) => {
+  if (typeof company === 'string') return company;
+  if (company && typeof company === 'object' && 'name' in company) {
+    const name = (company as { name?: unknown }).name;
+    if (typeof name === 'string' && name.trim()) return name;
+  }
+  return 'Company not available';
+};
+
 export const CandidateDashboard = () => {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: applicationsData, isLoading: appsLoading } = useMyApplications();
+  const {
+    data: recommendedJobs = [],
+    isLoading: recommendationsLoading,
+    isError: recommendationsError,
+  } = useJobRecommendations(10);
 
   if (statsLoading || appsLoading) return <Loader />;
 
@@ -168,7 +186,7 @@ export const CandidateDashboard = () => {
                         <h3 className="text-lg font-semibold text-slate-900">
                           {application.job?.title || 'Untitled Position'}
                         </h3>
-                        <p className="text-sm text-slate-600">{application.job?.company || 'Company not available'}</p>
+                        <p className="text-sm text-slate-600">{getCompanyDisplayName(application.job?.company)}</p>
                       </div>
 
                       <span
@@ -212,6 +230,68 @@ export const CandidateDashboard = () => {
           </div>
 
           <div className="space-y-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="flex items-center text-xl font-bold text-slate-900">
+                  <Stars className="mr-2 h-5 w-5 text-amber-500" />
+                  AI Recommended Jobs
+                </h2>
+                <Link to="/candidate/jobs" className="text-sm font-semibold text-blue-700 hover:text-blue-900">
+                  See all
+                </Link>
+              </div>
+
+              {recommendationsLoading ? (
+                <p className="text-sm text-slate-500">Loading recommendations...</p>
+              ) : recommendationsError ? (
+                <p className="text-sm text-rose-600">Could not load recommendations right now.</p>
+              ) : recommendedJobs.length === 0 ? (
+                <p className="text-sm text-slate-500">No recommendations found yet. Update your profile skills to improve matches.</p>
+              ) : (
+                <div className="space-y-3">
+                  {recommendedJobs.slice(0, 5).map((job) => (
+                    <Link
+                      key={job._id}
+                      to={`/jobs/${job._id}`}
+                      className="block rounded-xl border border-slate-200 p-3 transition hover:border-blue-300 hover:bg-slate-50"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-slate-900">{job.title}</p>
+                          <p className="text-xs text-slate-500">
+                            {typeof job.company === 'string'
+                              ? job.company
+                              : job.company?.name || 'Confidential Company'}
+                          </p>
+                        </div>
+                        <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                          {Math.round((job.relevanceScore || 0) * 100)}% match
+                        </span>
+                      </div>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5" />
+                          {job.location || 'Location not specified'}
+                        </span>
+                        <span className="inline-flex items-center gap-1 capitalize">
+                          <Briefcase className="h-3.5 w-3.5" />
+                          {(job.jobType || 'full-time').replace('-', ' ')}
+                        </span>
+                        {(job.salaryMin || job.salaryMax) && (
+                          <span className="inline-flex items-center gap-1">
+                            <BadgeDollarSign className="h-3.5 w-3.5" />
+                            {job.currency || 'BDT'} {job.salaryMin?.toLocaleString() || 0}
+                            {job.salaryMax ? ` - ${job.salaryMax.toLocaleString()}` : '+'}
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="mb-4 flex items-center text-xl font-bold text-slate-900">
                 <Briefcase className="mr-2 h-5 w-5 text-blue-600" />

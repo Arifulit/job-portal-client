@@ -3,8 +3,9 @@
 import { LayoutDashboard, User, Briefcase, FileText } from "lucide-react";
 import { CandidateDashboard } from "../pages/Candidate/CandidateDashboard";
 import CandidateProfile from "../pages/Candidate/CandidateProfile";
-import Jobs from "@/pages/Jobs/Jobs";
+// import Jobs from "@/pages/Jobs/Jobs";
 import MyApplications from "@/pages/Candidate/MyApplications";
+import Jobs from "@/pages/Job/Jobs";
 
 interface ISidebarItem {
   title: string;

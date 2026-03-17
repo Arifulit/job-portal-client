@@ -1,11 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createBrowserRouter, Navigate } from "react-router-dom";
-import HomePage from "../public/Home"; // Changed from { Home }
+import HomePage from "../public/Home"; 
 import About from "../public/About";
 import Features from "../public/Features";
 import ContactPage from "../public/Contact";
 import FAQ from "../public/FAQ";
-import Jobs from "../pages/Jobs/Jobs";
+import Jobs from "../pages/Job/Jobs";
 import JobDetails from "../pages/Job/JobDetails";
 import { Login, Register, RecruiterRegister } from "../components/auth";
 import Unauthorized from "../pages/status/Unauthorized";
