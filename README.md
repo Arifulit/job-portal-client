@@ -179,7 +179,7 @@ API access is organized in the `src/services` layer and built on Axios + TanStac
 
 - Centralized request logic and error handling
 - Query caching and invalidation for responsive UI updates
-- Mutations for application, profile, and job workflows
+- Mutations for application, profile, and job workflows updates
 
 ## Deployment
 
