@@ -31,6 +31,41 @@ type FeaturedJobItem = {
   routeId: string;
 };
 
+type HomeApiJob = {
+  _id: string;
+  title: string;
+  location?: string;
+  jobType?: string;
+  salary?: number | { min: number; max: number; currency: string };
+  salaryMin?: number;
+  salaryMax?: number;
+  currency?: string;
+  deadline?: string;
+  company?: { name?: string } | string | null;
+  relevanceScore?: number;
+};
+
+const formatHomeSalary = (job: HomeApiJob) => {
+  if (typeof job.salaryMin === "number" && typeof job.salaryMax === "number") {
+    return `${job.currency || "BDT"} ${job.salaryMin.toLocaleString()} - ${job.salaryMax.toLocaleString()}`;
+  }
+
+  if (typeof job.salary === "object" && job.salary !== null) {
+    return `${job.salary.currency || "BDT"} ${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()}`;
+  }
+
+  if (typeof job.salary === "number") {
+    return `${job.currency || "BDT"} ${job.salary.toLocaleString()}`;
+  }
+
+  return "Salary Negotiable";
+};
+
+const getHomeCompanyName = (company: HomeApiJob["company"]) => {
+  if (typeof company === "string") return company;
+  return company?.name || "Confidential Company";
+};
+
 
 
 const HomePage: React.FC = () => {
@@ -41,45 +76,10 @@ const HomePage: React.FC = () => {
 
   const { data: recommendedJobs, isLoading: isLoadingRecommendations } = useJobRecommendations(10);
 
-  type HomeApiJob = {
-    _id: string;
-    title: string;
-    location?: string;
-    jobType?: string;
-    salary?: number | { min: number; max: number; currency: string };
-    salaryMin?: number;
-    salaryMax?: number;
-    currency?: string;
-    deadline?: string;
-    company?: { name?: string } | string | null;
-    relevanceScore?: number;
-  };
-
   const backendJobs = useMemo(
     () => (recommendedJobs || []) as unknown as HomeApiJob[],
     [recommendedJobs]
   );
-
-  const formatSalary = (job: HomeApiJob) => {
-    if (typeof job.salaryMin === "number" && typeof job.salaryMax === "number") {
-      return `${job.currency || "BDT"} ${job.salaryMin.toLocaleString()} - ${job.salaryMax.toLocaleString()}`;
-    }
-
-    if (typeof job.salary === "object" && job.salary !== null) {
-      return `${job.salary.currency || "BDT"} ${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()}`;
-    }
-
-    if (typeof job.salary === "number") {
-      return `${job.currency || "BDT"} ${job.salary.toLocaleString()}`;
-    }
-
-    return "Salary Negotiable";
-  };
-
-  const getCompanyName = (company: HomeApiJob["company"]) => {
-    if (typeof company === "string") return company;
-    return company?.name || "Confidential Company";
-  };
 
   const dashboardStats = useMemo(() => {
     const total = backendJobs.length;
@@ -175,10 +175,10 @@ const HomePage: React.FC = () => {
       backendJobs.length > 0
         ? backendJobs.slice(0, 4).map((job): FeaturedJobItem => ({
           title: job.title,
-          company: getCompanyName(job.company),
+          company: getHomeCompanyName(job.company),
           location: job.location || "Bangladesh",
           type: job.jobType || "full-time",
-          salary: formatSalary(job),
+          salary: formatHomeSalary(job),
           deadline: job.deadline
             ? `Deadline: ${new Date(job.deadline).toLocaleDateString("en-GB", {
               day: "2-digit",
@@ -442,7 +442,7 @@ const HomePage: React.FC = () => {
           <div className="rounded-xl bg-[#123f7a] p-6 text-white shadow-md">
             <Users className="h-8 w-8" />
             <h4 className="mt-4 text-3xl font-extrabold">85K+</h4>
-            <p className="text-blue-100">Active Job Seekers</p>
+            <p className="text-blue-100">Active Candidates</p>
           </div>
           <div className="rounded-xl bg-[#1c5da8] p-6 text-white shadow-md">
             <Rocket className="h-8 w-8" />

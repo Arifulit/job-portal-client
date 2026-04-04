@@ -1,4 +1,4 @@
-export type UserRole = 'seeker' | 'recruiter' | 'admin';
+export type UserRole = 'candidate' | 'recruiter' | 'admin';
 
 export type JobStatus = 'active' | 'expired' | 'draft' | 'pending';
 
@@ -8,7 +8,8 @@ export type ApplicationStatus =
   | 'interview'
   | 'offered'
   | 'hired'
-  | 'rejected';
+  | 'rejected'
+  | 'withdrawn';
 
 export interface User {
   _id: string;
@@ -91,8 +92,7 @@ export interface Application {
   _id: string;
   jobId: string;
   job?: Job;
-  seekerId: string;
-  seeker?: User;
+  candidateId: string;
   candidate?: User;
   recruiterId: string;
   status: ApplicationStatus;
@@ -166,13 +166,25 @@ export interface JobFilters {
 }
 
 export interface DashboardStats {
+  availableJobs?: number;
   totalJobs?: number;
   totalApplications?: number;
   totalUsers?: number;
+  totalCandidates?: number;
+  totalRecruiters?: number;
+  totalAdmins?: number;
+  suspendedUsers?: number;
   activeJobs?: number;
+  pendingJobs?: number;
+  approvedJobs?: number;
+  rejectedJobs?: number;
+  closedJobs?: number;
   pendingApplications?: number;
   shortlistedCount?: number;
+  withdrawnCount?: number;
   hiredCount?: number;
+  totalNotifications?: number;
+  unreadNotifications?: number;
   views?: number;
   applicantsCount?: number;
 }

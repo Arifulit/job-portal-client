@@ -3,7 +3,6 @@ import { useMyApplications } from '../../services/applicationService';
 import { Loader } from '../../components/Loader';
 import { Link } from 'react-router-dom';
 import {
-  BarChart3,
   ArrowUpRight,
   CalendarDays,
   Briefcase,
@@ -18,9 +17,11 @@ import {
   Stars,
   MapPin,
   BadgeDollarSign,
+  Trophy,
+  XCircle,
 } from 'lucide-react';
 import { formatRelativeTime } from '../../utils/helpers';
-import { useJobRecommendations } from '../../services/jobService';
+import { useCandidateRecommendations } from '../../services/candidateService';
 
 const statusClassMap: Record<string, string> = {
   applied: 'bg-blue-100 text-blue-700 border border-blue-200',
@@ -32,6 +33,25 @@ const statusClassMap: Record<string, string> = {
 };
 
 const toTitleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
+
+const normalizeMatchPercentage = (score?: number) => {
+  if (typeof score !== 'number' || Number.isNaN(score)) return 0;
+  if (score <= 1) return Math.round(score * 100);
+  return Math.max(0, Math.min(100, Math.round(score)));
+};
+
+const getDateValue = (dateLike?: string) => {
+  if (!dateLike) return 0;
+  const parsed = new Date(dateLike).getTime();
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+};
 
 const getCompanyDisplayName = (company: unknown) => {
   if (typeof company === 'string') return company;
@@ -49,18 +69,33 @@ export const CandidateDashboard = () => {
     data: recommendedJobs = [],
     isLoading: recommendationsLoading,
     isError: recommendationsError,
-  } = useJobRecommendations(10);
+  } = useCandidateRecommendations(10);
 
   if (statsLoading || appsLoading) return <Loader />;
 
   const applications = applicationsData?.data || [];
+  const now = Date.now();
+  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
   const recentApplications = [...applications]
-    .sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime())
+    .sort(
+      (a, b) =>
+        getDateValue(b.appliedAt || b.createdAt || b.updatedAt) -
+        getDateValue(a.appliedAt || a.createdAt || a.updatedAt)
+    )
     .slice(0, 5);
 
   const appliedCount = applications.length;
   const interviewPipelineCount = applications.filter((item) =>
     ['shortlisted', 'interview', 'offered', 'hired'].includes(String(item.status || '').toLowerCase())
+  ).length;
+  const offeredCount = applications.filter((item) =>
+    ['offered', 'hired'].includes(String(item.status || '').toLowerCase())
+  ).length;
+  const rejectedCount = applications.filter(
+    (item) => String(item.status || '').toLowerCase() === 'rejected'
+  ).length;
+  const weeklyApplications = applications.filter(
+    (item) => getDateValue(item.appliedAt || item.createdAt || item.updatedAt) >= sevenDaysAgo
   ).length;
   const shortlistedCount =
     stats?.shortlistedCount ??
@@ -69,8 +104,13 @@ export const CandidateDashboard = () => {
     stats?.pendingApplications ??
     applications.filter((item) => String(item.status || '').toLowerCase() === 'applied').length;
   const totalApplications = stats?.totalApplications ?? appliedCount;
+  const availableJobs = stats?.availableJobs ?? stats?.totalJobs ?? 0;
+  const totalNotifications = stats?.totalNotifications ?? 0;
+  const unreadNotifications = stats?.unreadNotifications ?? 0;
   const profileViews = stats?.views ?? 0;
   const responseRate = totalApplications > 0 ? Math.round((interviewPipelineCount / totalApplications) * 100) : 0;
+  const weeklyTarget = 5;
+  const weeklyProgress = Math.min(100, Math.round((weeklyApplications / weeklyTarget) * 100));
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100/70 py-8">
@@ -85,6 +125,7 @@ export const CandidateDashboard = () => {
                 <Sparkles className="h-3.5 w-3.5" />
                 Candidate Workspace
               </p>
+              <p className="mt-3 text-sm font-semibold text-blue-100">{getGreeting()}</p>
               <h1 className="mt-3 text-2xl font-black leading-tight sm:text-3xl">
                 Track Progress, Improve Profile, Land Interviews
               </h1>
@@ -96,14 +137,14 @@ export const CandidateDashboard = () => {
             <div className="flex flex-wrap gap-3">
               <Link
                 to="/candidate/jobs"
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#124f8d] shadow-sm transition hover:bg-blue-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#124f8d] shadow-sm"
               >
                 Browse Jobs
                 <ArrowUpRight className="h-4 w-4" />
               </Link>
               <Link
                 to="/candidate/profile"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/60 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/60 px-4 py-2.5 text-sm font-semibold text-white"
               >
                 Update Profile
               </Link>
@@ -112,7 +153,7 @@ export const CandidateDashboard = () => {
         </div>
 
         <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-500">Total Applications</p>
@@ -125,42 +166,72 @@ export const CandidateDashboard = () => {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-500">Pending Review</p>
-                <p className="mt-2 text-3xl font-black text-slate-900">{pendingCount}</p>
-                <p className="mt-1 text-xs text-slate-500">Waiting for recruiter action</p>
+            <p className="text-sm font-semibold text-slate-500">Available Jobs</p>
+            <p className="mt-2 text-3xl font-black text-slate-900">{availableJobs}</p>
+            <p className="mt-1 text-xs text-slate-500">Open jobs available to apply</p>
               </div>
               <span className="rounded-xl bg-amber-100 p-3 text-amber-700">
-                <Clock className="h-6 w-6" />
+            <Briefcase className="h-6 w-6" />
               </span>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-500">Shortlisted</p>
-                <p className="mt-2 text-3xl font-black text-slate-900">{shortlistedCount}</p>
-                <p className="mt-1 text-xs text-slate-500">Moved to next hiring stage</p>
+            <p className="text-sm font-semibold text-slate-500">Unread Notifications</p>
+            <p className="mt-2 text-3xl font-black text-slate-900">{unreadNotifications}</p>
+            <p className="mt-1 text-xs text-slate-500">{totalNotifications} total notifications</p>
               </div>
               <span className="rounded-xl bg-emerald-100 p-3 text-emerald-700">
-                <CheckCircle className="h-6 w-6" />
+            <MessageCircle className="h-6 w-6" />
               </span>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-500">Response Rate</p>
-                <p className="mt-2 text-3xl font-black text-slate-900">{responseRate}%</p>
-                <p className="mt-1 text-xs text-slate-500">Interview pipeline conversion</p>
+            <p className="text-sm font-semibold text-slate-500">Pending Review</p>
+            <p className="mt-2 text-3xl font-black text-slate-900">{pendingCount}</p>
+            <p className="mt-1 text-xs text-slate-500">Waiting for recruiter action</p>
               </div>
               <span className="rounded-xl bg-violet-100 p-3 text-violet-700">
-                <BarChart3 className="h-6 w-6" />
+            <Clock className="h-6 w-6" />
               </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-3">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm font-semibold text-slate-500">Interview Pipeline</p>
+            <p className="mt-2 text-2xl font-black text-slate-900">{interviewPipelineCount}</p>
+            <p className="mt-1 text-xs text-slate-500">Shortlisted, interview, offered and hired stages</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-500">Offers / Hired</p>
+                <p className="mt-2 text-2xl font-black text-slate-900">{offeredCount}</p>
+                <p className="mt-1 text-xs text-slate-500">Strong opportunity indicators</p>
+              </div>
+              <Trophy className="h-6 w-6 text-emerald-600" />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-500">Rejected</p>
+                <p className="mt-2 text-2xl font-black text-slate-900">{rejectedCount}</p>
+                <p className="mt-1 text-xs text-slate-500">Use insights to refine next applications</p>
+              </div>
+              <XCircle className="h-6 w-6 text-rose-600" />
             </div>
           </div>
         </div>
@@ -172,7 +243,7 @@ export const CandidateDashboard = () => {
                 <FileText className="mr-2 h-5 w-5 text-blue-600" />
                 Recent Applications
               </h2>
-              <Link to="/candidate/applications" className="text-sm font-semibold text-blue-700 hover:text-blue-900">
+              <Link to="/candidate/applications" className="text-sm font-semibold text-blue-700">
                 View all
               </Link>
             </div>
@@ -180,7 +251,7 @@ export const CandidateDashboard = () => {
             <div className="divide-y divide-slate-200">
               {recentApplications.length > 0 ? (
                 recentApplications.map((application) => (
-                  <div key={application._id} className="p-5 transition hover:bg-slate-50 sm:p-6">
+                  <div key={application._id} className="p-5 sm:p-6">
                     <div className="mb-3 flex items-start justify-between gap-3">
                       <div>
                         <h3 className="text-lg font-semibold text-slate-900">
@@ -202,11 +273,11 @@ export const CandidateDashboard = () => {
                     <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500">
                       <span className="flex items-center">
                         <CalendarDays className="mr-1 h-4 w-4" />
-                        Applied {formatRelativeTime(application.appliedAt)}
+                          Applied {formatRelativeTime(application.appliedAt || application.createdAt || application.updatedAt || new Date().toISOString())}
                       </span>
                       <Link
                         to={`/jobs/${application.jobId}`}
-                        className="font-semibold text-blue-700 hover:text-blue-900"
+                        className="font-semibold text-blue-700"
                       >
                         View Job
                       </Link>
@@ -220,7 +291,7 @@ export const CandidateDashboard = () => {
                   <p className="mt-1 text-sm text-slate-500">Start applying to jobs and track your progress from here.</p>
                   <Link
                     to="/candidate/jobs"
-                    className="mt-4 inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                    className="mt-4 inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
                   >
                     Browse Jobs
                   </Link>
@@ -236,7 +307,7 @@ export const CandidateDashboard = () => {
                   <Stars className="mr-2 h-5 w-5 text-amber-500" />
                   AI Recommended Jobs
                 </h2>
-                <Link to="/candidate/jobs" className="text-sm font-semibold text-blue-700 hover:text-blue-900">
+                <Link to="/candidate/jobs" className="text-sm font-semibold text-blue-700">
                   See all
                 </Link>
               </div>
@@ -253,19 +324,17 @@ export const CandidateDashboard = () => {
                     <Link
                       key={job._id}
                       to={`/jobs/${job._id}`}
-                      className="block rounded-xl border border-slate-200 p-3 transition hover:border-blue-300 hover:bg-slate-50"
+                      className="block rounded-xl border border-slate-200 p-3"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="font-semibold text-slate-900">{job.title}</p>
                           <p className="text-xs text-slate-500">
-                            {typeof job.company === 'string'
-                              ? job.company
-                              : job.company?.name || 'Confidential Company'}
+                            {getCompanyDisplayName(job.company)}
                           </p>
                         </div>
                         <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
-                          {Math.round((job.relevanceScore || 0) * 100)}% match
+                          {normalizeMatchPercentage(job.relevanceScore)}% match
                         </span>
                       </div>
 
@@ -300,19 +369,19 @@ export const CandidateDashboard = () => {
               <div className="space-y-3">
                 <Link
                   to="/candidate/jobs"
-                  className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                  className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white"
                 >
                   Browse Jobs
                 </Link>
                 <Link
                   to="/candidate/profile"
-                  className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700"
                 >
                   Update Profile
                 </Link>
                 <Link
                   to="/candidate/applications"
-                  className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700"
                 >
                   Track Applications
                 </Link>
@@ -325,6 +394,16 @@ export const CandidateDashboard = () => {
                 Weekly Target
               </h3>
               <p className="mb-4 text-sm text-blue-100">Aim for at least 5 quality applications per week to keep your profile active in recruiter searches.</p>
+
+              <div className="mb-4">
+                <div className="mb-1 flex items-center justify-between text-xs text-blue-100">
+                  <span>{weeklyApplications}/{weeklyTarget} this week</span>
+                  <span>{weeklyProgress}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-white/20">
+                  <div className="h-2 rounded-full bg-white transition-all" style={{ width: `${weeklyProgress}%` }} />
+                </div>
+              </div>
 
               <div className="mb-4 rounded-xl bg-white/10 p-3 text-sm">
                 <p className="flex items-center justify-between">
@@ -339,7 +418,7 @@ export const CandidateDashboard = () => {
 
               <Link
                 to="/candidate/profile"
-                className="inline-flex items-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
+                className="inline-flex items-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-blue-700"
               >
                 Update Now
               </Link>

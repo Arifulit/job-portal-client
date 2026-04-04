@@ -28,7 +28,7 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!user || user.role !== 'seeker') return;
+    if (!user || user.role !== 'candidate') return;
 
     if (saved) {
       unsaveJobMutation.mutate(job._id, {
@@ -83,7 +83,7 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
               'badge-neutral'
             }`}>{job.status}</span>
           )}
-          {user?.role === 'seeker' && (
+          {user?.role === 'candidate' && (
             <button
               onClick={handleSaveToggle}
               className="btn btn-ghost btn-sm btn-circle"

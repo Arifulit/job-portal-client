@@ -2,13 +2,16 @@ import { Link } from 'react-router-dom';
 import {
   ArrowUpRight,
   BarChart3,
-  CheckCircle2,
+  Bell,
   Clock3,
   Users,
   Briefcase,
   FileText,
   Sparkles,
   Activity,
+  UserCheck,
+  UserRound,
+  Shield,
 } from 'lucide-react';
 import { useDashboardStats } from '../../services/userService';
 import { Loader } from '../../components/Loader';
@@ -19,11 +22,23 @@ export const AdminDashboard = () => {
   if (isLoading) return <Loader />;
 
   const totalUsers = stats?.totalUsers ?? 0;
+  const totalCandidates = stats?.totalCandidates ?? 0;
+  const totalRecruiters = stats?.totalRecruiters ?? 0;
+  const totalAdmins = stats?.totalAdmins ?? 0;
+  const suspendedUsers = stats?.suspendedUsers ?? 0;
   const totalJobs = stats?.totalJobs ?? 0;
+  const pendingJobs = stats?.pendingJobs ?? 0;
+  const approvedJobs = stats?.approvedJobs ?? 0;
+  const rejectedJobs = stats?.rejectedJobs ?? 0;
+  const closedJobs = stats?.closedJobs ?? 0;
   const totalApplications = stats?.totalApplications ?? 0;
-  const activeJobs = stats?.activeJobs ?? 0;
+  const activeJobs = stats?.activeJobs ?? approvedJobs;
   const pendingReviews = stats?.pendingApplications ?? 0;
   const hired = stats?.hiredCount ?? 0;
+  const shortlisted = stats?.shortlistedCount ?? 0;
+  const withdrawn = stats?.withdrawnCount ?? 0;
+  const totalNotifications = stats?.totalNotifications ?? 0;
+  const unreadNotifications = stats?.unreadNotifications ?? 0;
 
   const approvalRate = totalApplications > 0 ? Math.round((hired / totalApplications) * 100) : 0;
 
@@ -49,14 +64,14 @@ export const AdminDashboard = () => {
             <div className="flex flex-wrap gap-3">
               <Link
                 to="/admin/users"
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#4b2d8f] shadow-sm transition hover:bg-violet-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#4b2d8f] shadow-sm"
               >
                 Manage Users
                 <ArrowUpRight className="h-4 w-4" />
               </Link>
               <Link
                 to="/admin/jobs"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/60 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/60 px-4 py-2.5 text-sm font-semibold text-white"
               >
                 Moderate Jobs
               </Link>
@@ -64,8 +79,8 @@ export const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+        <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-500">Total Users</p>
@@ -78,7 +93,7 @@ export const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-500">Total Jobs</p>
@@ -91,7 +106,46 @@ export const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-500">Total Candidates</p>
+                <p className="mt-2 text-3xl font-black text-slate-900">{totalCandidates}</p>
+                <p className="mt-1 text-xs text-slate-500">Candidate accounts</p>
+              </div>
+              <span className="rounded-xl bg-violet-100 p-3 text-violet-700">
+                <UserRound className="h-6 w-6" />
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-500">Total Recruiters</p>
+                <p className="mt-2 text-3xl font-black text-slate-900">{totalRecruiters}</p>
+                <p className="mt-1 text-xs text-slate-500">Recruiter accounts</p>
+              </div>
+              <span className="rounded-xl bg-cyan-100 p-3 text-cyan-700">
+                <UserCheck className="h-6 w-6" />
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-500">Total Admins</p>
+                <p className="mt-2 text-3xl font-black text-slate-900">{totalAdmins}</p>
+                <p className="mt-1 text-xs text-slate-500">Admin accounts</p>
+              </div>
+              <span className="rounded-xl bg-indigo-100 p-3 text-indigo-700">
+                <Shield className="h-6 w-6" />
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-500">Total Applications</p>
@@ -104,7 +158,7 @@ export const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-500">Active Jobs</p>
@@ -117,12 +171,12 @@ export const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-500">Pending Reviews</p>
+                <p className="text-sm font-semibold text-slate-500">Pending Applications</p>
                 <p className="mt-2 text-3xl font-black text-slate-900">{pendingReviews}</p>
-                <p className="mt-1 text-xs text-slate-500">Items needing moderation</p>
+                <p className="mt-1 text-xs text-slate-500">From application status</p>
               </div>
               <span className="rounded-xl bg-red-100 p-3 text-red-700">
                 <Clock3 className="h-6 w-6" />
@@ -130,15 +184,15 @@ export const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-500">Hired</p>
-                <p className="mt-2 text-3xl font-black text-slate-900">{hired}</p>
-                <p className="mt-1 text-xs text-slate-500">Completed hiring outcomes</p>
+                <p className="text-sm font-semibold text-slate-500">Unread Notifications</p>
+                <p className="mt-2 text-3xl font-black text-slate-900">{unreadNotifications}</p>
+                <p className="mt-1 text-xs text-slate-500">{totalNotifications} total notifications</p>
               </div>
-              <span className="rounded-xl bg-teal-100 p-3 text-teal-700">
-                <CheckCircle2 className="h-6 w-6" />
+              <span className="rounded-xl bg-sky-100 p-3 text-sky-700">
+                <Bell className="h-6 w-6" />
               </span>
             </div>
           </div>
@@ -156,18 +210,18 @@ export const AdminDashboard = () => {
             <div className="space-y-3">
               <Link
                 to="/admin/users"
-                className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white"
               >
                 View All Users
               </Link>
               <div className="grid grid-cols-3 gap-3">
-                <Link to="/admin/users?role=seeker" className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                <Link to="/admin/users?role=candidate" className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">
                   Candidates
                 </Link>
-                <Link to="/admin/users?role=recruiter" className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                <Link to="/admin/users?role=recruiter" className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">
                   Recruiters
                 </Link>
-                <Link to="/admin/users?role=admin" className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                <Link to="/admin/users?role=admin" className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">
                   Admins
                 </Link>
               </div>
@@ -185,18 +239,18 @@ export const AdminDashboard = () => {
             <div className="space-y-3">
               <Link
                 to="/admin/jobs"
-                className="inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                className="inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white"
               >
                 View All Jobs
               </Link>
               <div className="grid grid-cols-3 gap-3">
-                <Link to="/admin/jobs?status=active" className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                <Link to="/admin/jobs?status=active" className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">
                   Active
                 </Link>
-                <Link to="/admin/jobs?status=draft" className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                <Link to="/admin/jobs?status=draft" className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">
                   Pending
                 </Link>
-                <Link to="/admin/jobs?status=expired" className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                <Link to="/admin/jobs?status=expired" className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">
                   Expired
                 </Link>
               </div>
@@ -212,8 +266,8 @@ export const AdminDashboard = () => {
               Monitor application activity and resolve issues
             </p>
             <Link
-              to="/admin/users"
-              className="inline-flex w-full items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-700"
+              to="/admin/jobs"
+              className="inline-flex w-full items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white"
             >
               View Applications
             </Link>
@@ -224,12 +278,36 @@ export const AdminDashboard = () => {
               <BarChart3 className="mr-2 h-5 w-5 text-amber-600" />
               Analytics & Reports
             </h2>
-            <p className="mb-6 text-slate-600">
-              Generate insights and export platform data
-            </p>
-            <button className="inline-flex w-full items-center justify-center rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700">
-              Generate Reports
-            </button>
+            <div className="space-y-3 text-sm text-slate-700">
+              <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                <span>Jobs: Pending</span>
+                <span className="font-semibold">{pendingJobs}</span>
+              </p>
+              <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                <span>Jobs: Approved</span>
+                <span className="font-semibold">{approvedJobs}</span>
+              </p>
+              <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                <span>Jobs: Rejected</span>
+                <span className="font-semibold">{rejectedJobs}</span>
+              </p>
+              <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                <span>Jobs: Closed</span>
+                <span className="font-semibold">{closedJobs}</span>
+              </p>
+              <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                <span>Applications: Shortlisted</span>
+                <span className="font-semibold">{shortlisted}</span>
+              </p>
+              <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                <span>Applications: Withdrawn</span>
+                <span className="font-semibold">{withdrawn}</span>
+              </p>
+              <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                <span>Suspended Users</span>
+                <span className="font-semibold">{suspendedUsers}</span>
+              </p>
+            </div>
           </div>
         </div>
 

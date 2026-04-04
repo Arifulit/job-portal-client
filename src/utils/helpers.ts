@@ -64,12 +64,12 @@ export const generateSlug = (text: string): string => {
     .trim();
 };
 
-export const debounce = <T extends (...args: unknown[]) => void>(
-  func: T,
+export const debounce = <TArgs extends unknown[]>(
+  func: (...args: TArgs) => void,
   wait: number
-): ((...args: Parameters<T>) => void) => {
+): ((...args: TArgs) => void) => {
   let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
+  return (...args: TArgs) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
   };

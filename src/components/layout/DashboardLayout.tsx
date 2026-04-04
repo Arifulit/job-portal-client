@@ -6,10 +6,8 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import { Menu, Search, Bell, User, Settings, LogOut, Home } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { api } from '../../utils/api';
 import {
   Avatar,
   AvatarFallback,
@@ -37,7 +35,6 @@ interface ISidebarItem {
 const DashboardLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -76,6 +73,15 @@ const DashboardLayout: React.FC = () => {
     return location.pathname === url || location.pathname.startsWith(`${url}/`);
   };
 
+  const getBestActiveUrl = (items: ISidebarItem['items']) => {
+    const matches = items
+      .map((item) => item.url)
+      .filter((url) => isActiveRoute(url))
+      .sort((a, b) => b.length - a.length);
+
+    return matches[0] || '';
+  };
+
   const getUserInitials = () => {
     if (!user) return 'U';
     if (user.name) {
@@ -105,33 +111,17 @@ const DashboardLayout: React.FC = () => {
     (user as { profileImage?: string; avatar?: string } | null)?.avatar ||
     '';
 
-  const prefetchProfileData = async () => {
-    if (normalizedRole === 'candidate' || normalizedRole === 'job_seeker' || normalizedRole === 'seeker') {
-      await queryClient.prefetchQuery({
-        queryKey: ['candidate-profile'],
-        queryFn: async () => {
-          const response = await api.get('/candidate/profile');
-          return response.data;
-        },
-      });
-      return;
-    }
-
-    if (normalizedRole === 'admin' || normalizedRole === 'recruiter') {
-      await queryClient.prefetchQuery({
-        queryKey: ['profile'],
-        queryFn: async () => {
-          const response = await api.get('/users/profile');
-          return response.data?.data;
-        },
-      });
-    }
-  };
-
   const handleProfileNavigate = () => {
     setDropdownOpen(false);
     setSidebarOpen(false);
     navigate(profileLink);
+  };
+
+  const handleSidebarNavigate = (url: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    setDropdownOpen(false);
+    setSidebarOpen(false);
+    navigate(url);
   };
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
@@ -186,22 +176,27 @@ const DashboardLayout: React.FC = () => {
       <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
         {sidebarItems.map((section, i) => (
           <div key={i} className="space-y-2">
+            {(() => {
+              const bestActiveUrl = getBestActiveUrl(section.items);
+
+              return (
+                <>
             <h3 className="px-3 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
               {section.title}
             </h3>
             <div className="space-y-1">
               {section.items.map((item, j) => {
                 const Icon = item.icon;
-                const active = isActiveRoute(item.url);
+                const active = bestActiveUrl ? bestActiveUrl === item.url : isActiveRoute(item.url);
                 return (
                   <Link
                     key={j}
                     to={item.url}
-                    onClick={() => setSidebarOpen(false)}
-                    className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    onClick={handleSidebarNavigate(item.url)}
+                    className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium ${
                       active
                         ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm'
-                        : 'text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800'
+                        : 'text-gray-700 dark:text-slate-300'
                     }`}
                   >
                     {Icon && <Icon className={`w-5 h-5 ${active ? 'text-blue-600 dark:text-blue-300' : 'text-gray-500 dark:text-slate-400'}`} />}
@@ -212,6 +207,9 @@ const DashboardLayout: React.FC = () => {
                 );
               })}
             </div>
+                </>
+              );
+            })()}
           </div>
         ))}
       </nav>
@@ -220,14 +218,8 @@ const DashboardLayout: React.FC = () => {
       <div className="p-4 border-t border-gray-200 dark:border-slate-800">
         <button
           type="button"
-          onMouseEnter={() => {
-            void prefetchProfileData();
-          }}
-          onFocus={() => {
-            void prefetchProfileData();
-          }}
           onClick={handleProfileNavigate}
-          className="flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-slate-800"
+          className="flex w-full items-center gap-3 rounded-lg p-3 text-left"
         >
           <Avatar className="h-10 w-10 ring-2 ring-blue-100">
             <ControlledAvatarImage src={avatarSource} alt={getUserFullName()} />
@@ -324,21 +316,15 @@ const DashboardLayout: React.FC = () => {
                     <div className="py-2">
                       <button
                         type="button"
-                        onMouseEnter={() => {
-                          void prefetchProfileData();
-                        }}
-                        onFocus={() => {
-                          void prefetchProfileData();
-                        }}
                         onClick={handleProfileNavigate}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800"
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-slate-200"
                       >
                         <User className="w-4 h-4" /> Profile
                       </button>
                       <Link
                         to="/settings"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800"
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-slate-200"
                       >
                         <Settings className="w-4 h-4" /> Settings
                       </Link>
@@ -346,7 +332,7 @@ const DashboardLayout: React.FC = () => {
                     <div className="border-t border-gray-200 dark:border-slate-700 pt-2">
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600"
                       >
                         <LogOut className="w-4 h-4" /> Log out
                       </button>

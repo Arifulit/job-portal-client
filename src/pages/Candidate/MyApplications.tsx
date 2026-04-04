@@ -2,7 +2,7 @@ import React from 'react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { Loader2, ExternalLink } from 'lucide-react';
-import { useMyApplications } from '../../services/applicationService';
+import { useDeleteApplication, useMyApplications } from '../../services/applicationService';
 import { ApplicationStatus } from '../../types';
 
 const statusBadgeClassMap: Record<ApplicationStatus, string> = {
@@ -12,13 +12,21 @@ const statusBadgeClassMap: Record<ApplicationStatus, string> = {
   offered: 'bg-indigo-100 text-indigo-700 border border-indigo-200',
   hired: 'bg-green-100 text-green-700 border border-green-200',
   rejected: 'bg-rose-100 text-rose-700 border border-rose-200',
+  withdrawn: 'bg-slate-100 text-slate-700 border border-slate-200',
 };
 
 const toTitleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
 const MyApplications: React.FC = () => {
   const { data, isLoading, isError, refetch } = useMyApplications();
+  const { mutate: withdrawApplication, isPending: isWithdrawing } = useDeleteApplication();
   const applications = data?.data || [];
+
+  const handleWithdraw = (applicationId: string) => {
+    const confirmed = window.confirm('Are you sure you want to withdraw this application?');
+    if (!confirmed) return;
+    withdrawApplication(applicationId);
+  };
 
   if (isLoading) {
     return (
@@ -89,6 +97,7 @@ const MyApplications: React.FC = () => {
                       application.appliedAt ||
                       application.updatedAt;
                     const jobId = application.jobId || jobData?._id;
+                    const canWithdraw = application.status !== 'withdrawn';
 
                     return (
                       <tr key={application._id} className="hover:bg-gray-50 transition-colors">
@@ -121,11 +130,23 @@ const MyApplications: React.FC = () => {
                           {appliedDate ? format(new Date(appliedDate), 'MMM d, yyyy h:mm a') : 'N/A'}
                         </td>
                         <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusBadgeClassMap[application.status] || statusBadgeClassMap.applied}`}
-                          >
-                            {toTitleCase(application.status)}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusBadgeClassMap[application.status] || statusBadgeClassMap.applied}`}
+                            >
+                              {toTitleCase(application.status)}
+                            </span>
+                            {canWithdraw ? (
+                              <button
+                                type="button"
+                                onClick={() => handleWithdraw(application._id)}
+                                disabled={isWithdrawing}
+                                className="inline-flex items-center rounded-md border border-red-300 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+                              >
+                                Withdraw
+                              </button>
+                            ) : null}
+                          </div>
                         </td>
                       </tr>
                     );

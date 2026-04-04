@@ -1,14 +1,41 @@
 
 import React from 'react';
-import { useAllJobs } from '../../services/jobService';
+import { useRecruiterJobs, useDeleteJob } from '../../services/jobService';
 import { format } from 'date-fns';
 import { Button } from '../../components/ui/button';
 import Badge from '../../components/ui/badge';
-import { Loader2, Plus, Eye, Edit2, Users, Calendar, Briefcase } from 'lucide-react';
+import { Loader2, Plus, Eye, Edit2, Users, Calendar, Briefcase, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const MyJob: React.FC = () => {
-  const { data: jobs, isLoading, error, refetch } = useAllJobs();
+  const { data: jobsResponse, isLoading, error, refetch } = useRecruiterJobs();
+  const { mutate: deleteJob, isPending: isDeleting } = useDeleteJob();
+  const jobs = jobsResponse?.data ?? [];
+
+  const getStatusLabel = (status?: string) =>
+    status ? `${status.charAt(0).toUpperCase()}${status.slice(1)}` : 'Pending';
+
+  const getApplicationCount = (job: unknown) => {
+    const safeJob = job as { applicantsCount?: unknown; applications?: unknown };
+
+    if (typeof safeJob.applicantsCount === 'number') {
+      return safeJob.applicantsCount;
+    }
+
+    const rawApplications = safeJob.applications;
+    if (Array.isArray(rawApplications)) {
+      return rawApplications.length;
+    }
+
+    return 0;
+  };
+
+  const handleDelete = (jobId: string, title: string) => {
+    const confirmed = window.confirm(`Are you sure you want to delete "${title}"?`);
+    if (!confirmed) return;
+
+    deleteJob(jobId);
+  };
 
   if (isLoading) {
     return (
@@ -44,10 +71,10 @@ const MyJob: React.FC = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">My Posted Jobs</h1>
               <p className="text-gray-600 mt-1">
-                You have posted <span className="font-bold text-blue-600">{jobs?.length || 0}</span> job(s)
+                You have posted <span className="font-bold text-blue-600">{jobs.length}</span> job(s)
               </p>
             </div>
-            <Link to="/recruiter/job-post">
+            <Link to="/recruiter/jobs/create">
               <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-xl shadow-lg flex items-center gap-2">
                 <Plus className="w-5 h-5" />
                 Post New Job
@@ -69,7 +96,7 @@ const MyJob: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {jobs?.map((job) => (
+              {jobs.map((job) => (
                 <tr key={job._id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-8 py-6">
                     <div className="text-lg font-semibold text-gray-900">{job.title}</div>
@@ -85,13 +112,13 @@ const MyJob: React.FC = () => {
                         'bg-gray-100 text-gray-700 border border-gray-300'
                       }
                     >
-                      {job.status?.charAt(0).toUpperCase() + job.status?.slice(1) || 'Pending'}
+                      {getStatusLabel(job.status)}
                     </Badge>
                   </td>
                   <td className="px-8 py-6 text-gray-700">
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-gray-500" />
-                      <span className="font-medium">{job.applications?.length || 0}</span>
+                      <span className="font-medium">{getApplicationCount(job)}</span>
                     </div>
                   </td>
                   <td className="px-8 py-6 text-gray-600">
@@ -102,11 +129,24 @@ const MyJob: React.FC = () => {
                   </td>
                   <td className="px-8 py-6">
                     <div className="flex gap-3">
-                      <Button variant="outline" size="sm" className="border-gray-300 hover:border-blue-500 hover:text-blue-600">
-                        <Eye className="w-4 h-4 mr-1" /> View
+                      <Button asChild variant="outline" size="sm" className="border-gray-300 hover:border-blue-500 hover:text-blue-600">
+                        <Link to={`/jobs/${job._id}`}>
+                          <Eye className="w-4 h-4 mr-1" /> View
+                        </Link>
                       </Button>
-                      <Button variant="outline" size="sm" className="border-gray-300 hover:border-blue-500 hover:text-blue-600">
-                        <Edit2 className="w-4 h-4 mr-1" /> Edit
+                      <Button asChild variant="outline" size="sm" className="border-gray-300 hover:border-blue-500 hover:text-blue-600">
+                        <Link to={`/recruiter/jobs/edit/${job._id}`}>
+                          <Edit2 className="w-4 h-4 mr-1" /> Edit
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={isDeleting}
+                        onClick={() => handleDelete(job._id, job.title)}
+                        className="border-red-300 text-red-600 hover:border-red-500 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" /> Delete
                       </Button>
                     </div>
                   </td>
@@ -118,7 +158,7 @@ const MyJob: React.FC = () => {
 
         {/* Mobile Card View */}
         <div className="lg:hidden grid gap-5">
-          {jobs?.map((job) => (
+          {jobs.map((job) => (
             <div key={job._id} className="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
               <div className="flex justify-between items-start mb-3">
                 <div>
@@ -132,14 +172,14 @@ const MyJob: React.FC = () => {
                     'bg-gray-100 text-gray-700'
                   }
                 >
-                  {job.status?.charAt(0).toUpperCase() + job.status?.slice(1)}
+                  {getStatusLabel(job.status)}
                 </Badge>
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-5">
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  {job.applications?.length || 0} applications
+                  {getApplicationCount(job)} applications
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
@@ -148,15 +188,28 @@ const MyJob: React.FC = () => {
               </div>
 
               <div className="flex gap-3">
-                <Button variant="outline" size="sm" className="flex-1">View</Button>
-                <Button variant="outline" size="sm" className="flex-1">Edit</Button>
+                <Button asChild variant="outline" size="sm" className="flex-1">
+                  <Link to={`/jobs/${job._id}`}>View</Link>
+                </Button>
+                <Button asChild variant="outline" size="sm" className="flex-1">
+                  <Link to={`/recruiter/jobs/edit/${job._id}`}>Edit</Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isDeleting}
+                  onClick={() => handleDelete(job._id, job.title)}
+                  className="flex-1 border-red-300 text-red-600 hover:border-red-500 hover:text-red-700"
+                >
+                  Delete
+                </Button>
               </div>
             </div>
           ))}
         </div>
 
         {/* Empty State */}
-        {jobs?.length === 0 && (
+        {jobs.length === 0 && (
           <div className="text-center py-20 bg-white rounded-2xl shadow-lg border border-gray-200">
             <div className="bg-gray-100 w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center">
               <Briefcase className="w-12 h-12 text-gray-400" />
@@ -165,7 +218,7 @@ const MyJob: React.FC = () => {
             <p className="text-gray-600 max-w-md mx-auto mb-8">
               Start building your team by posting your first job opening today!
             </p>
-            <Link to="/recruiter/job-post">
+            <Link to="/recruiter/jobs/create">
               <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-6 rounded-xl">
                 <Plus className="w-5 h-5 mr-2" />
                 Post Your First Job

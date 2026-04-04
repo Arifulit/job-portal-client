@@ -11,6 +11,7 @@ const statusOptions: ApplicationStatus[] = [
   'offered',
   'hired',
   'rejected',
+  'withdrawn',
 ];
 
 const statusBadgeClassMap: Record<ApplicationStatus, string> = {
@@ -20,6 +21,7 @@ const statusBadgeClassMap: Record<ApplicationStatus, string> = {
   offered: 'bg-indigo-100 text-indigo-700 border border-indigo-200',
   hired: 'bg-green-100 text-green-700 border border-green-200',
   rejected: 'bg-rose-100 text-rose-700 border border-rose-200',
+  withdrawn: 'bg-slate-100 text-slate-700 border border-slate-200',
 };
 
 const toTitleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
@@ -54,7 +56,7 @@ const RecruiterApplications: React.FC = () => {
     const query = searchTerm.trim().toLowerCase();
 
     return applications.filter((application) => {
-      const candidateData = application.candidate || application.seeker;
+      const candidateData = application.candidate;
       const candidateName = String(candidateData?.name || '').toLowerCase();
       const candidateEmail = String(candidateData?.email || '').toLowerCase();
       const jobTitle = String(application.job?.title || '').toLowerCase();
@@ -171,7 +173,7 @@ const RecruiterApplications: React.FC = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredApplications.map((application) => {
-                    const candidateData = application.candidate || application.seeker;
+                    const candidateData = application.candidate;
                     const candidateName = candidateData?.name || 'Candidate';
                     const candidateEmail = candidateData?.email || 'N/A';
                     const jobData = application.job;

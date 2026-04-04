@@ -1,10 +1,11 @@
 
 // ========== adminSidebarItems.tsx ==========
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { LayoutDashboard, Users, Briefcase, User } from "lucide-react";
 import { AdminDashboard } from "../pages/admin/AdminDashboard";
 import AdminProfile from "../pages/admin/AdminProfile";
+import UserManagement from "../pages/admin/UserManagement";
+import Analytics from "../pages/admin/Analytics";
 
 interface ISidebarSubItem {
   title: string;
@@ -32,13 +33,13 @@ export const adminSidebarItems: ISidebarItem[] = [
         title: "Manage Users",
         url: "/admin/users",
         icon: Users,
-        component: AdminDashboard, // Replace with actual component
+        component: UserManagement,
       },
       {
         title: "Moderate Jobs",
         url: "/admin/jobs",
         icon: Briefcase,
-        component: AdminDashboard, // Replace with actual component
+        component: Analytics,
       },
     ],
   },

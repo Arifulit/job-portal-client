@@ -7,11 +7,13 @@ import ContactPage from "../public/Contact";
 import FAQ from "../public/FAQ";
 import Jobs from "../pages/Job/Jobs";
 import JobDetails from "../pages/Job/JobDetails";
+import ApplyPage from "../pages/Application/ApplyPage";
 import { Login, Register, RecruiterRegister } from "../components/auth";
 import Unauthorized from "../pages/status/Unauthorized";
 import NotFound from "../pages/status/NotFound";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import MainLayout from "../components/layout/MainLayout";
+import JobPost from "../pages/Recruiter/JobPost";
 import { withAuth } from "../utils/withAuth";
 import { generateRoutes } from "../utils/generateRoutes";
 import { adminSidebarItems } from "./adminSidebarItems";
@@ -89,6 +91,10 @@ export const router = createBrowserRouter([
         element: <JobDetails />,
       },
       {
+        path: "jobs/:jobId/apply",
+        element: <ApplyPage />,
+      },
+      {
         path: "unauthorized",
         element: <Unauthorized />,
       },
@@ -117,6 +123,7 @@ export const router = createBrowserRouter([
     errorElement: <RouteError />,
     children: [
       { index: true, element: <Navigate to="/recruiter/dashboard" replace /> },
+      { path: "jobs/edit/:jobId", element: <JobPost /> },
       ...generateRoutes(recruiterSidebarItems),
     ],
   },

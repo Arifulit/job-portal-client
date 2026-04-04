@@ -41,14 +41,14 @@
 //   return routes;
 // }
 
-import * as React from "react";
-import { RouteObject } from "react-router-dom";
+import * as React from 'react';
+import { RouteObject } from 'react-router-dom';
 
 interface SidebarItem {
   title: string;
   items: {
     title: string;
-    url: string; // example: "/jobs/create"
+    url: string;
     component?: React.ComponentType<any>;
   }[];
 }
@@ -61,20 +61,24 @@ export function generateRoutes(sidebarItems: SidebarItem[]): RouteObject[] {
       if (item.component && item.url) {
         const Component = item.component;
 
-        // full absolute path
-        const fullPath = item.url.startsWith("/") ? item.url : `/${item.url}`;
+        const normalized = item.url.startsWith('/') ? item.url : `/${item.url}`;
+        const segments = normalized.split('/').filter(Boolean);
+        const relativePath = segments.slice(1).join('/');
+
+        if (!relativePath) {
+          return;
+        }
 
         const fallback = React.createElement(
-          "div",
+          'div',
           { className: "flex items-center justify-center min-h-screen" },
-          React.createElement("div", {
-            className:
-              "animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900",
+          React.createElement('div', {
+            className: 'animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900',
           })
         );
 
         routes.push({
-          path: fullPath,
+          path: relativePath,
           element: React.createElement(
             React.Suspense,
             { fallback },

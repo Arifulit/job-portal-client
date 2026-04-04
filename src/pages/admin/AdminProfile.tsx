@@ -1,359 +1,244 @@
-// import React from "react";
-// import { Link, useNavigate } from "react-router-dom";
-// import { useQuery } from "@tanstack/react-query";
-// import axios from "axios";
-// import { useAuth } from "../../context/AuthContext";
-// import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-// import { Button } from "../../components/ui/button";
-// import { format } from "date-fns";
 
-// const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000/api/v1";
+import { useEffect, useMemo, useState } from 'react';
+import { format } from 'date-fns';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { Loader } from '../../components/Loader';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { useProfile, useUpdateProfile } from '../../services/userService';
+import { CalendarDays, MapPin, Phone, ShieldCheck, UserCircle2 } from 'lucide-react';
 
-// interface AdminProfileData {
-//   _id: string;
-//   name: string;
-//   email: string;
-//   role: string;
-//   createdAt: string;
-//   updatedAt: string;
-//   __v: number;
-// }
-
-// export default function AdminProfile(): JSX.Element {
-//   const navigate = useNavigate();
-//   const { user: ctxUser, logout } = useAuth();
-
-//   const tokenPresent = !!ctxUser || !!localStorage.getItem("token");
-
-//   const { data, isLoading, isError } = useQuery<{ success: boolean; data: AdminProfileData }>({
-//     queryKey: ["adminProfile"],
-//     queryFn: async () => {
-//       const res = await axios.get(`${API_BASE}/admin/profile`, {
-//         headers: {
-//           'Authorization': `Bearer ${localStorage.getItem('token')}`
-//         }
-//       });
-//       return res.data;
-//     },
-//     enabled: tokenPresent,
-//     staleTime: 5 * 60 * 1000,
-//   });
-
-//   const admin = data?.data;
-
-//   if (isLoading) {
-//     return (
-//       <div className="flex items-center justify-center min-h-screen">
-//         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-//       </div>
-//     );
-//   }
-
-//   if (isError || !admin) {
-//     return (
-//       <div className="p-6 max-w-5xl mx-auto">
-//         <div className="bg-red-50 p-4 rounded-md">
-//           <h3 className="text-red-800 font-medium">Error loading profile</h3>
-//           <p className="text-red-700 text-sm mt-1">Failed to load admin profile. Please try again later.</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="p-6 max-w-4xl mx-auto">
-//       <header className="flex items-center justify-between mb-8">
-//         <div>
-//           <h1 className="text-3xl font-bold text-gray-900">Admin Profile</h1>
-//           <p className="text-gray-600 mt-1">Manage your account and admin settings</p>
-//         </div>
-//         <div className="flex items-center gap-3">
-//           <Button
-//             variant="outline"
-//             onClick={() => {
-//               logout();
-//               navigate("/login");
-//             }}
-//             className="text-red-600 border-red-200 hover:bg-red-50"
-//           >
-//             Logout
-//           </Button>
-//           <Link to="/admin/dashboard">
-//             <Button>
-//               Back to Dashboard
-//             </Button>
-//           </Link>
-//         </div>
-//       </header>
-
-//       <Card className="overflow-hidden">
-//         <CardHeader className="bg-gradient-to-r from-indigo-600 to-indigo-800 text-white">
-//           <div className="flex items-center space-x-4">
-//             <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold">
-//               {admin.name?.charAt(0).toUpperCase()}
-//             </div>
-//             <div>
-//               <CardTitle className="text-2xl">{admin.name}</CardTitle>
-//               <p className="text-indigo-100">{admin.email}</p>
-//             </div>
-//           </div>
-//         </CardHeader>
-        
-//         <CardContent className="p-6">
-//           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-//             <div className="space-y-1">
-//               <h3 className="text-sm font-medium text-gray-500">Admin ID</h3>
-//               <p className="text-gray-900">{admin._id}</p>
-//             </div>
-            
-//             <div className="space-y-1">
-//               <h3 className="text-sm font-medium text-gray-500">Role</h3>
-//               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-//                 {admin.role}
-//               </span>
-//             </div>
-            
-//             <div className="space-y-1">
-//               <h3 className="text-sm font-medium text-gray-500">Account Created</h3>
-//               <p className="text-gray-900">
-//                 {format(new Date(admin.createdAt), 'MMMM d, yyyy')}
-//               </p>
-//             </div>
-            
-//             <div className="space-y-1">
-//               <h3 className="text-sm font-medium text-gray-500">Last Updated</h3>
-//               <p className="text-gray-900">
-//                 {format(new Date(admin.updatedAt), 'MMMM d, yyyy')}
-//               </p>
-//             </div>
-//           </div>
-          
-//           <div className="mt-8 pt-6 border-t border-gray-200">
-//             <h3 className="text-lg font-medium text-gray-900 mb-4">Account Actions</h3>
-//             <div className="flex flex-wrap gap-3">
-//               <Button variant="outline">
-//                 Edit Profile
-//               </Button>
-//               <Button variant="outline">
-//                 Change Password
-//               </Button>
-//             </div>
-//           </div>
-//         </CardContent>
-//       </Card>
-
-//       <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-//         <Link to="/admin/users" className="block bg-white hover:shadow-lg transition-shadow rounded-lg p-6 border">
-//           <h4 className="text-sm text-gray-500">Users</h4>
-//           <p className="mt-2 text-xl font-semibold text-gray-800">Manage users</p>
-//         </Link>
-
-//         <Link to="/admin/jobs" className="block bg-white hover:shadow-lg transition-shadow rounded-lg p-6 border">
-//           <h4 className="text-sm text-gray-500">Jobs</h4>
-//           <p className="mt-2 text-xl font-semibold text-gray-800">Moderate job posts</p>
-//         </Link>
-
-//         <Link to="/admin/settings" className="block bg-white hover:shadow-lg transition-shadow rounded-lg p-6 border">
-//           <h4 className="text-sm text-gray-500">Settings</h4>
-//           <p className="mt-2 text-xl font-semibold text-gray-800">Account & platform settings</p>
-//         </Link>
-//       </section>
-
-//       <section className="bg-white shadow rounded-lg p-6 mt-6">
-//         <h3 className="text-lg font-medium text-gray-900 mb-4">About</h3>
-//         <p className="text-gray-700">
-//           You are logged in as <span className="font-medium text-indigo-600">{admin.role}</span>. 
-//           Use the links above to manage users, review jobs and configure platform settings.
-//         </p>
-//       </section>
-//     </div>
-//   );
-// }
-
-
-import React from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-import { useAuth } from "../../context/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { format } from "date-fns";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000/api/v1";
-
-interface AdminProfileData {
-  _id: string;
-  name: string;
-  email: string;
-  role: string;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-}
-
-export default function AdminProfile(): JSX.Element {
+const AdminProfile = (): JSX.Element => {
   const navigate = useNavigate();
-  const { user: ctxUser, logout } = useAuth();
+  const { logout } = useAuth();
+  const { data: profile, isLoading, isError, refetch } = useProfile();
+  const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
 
-  const tokenPresent = !!ctxUser || !!localStorage.getItem("token");
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [location, setLocation] = useState('');
+  const [bio, setBio] = useState('');
 
-  const { data, isLoading, isError } = useQuery<{
-    success: boolean;
-    data: AdminProfileData;
-  }>({
-    queryKey: ["adminProfile"],
-    queryFn: async () => {
-      const res = await axios.get(`${API_BASE}/admin/profile`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+  useEffect(() => {
+    if (!profile) return;
+    setName(profile.name || '');
+    setPhone(profile.phone || '');
+    setLocation(profile.location || '');
+    setBio(profile.bio || '');
+  }, [profile]);
+
+  const initials = useMemo(() => {
+    const base = String(profile?.name || 'A').trim();
+    return base.charAt(0).toUpperCase();
+  }, [profile?.name]);
+
+  const handleSave = () => {
+    if (!profile) return;
+
+    updateProfile(
+      {
+        name: name.trim(),
+        phone: phone.trim() || undefined,
+        location: location.trim() || undefined,
+        bio: bio.trim() || undefined,
+      },
+      {
+        onSuccess: () => {
+          setIsEditing(false);
         },
-      });
-      return res.data;
-    },
-    enabled: tokenPresent,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const admin = data?.data;
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-blue-600"></div>
-      </div>
+      }
     );
-  }
+  };
 
-  if (isError || !admin) {
+  const handleCancel = () => {
+    if (!profile) return;
+    setName(profile.name || '');
+    setPhone(profile.phone || '');
+    setLocation(profile.location || '');
+    setBio(profile.bio || '');
+    setIsEditing(false);
+  };
+
+  if (isLoading) return <Loader />;
+
+  if (isError || !profile) {
     return (
-      <div className="p-6 max-w-5xl mx-auto">
-        <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-lg">
-          <h3 className="font-semibold">Error loading profile</h3>
-          <p className="text-sm mt-1">Failed to load admin profile. Please try again later.</p>
-        </div>
+      <div className="rounded-xl border border-red-200 bg-red-50 p-6">
+        <p className="font-semibold text-red-700">Failed to load admin profile.</p>
+        <Button onClick={() => refetch()} className="mt-3 bg-red-600 text-white hover:bg-red-700">
+          Retry
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-gray-50 min-h-screen">
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Profile</h1>
-          <p className="text-gray-600 mt-1">Manage your account and admin settings</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            onClick={() => {
-              logout();
-              navigate("/");
-            }}
-            className="text-red-600 border-red-300 hover:bg-red-50"
-          >
-            Logout
-          </Button>
-          <Link to="/admin/dashboard">
-            <Button className="border-blue-300 text-blue-700 hover:bg-blue-50">Back to Dashboard</Button>
-          </Link>
+    <div className="space-y-6">
+      <header className="rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 px-6 py-6 text-white shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">Administration</p>
+            <h1 className="mt-2 text-3xl font-black leading-tight">Admin Profile</h1>
+            <p className="mt-2 text-sm text-slate-200">Update your account identity and keep admin contact details current.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              className="border-white/40 bg-transparent text-white hover:bg-white/10"
+              onClick={() => {
+                logout();
+                navigate('/login');
+              }}
+            >
+              Logout
+            </Button>
+            <Button variant="outline" className="border-white/40 bg-transparent text-white hover:bg-white/10" asChild>
+              <Link to="/admin/dashboard">Back to Dashboard</Link>
+            </Button>
+          </div>
         </div>
       </header>
 
-      <Card className="shadow-lg border-0 overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center text-3xl font-bold shadow-lg">
-              {admin.name?.charAt(0).toUpperCase()}
+      <Card className="overflow-hidden border-slate-200 shadow-sm">
+        <CardHeader className="border-b border-slate-200 bg-slate-50">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-2xl font-black text-white shadow-sm">
+                {initials}
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-black text-slate-900">{profile.name || 'Admin'}</CardTitle>
+                <p className="text-sm text-slate-600">{profile.email}</p>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-2xl">{admin.name}</CardTitle>
-              <p className="text-blue-100 text-lg">{admin.email}</p>
-            </div>
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              {String(profile.role || 'admin').toUpperCase()}
+            </span>
           </div>
         </CardHeader>
 
-        <CardContent className="p-6 bg-white">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Admin ID</h3>
-              <p className="text-gray-900 font-mono text-sm mt-1">{admin._id}</p>
+        <CardContent className="space-y-6 p-6">
+          <div className="grid gap-3 lg:grid-cols-3">
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Account ID</p>
+              <p className="mt-2 break-all text-sm font-medium text-slate-800">{profile._id}</p>
             </div>
-
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Role</h3>
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 mt-1">
-                {admin.role.toUpperCase()}
-              </span>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Account Created</h3>
-              <p className="text-gray-900 mt-1">
-                {format(new Date(admin.createdAt), "MMMM d, yyyy 'at' h:mm a")}
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <CalendarDays className="h-3.5 w-3.5" /> Created
+              </p>
+              <p className="mt-2 text-sm text-slate-800">
+                {profile.createdAt ? format(new Date(profile.createdAt), "MMMM d, yyyy 'at' h:mm a") : 'N/A'}
               </p>
             </div>
-
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Last Updated</h3>
-              <p className="text-gray-900 mt-1">
-                {format(new Date(admin.updatedAt), "MMMM d, yyyy 'at' h:mm a")}
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <CalendarDays className="h-3.5 w-3.5" /> Last Updated
+              </p>
+              <p className="mt-2 text-sm text-slate-800">
+                {profile.updatedAt ? format(new Date(profile.updatedAt), "MMMM d, yyyy 'at' h:mm a") : 'N/A'}
               </p>
             </div>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Actions</h3>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
-                Edit Profile
-              </Button>
-              <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
-                Change Password
-              </Button>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+            <h2 className="text-sm font-black uppercase tracking-wide text-slate-700">Profile Details</h2>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <UserCircle2 className="h-4 w-4" /> Full Name
+                </label>
+                <input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  disabled={!isEditing || isUpdating}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-offset-2 transition focus:border-slate-500 focus:ring-2 focus:ring-slate-300 disabled:bg-slate-100"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <Phone className="h-4 w-4" /> Phone
+                </label>
+                <input
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  disabled={!isEditing || isUpdating}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-offset-2 transition focus:border-slate-500 focus:ring-2 focus:ring-slate-300 disabled:bg-slate-100"
+                  placeholder="Add phone number"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <MapPin className="h-4 w-4" /> Location
+                </label>
+                <input
+                  value={location}
+                  onChange={(event) => setLocation(event.target.value)}
+                  disabled={!isEditing || isUpdating}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-offset-2 transition focus:border-slate-500 focus:ring-2 focus:ring-slate-300 disabled:bg-slate-100"
+                  placeholder="Add location"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Bio</label>
+                <textarea
+                  value={bio}
+                  onChange={(event) => setBio(event.target.value)}
+                  disabled={!isEditing || isUpdating}
+                  className="min-h-[108px] w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-offset-2 transition focus:border-slate-500 focus:ring-2 focus:ring-slate-300 disabled:bg-slate-100"
+                  placeholder="Add a short admin bio"
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-200 pt-4">
+              {!isEditing ? (
+                <Button onClick={() => setIsEditing(true)} className="bg-slate-900 text-white hover:bg-slate-800">
+                  Edit Profile
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    onClick={handleSave}
+                    disabled={isUpdating || !name.trim()}
+                    className="bg-emerald-600 text-white hover:bg-emerald-700"
+                  >
+                    {isUpdating ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                  <Button variant="outline" onClick={handleCancel} disabled={isUpdating} className="border-slate-300">
+                    Cancel
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
-        <Link
-          to="/admin/users"
-          className="block bg-white border border-gray-200 rounded-lg p-6 hover:shadow-xl transition-all hover:-translate-y-1"
-        >
-          <h4 className="text-sm font-medium text-gray-500">Users</h4>
-          <p className="mt-2 text-2xl font-bold text-gray-800">Manage Users</p>
-          <p className="text-sm text-gray-600 mt-1">View, edit, or remove user accounts</p>
+      <section className="grid gap-4 md:grid-cols-3">
+        <Link to="/admin/users" className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Users</p>
+          <p className="mt-2 text-lg font-black text-slate-900">Manage Users</p>
+          <p className="mt-1 text-sm text-slate-600">Handle roles, suspension, approvals, and removals.</p>
         </Link>
 
-        <Link
-          to="/admin/jobs"
-          className="block bg-white border border-gray-200 rounded-lg p-6 hover:shadow-xl transition-all hover:-translate-y-1"
-        >
-          <h4 className="text-sm font-medium text-gray-500">Jobs</h4>
-          <p className="mt-2 text-2xl font-bold text-gray-800">Moderate Jobs</p>
-          <p className="text-sm text-gray-600 mt-1">Review and approve job postings</p>
+        <Link to="/admin/jobs" className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Moderation</p>
+          <p className="mt-2 text-lg font-black text-slate-900">Moderate Jobs</p>
+          <p className="mt-1 text-sm text-slate-600">Review platform activity and job-related actions.</p>
         </Link>
 
-        <Link
-          to="/admin/settings"
-          className="block bg-white border border-gray-200 rounded-lg p-6 hover:shadow-xl transition-all hover:-translate-y-1"
-        >
-          <h4 className="text-sm font-medium text-gray-500">Settings</h4>
-          <p className="mt-2 text-2xl font-bold text-gray-800">Platform Settings</p>
-          <p className="text-sm text-gray-600 mt-1">Configure site-wide options</p>
+        <Link to="/admin/dashboard" className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Overview</p>
+          <p className="mt-2 text-lg font-black text-slate-900">Dashboard</p>
+          <p className="mt-1 text-sm text-slate-600">Go back to high-level metrics and quick admin actions.</p>
         </Link>
-      </section>
-
-      {/* About Section */}
-      <section className="bg-white border border-gray-200 shadow rounded-lg p-6 mt-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">About Your Role</h3>
-        <p className="text-gray-700 leading-relaxed">
-          You are logged in as an <span className="font-bold text-blue-700">Administrator</span>. 
-          You have full access to manage users, moderate job listings, and configure platform settings.
-        </p>
       </section>
     </div>
   );
-}
+};
+
+export default AdminProfile;

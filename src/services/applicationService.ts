@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, handleApiError } from '../utils/api';
+import { api, handleApiError, uploadToCloudinary } from '../utils/api';
 import { Application, ApplicationStatus, ApiResponse, PaginatedResponse } from '../types';
 import { toast } from 'sonner';
 
@@ -10,6 +10,7 @@ const allowedStatuses: ApplicationStatus[] = [
   'offered',
   'hired',
   'rejected',
+  'withdrawn',
 ];
 
 const normalizeApplicationStatus = (status: unknown): ApplicationStatus => {
@@ -18,12 +19,22 @@ const normalizeApplicationStatus = (status: unknown): ApplicationStatus => {
 };
 
 const normalizeApplication = (application: Partial<Application> & Record<string, any>): Application => {
+  const normalizedJobId =
+    application.jobId ||
+    (typeof application.job === 'string' ? application.job : application.job?._id) ||
+    '';
+
+  const normalizedRecruiterId =
+    application.recruiterId ||
+    (typeof application.job === 'object' ? application.job?.createdBy?._id || application.job?.createdBy : '') ||
+    '';
+
   return {
     ...application,
     status: normalizeApplicationStatus(application.status),
-    jobId: application.jobId || application.job?._id || '',
-    seekerId: application.seekerId || application.candidate?._id || application.candidate || '',
-    recruiterId: application.recruiterId || application.job?.createdBy || '',
+    jobId: normalizedJobId,
+    candidateId: application.candidateId || application.candidate?._id || application.candidate || '',
+    recruiterId: normalizedRecruiterId,
     resume: application.resume || '',
     appliedAt:
       application.appliedAt ||
@@ -49,9 +60,51 @@ export const useJobApplications = (jobId: string | undefined) => {
     queryFn: async () => {
       if (!jobId) throw new Error('Job ID is required');
       const response = await api.get<ApiResponse<Application[]>>(
-        `/applications/job/${jobId}`
+        `/applications/recruiter/jobs/${jobId}/applications`
       );
       return (response.data.data || []).map(normalizeApplication);
+    },
+    enabled: !!jobId,
+  });
+};
+
+export const useAdminJobApplications = (jobId: string | undefined) => {
+  return useQuery({
+    queryKey: ['admin-job-applications', jobId],
+    queryFn: async () => {
+      if (!jobId) throw new Error('Job ID is required');
+
+      const response = await api.get<
+        ApiResponse<Application[]> |
+        { success?: boolean; data?: { applications?: Application[]; allApplications?: Application[] } }
+      >(`/jobs/${jobId}/applications`);
+
+      const payload = response.data;
+
+      if (payload && typeof payload === 'object') {
+        if ('success' in payload && payload.success === false) {
+          throw new Error((payload as ApiResponse<Application[]>).message || 'Failed to fetch job applications');
+        }
+
+        if ('data' in payload) {
+          if (Array.isArray(payload.data)) {
+            return payload.data.map(normalizeApplication);
+          }
+
+          if (payload.data && typeof payload.data === 'object') {
+            const nested = payload.data as { applications?: Application[]; allApplications?: Application[] };
+            if (Array.isArray(nested.applications)) {
+              return nested.applications.map(normalizeApplication);
+            }
+
+            if (Array.isArray(nested.allApplications)) {
+              return nested.allApplications.map(normalizeApplication);
+            }
+          }
+        }
+      }
+
+      return [] as Application[];
     },
     enabled: !!jobId,
   });
@@ -80,28 +133,22 @@ export const useApplyJob = () => {
       resumeUrl?: string;
       resumeFile?: File;
     }) => {
-      let response;
+      let resumeUrl = data.resumeUrl;
 
-      if (data.resumeFile) {
-        const formData = new FormData();
-        // Some backends expect `job` while others expect `jobId`; send both for compatibility.
-        formData.append('job', data.jobId);
-        formData.append('jobId', data.jobId);
-        formData.append('resume', data.resumeFile);
-
-        if (data.coverLetter) {
-          formData.append('coverLetter', data.coverLetter);
-        }
-
-        // Let Axios/browser set multipart boundary automatically.
-        response = await api.post<ApiResponse<Application>>('/applications', formData);
-      } else {
-        response = await api.post<ApiResponse<Application>>('/applications', {
-          jobId: data.jobId,
-          coverLetter: data.coverLetter,
-          resumeUrl: data.resumeUrl,
-        });
+      // Backend expects resumeUrl in JSON payload.
+      if (!resumeUrl && data.resumeFile) {
+        resumeUrl = await uploadToCloudinary(data.resumeFile);
       }
+
+      if (!resumeUrl) {
+        throw new Error('Resume URL is required');
+      }
+
+      const response = await api.post<ApiResponse<Application>>('/applications', {
+        jobId: data.jobId,
+        coverLetter: data.coverLetter,
+        resumeUrl,
+      });
 
       if (!response.data.data) {
         throw new Error(response.data.message || 'Application submission failed');
@@ -156,11 +203,14 @@ export const useDeleteApplication = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.delete<ApiResponse<void>>(`/applications/${id}`);
-      return response.data;
+      const response = await api.put<ApiResponse<Application>>(`/applications/${id}/withdraw`);
+      return response.data.data ? normalizeApplication(response.data.data as Application) : null;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
+      queryClient.invalidateQueries({ queryKey: ['my-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['job-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['recruiter-all-applications'] });
       toast.success('Application withdrawn successfully');
     },
     onError: (error) => {

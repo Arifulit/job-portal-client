@@ -1,47 +1,26 @@
 // src/pages/Job/JobDetails.tsx
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useJob } from '../../services/jobService';
 import { useAuth } from '../../context/AuthContext';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Button } from '../../components/ui/button';
 import Badge from '../../components/ui/badge';
 import { useState } from 'react';
-import { useApplyJob } from '../../services/applicationService';
-import ApplicationForm from '../../components/ApplicationForm';
 import { MapPin, Briefcase, DollarSign, Clock, Building, Calendar } from 'lucide-react';
 
 const JobDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { data: job, isLoading, error } = useJob(id);
   const { user } = useAuth();
-  const [showApplicationModal, setShowApplicationModal] = useState(false);
+  const navigate = useNavigate();
   const [hasApplied, setHasApplied] = useState(false);
 
-  const { mutate: applyForJob, isPending: isSubmitting } = useApplyJob();
-
   const roleValue = String(user?.role || '').toLowerCase();
-  const canApply = roleValue === 'candidate' || roleValue === 'seeker' || roleValue === 'job_seeker';
+  const canApply = roleValue === 'candidate';
   const companyName =
     typeof job?.company === 'string'
       ? job.company
       : job?.company?.name || 'Company not specified';
-
-  const handleApply = (values: { resumeFile: File; coverLetter?: string }) => {
-    if (!id) {
-      return;
-    }
-
-    applyForJob({
-      jobId: id,
-      coverLetter: values.coverLetter,
-      resumeFile: values.resumeFile,
-    }, {
-      onSuccess: () => {
-        setHasApplied(true);
-        setShowApplicationModal(false);
-      },
-    });
-  };
 
   if (isLoading) {
     return (
@@ -159,7 +138,7 @@ const JobDetails = () => {
               <div className="flex flex-col space-y-2">
                 {canApply && (
                   <Button
-                    onClick={() => setShowApplicationModal(true)}
+                    onClick={() => navigate(`/jobs/${id}/apply`)}
                     disabled={hasApplied}
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
@@ -256,21 +235,6 @@ const JobDetails = () => {
           </div>
         </div>
       </div>
-
-      {/* Application Modal */}
-      {showApplicationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-semibold mb-4">Apply for {job.title}</h2>
-
-            <ApplicationForm
-              onSubmit={handleApply}
-              onCancel={() => setShowApplicationModal(false)}
-              isSubmitting={isSubmitting}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

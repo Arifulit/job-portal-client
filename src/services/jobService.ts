@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 import { api, handleApiError } from '../utils/api';
 import { Job, JobFilters, PaginatedResponse, ApiResponse, RecommendedJob } from '../types';
 import { toast } from 'sonner';
@@ -48,11 +47,89 @@ export const useAllJobs = (filters?: JobFilters) => {
           }
         });
       }
-      const response = await api.get<ApiResponse<Job[]>>(`/v1/jobs/all?${params}`);
-      if (!response.data.success) {
-        throw new Error(response.data.message || 'Failed to fetch jobs');
+
+      const response = await api.get<PaginatedResponse<Job> | ApiResponse<Job[]>>(`/jobs?${params}`);
+      const payload = response.data;
+
+      if ('pagination' in payload) {
+        return payload.data;
       }
-      return response.data.data;
+
+      if (!payload.success) {
+        throw new Error(payload.message || 'Failed to fetch jobs');
+      }
+
+      return payload.data || [];
+    },
+  });
+};
+
+export const useAdminJobsSummary = () => {
+  return useQuery({
+    queryKey: ['admin-jobs-summary'],
+    queryFn: async () => {
+      const response = await api.get('/jobs');
+      const payload = response.data as
+        | PaginatedResponse<Job>
+        | ApiResponse<Job[]>
+        | { success?: boolean; data?: Job[]; pagination?: { total?: number } };
+
+      if (payload && typeof payload === 'object') {
+        if ('pagination' in payload && Array.isArray(payload.data)) {
+          const jobs = payload.data;
+          const total = payload.pagination?.total ?? jobs.length;
+          return { totalJobs: total };
+        }
+
+        if ('success' in payload && payload.success === false) {
+          throw new Error((payload as ApiResponse<Job[]>).message || 'Failed to fetch jobs summary');
+        }
+
+        if ('data' in payload && Array.isArray(payload.data)) {
+          return { totalJobs: payload.data.length };
+        }
+      }
+
+      return { totalJobs: 0 };
+    },
+  });
+};
+
+export const useAdminAllJobs = () => {
+  return useQuery({
+    queryKey: ['admin-all-jobs'],
+    queryFn: async () => {
+      const response = await api.get<PaginatedResponse<Job> | ApiResponse<Job[]> | { success?: boolean; data?: { jobs?: Job[]; allJobs?: Job[] } }>('/jobs/all');
+      const payload = response.data;
+
+      if (payload && typeof payload === 'object') {
+        if ('pagination' in payload && Array.isArray(payload.data)) {
+          return payload.data;
+        }
+
+        if ('success' in payload && payload.success === false) {
+          throw new Error((payload as ApiResponse<Job[]>).message || 'Failed to fetch admin jobs');
+        }
+
+        if ('data' in payload) {
+          if (Array.isArray(payload.data)) {
+            return payload.data;
+          }
+
+          if (payload.data && typeof payload.data === 'object') {
+            const nested = payload.data as { jobs?: Job[]; allJobs?: Job[] };
+            if (Array.isArray(nested.jobs)) {
+              return nested.jobs;
+            }
+
+            if (Array.isArray(nested.allJobs)) {
+              return nested.allJobs;
+            }
+          }
+        }
+      }
+
+      return [] as Job[];
     },
   });
 };
@@ -73,12 +150,11 @@ export const useJob = (id: string | undefined) => {
 
 export const useCreateJob = () => {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   return useMutation<Job, Error, Partial<Job>>({
     mutationFn: async (jobData) => {
       try {
-        const response = await api.post<ApiResponse<Job>>('/v1/jobs/create', jobData);
+        const response = await api.post<ApiResponse<Job>>('/jobs/create', jobData);
         
         if (!response.data.success) {
           throw new Error(response.data.message || 'Failed to create job');
@@ -94,10 +170,12 @@ export const useCreateJob = () => {
         throw new Error(handleApiError(error));
       }
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['all-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['recruiter-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success('Job created successfully');
-      navigate(`/recruiter/jobs/${data._id}`);
     },
     onError: (error) => {
       console.error('Job creation error:', error);
@@ -110,11 +188,14 @@ export const useUpdateJob = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Job> }) => {
-      const response = await api.put<ApiResponse<Job>>(`/v1/jobs/${id}`, data);
+      const response = await api.put<ApiResponse<Job>>(`/jobs/${id}`, data);
       return response.data.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['all-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['recruiter-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       queryClient.invalidateQueries({ queryKey: ['job', variables.id] });
       toast.success('Job updated successfully!');
     },
@@ -129,11 +210,15 @@ export const useDeleteJob = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.delete<ApiResponse<void>>(`/v1/jobs/${id}`);
+      const response = await api.delete<ApiResponse<void>>(`/jobs/${id}`);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['all-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-all-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['recruiter-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success('Job deleted successfully!');
     },
     onError: (error) => {
@@ -146,8 +231,27 @@ export const useRecruiterJobs = () => {
   return useQuery({
     queryKey: ['recruiter-jobs'],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Job>>('/jobs/recruiter/my-jobs');
-      return response.data;
+      const response = await api.get<PaginatedResponse<Job> | ApiResponse<Job[]>>('/jobs');
+      const payload = response.data;
+
+      if ('pagination' in payload) {
+        return payload;
+      }
+
+      if (!payload.success) {
+        throw new Error(payload.message || 'Failed to fetch recruiter jobs');
+      }
+
+      return {
+        success: true,
+        data: payload.data || [],
+        pagination: {
+          total: payload.data?.length || 0,
+          page: 1,
+          limit: payload.data?.length || 0,
+          pages: 1,
+        },
+      } as PaginatedResponse<Job>;
     },
   });
 };

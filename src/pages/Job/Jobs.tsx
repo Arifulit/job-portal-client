@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useJobs } from '../../services/jobService';
 import { JobCard } from '../../components/JobCard';
 import { Loader } from '../../components/Loader';
-import { Search, Filter, MapPin, Briefcase, Users, Building, TrendingUp, Clock } from 'lucide-react';
+import { Search, Filter, MapPin, Briefcase, Building, TrendingUp, Clock } from 'lucide-react';
 import { JobFilters } from '../../types';
 import { debounce } from '../../utils/helpers';
 
@@ -36,6 +36,7 @@ const Jobs = () => {
 
   const { data, isLoading, isError } = useJobs(filters);
   const jobs = data?.data || [];
+  const totalPages = data?.pagination?.pages || 1;
   const totalJobs = data?.pagination?.total || 0;
   const fullTimeCount = jobs.filter((job) => String(job.jobType || '').toLowerCase() === 'full-time').length;
   const uniqueCompanyCount = new Set(
@@ -449,7 +450,7 @@ const Jobs = () => {
                       ))}
                     </div>
 
-                    {data.pagination.totalPages > 1 && (
+                    {totalPages > 1 && (
                       <div className="flex justify-center">
                         <div className="join">
                           <button
@@ -459,7 +460,7 @@ const Jobs = () => {
                           >
                             Previous
                           </button>
-                          {Array.from({ length: data.pagination.totalPages }, (_, i) => i + 1).map(
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map(
                             (page) => (
                               <button
                                 key={page}
@@ -475,7 +476,7 @@ const Jobs = () => {
                           <button
                             className="join-item btn"
                             onClick={() => handlePageChange(filters.page! + 1)}
-                            disabled={filters.page === data.pagination.totalPages}
+                            disabled={filters.page === totalPages}
                           >
                             Next
                           </button>

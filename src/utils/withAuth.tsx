@@ -8,6 +8,16 @@ export function withAuth<P extends object>(
   Component: ComponentType<P>,
   requiredRole?: string
 ) {
+  const normalizeRole = (role: string): string => {
+    const value = role.toLowerCase();
+
+    if (value === 'candidate') {
+      return 'candidate';
+    }
+
+    return value;
+  };
+
   return function ProtectedComponent(props: P) {
     const { isAuthenticated, user } = useAuth();
 
@@ -16,12 +26,8 @@ export function withAuth<P extends object>(
     }
 
     if (requiredRole) {
-      const userRole = (user?.role || '').toLowerCase();
-      const required = requiredRole.toLowerCase();
-      
-      // Handle different role formats
-      const normalizedUserRole = userRole === 'job_seeker' ? 'candidate' : userRole;
-      const normalizedRequired = required === 'job_seeker' ? 'candidate' : required;
+      const normalizedUserRole = normalizeRole(user?.role || '');
+      const normalizedRequired = normalizeRole(requiredRole);
 
       if (normalizedUserRole !== normalizedRequired) {
         return <Navigate to="/unauthorized" replace />;

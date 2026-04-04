@@ -33,7 +33,6 @@ const roleToDashboard: Record<string, string> = {
   admin: '/admin/dashboard',
   recruiter: '/recruiter/dashboard',
   candidate: '/candidate/dashboard',
-  job_seeker: '/candidate/dashboard',
 };
 
 export const Navbar = () => {
@@ -123,7 +122,6 @@ export const Navbar = () => {
       admin: { label: 'Admin', cls: 'bg-purple-100 text-purple-700' },
       recruiter: { label: 'Recruiter', cls: 'bg-emerald-100 text-emerald-700' },
       candidate: { label: 'Candidate', cls: 'bg-blue-100 text-blue-700' },
-      job_seeker: { label: 'Candidate', cls: 'bg-blue-100 text-blue-700' },
     };
     return map[normalizedRole] || { label: 'User', cls: 'bg-slate-100 text-slate-600' };
   }, [normalizedRole]);
