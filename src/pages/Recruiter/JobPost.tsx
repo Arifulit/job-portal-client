@@ -2,7 +2,7 @@
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
 import { useCreateJob, useJob, useUpdateJob } from "../../services/jobService";
@@ -28,12 +28,15 @@ interface JobFormData {
 
 interface LocalUser {
   company?: string | { _id?: string };
+  agency?: string | { _id?: string };
+  companyName?: string;
 }
 
 interface RecruiterProfileResponse {
   success?: boolean;
   data?: {
     company?: string | { _id?: string };
+    agency?: string | { _id?: string };
   };
 }
 
@@ -41,9 +44,11 @@ interface AuthMeResponse {
   success?: boolean;
   user?: {
     company?: string | { _id?: string };
+    agency?: string | { _id?: string };
   };
   data?: {
     company?: string | { _id?: string };
+    agency?: string | { _id?: string };
   };
 }
 
@@ -67,8 +72,8 @@ export default function JobPost() {
       title: "",
       description: "",
       location: "",
-      salaryMin: 0,
-      salaryMax: 0,
+      salaryMin: 10000,
+      salaryMax: 60000,
       currency: "BDT",
       jobType: "full-time",
       experience: "1-2 years",
@@ -84,13 +89,40 @@ export default function JobPost() {
   const responsibilities = watch("responsibilities");
   const skills = watch("skills");
 
+  const normalizeStringList = (value: unknown): string[] => {
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => String(item || "").trim())
+        .filter(Boolean);
+    }
+
+    if (typeof value === "string") {
+      return value
+        .split(/\r?\n|,/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+
+    return [];
+  };
+
   useEffect(() => {
     if (!isEditMode || !existingJob) return;
 
     const safeExistingJob = existingJob as Job & {
+      requirement?: string[] | string;
       responsibilities?: string[];
+      responsibility?: string[] | string;
       salary?: { min?: number; max?: number; currency?: string } | number;
     };
+
+    const normalizedRequirements = normalizeStringList(
+      safeExistingJob.requirements ?? safeExistingJob.requirement
+    );
+    const normalizedResponsibilities = normalizeStringList(
+      safeExistingJob.responsibilities ?? safeExistingJob.responsibility
+    );
+    const normalizedSkills = normalizeStringList(safeExistingJob.skills);
 
     const deadlineValue = safeExistingJob.deadline
       ? new Date(safeExistingJob.deadline).toISOString().slice(0, 10)
@@ -106,12 +138,12 @@ export default function JobPost() {
     setValue("experience", safeExistingJob.experience || "1-2 years");
     setValue("deadline", deadlineValue);
     setValue("vacancies", Number(safeExistingJob.vacancies ?? 1));
-    setValue("requirements", safeExistingJob.requirements?.length ? safeExistingJob.requirements : [""]);
+    setValue("requirements", normalizedRequirements.length ? normalizedRequirements : [""]);
     setValue(
       "responsibilities",
-      safeExistingJob.responsibilities?.length ? safeExistingJob.responsibilities : [""]
+      normalizedResponsibilities.length ? normalizedResponsibilities : [""]
     );
-    setValue("skills", safeExistingJob.skills?.length ? safeExistingJob.skills : [""]);
+    setValue("skills", normalizedSkills.length ? normalizedSkills : [""]);
   }, [existingJob, isEditMode, setValue]);
 
   const addField = (field: "requirements" | "responsibilities" | "skills") => {
@@ -133,6 +165,14 @@ export default function JobPost() {
 
     if (user.company && typeof user.company === "object" && user.company._id) {
       return user.company._id;
+    }
+
+    if (typeof user.agency === "string" && user.agency.trim()) {
+      return user.agency;
+    }
+
+    if (user.agency && typeof user.agency === "object" && user.agency._id) {
+      return user.agency._id;
     }
 
     return null;
@@ -166,7 +206,7 @@ export default function JobPost() {
     if (!companyId && !isEditMode) {
       try {
         const profile = (await recruiterService.getRecruiterProfile()) as RecruiterProfileResponse;
-        const profileCompany = profile?.data?.company;
+        const profileCompany = profile?.data?.company ?? profile?.data?.agency;
 
         if (typeof profileCompany === "string" && profileCompany.trim()) {
           companyId = profileCompany;
@@ -176,7 +216,11 @@ export default function JobPost() {
       } catch {
         try {
           const meResponse = await api.get<AuthMeResponse>("/auth/me");
-          const meCompany = meResponse.data?.user?.company ?? meResponse.data?.data?.company;
+          const meCompany =
+            meResponse.data?.user?.company ??
+            meResponse.data?.user?.agency ??
+            meResponse.data?.data?.company ??
+            meResponse.data?.data?.agency;
 
           if (typeof meCompany === "string" && meCompany.trim()) {
             companyId = meCompany;
@@ -198,10 +242,30 @@ export default function JobPost() {
     const cleanedSkills = data.skills.map((item) => item.trim()).filter(Boolean);
     const cleanedRequirements = data.requirements.map((item) => item.trim()).filter(Boolean);
     const cleanedResponsibilities = data.responsibilities.map((item) => item.trim()).filter(Boolean);
+    const existingRequirements = normalizeStringList(
+      (existingJob as { requirements?: unknown; requirement?: unknown } | undefined)?.requirements ??
+        (existingJob as { requirements?: unknown; requirement?: unknown } | undefined)?.requirement
+    );
+    const finalRequirements =
+      cleanedRequirements.length > 0
+        ? cleanedRequirements
+        : isEditMode
+        ? existingRequirements
+        : cleanedRequirements;
+    const existingResponsibilities = normalizeStringList(
+      (existingJob as { responsibilities?: unknown; responsibility?: unknown } | undefined)?.responsibilities ??
+        (existingJob as { responsibilities?: unknown; responsibility?: unknown } | undefined)?.responsibility
+    );
+    const finalResponsibilities =
+      cleanedResponsibilities.length > 0
+        ? cleanedResponsibilities
+        : isEditMode
+        ? existingResponsibilities
+        : cleanedResponsibilities;
 
     if (!cleanedSkills.length) return toast.error("Add at least one skill");
-    if (!cleanedRequirements.length) return toast.error("Add at least one requirement");
-    if (!cleanedResponsibilities.length) return toast.error("Add at least one responsibility");
+    if (!finalRequirements.length) return toast.error("Add at least one requirement");
+    if (!finalResponsibilities.length) return toast.error("Add at least one responsibility");
     if (data.salaryMax > 0 && data.salaryMin > data.salaryMax) {
       return toast.error("Minimum salary cannot be greater than maximum salary");
     }
@@ -211,6 +275,15 @@ export default function JobPost() {
     const normalizedJobType: Job["jobType"] = allowedJobTypes.includes(requestedJobType as Job["jobType"])
       ? (requestedJobType as Job["jobType"])
       : "full-time";
+
+    const getExperienceLevel = (value: string): string => {
+      const normalized = value.toLowerCase();
+      if (normalized.includes("0-1") || normalized.includes("entry")) return "entry";
+      if (normalized.includes("1-2") || normalized.includes("mid")) return "mid-level";
+      if (normalized.includes("3-6") || normalized.includes("senior")) return "mid-level";
+      if (normalized.includes("7+") || normalized.includes("lead")) return "senior";
+      return "mid-level";
+    };
 
     const payload = {
       title: data.title.trim(),
@@ -222,12 +295,16 @@ export default function JobPost() {
       currency: data.currency,
       skills: cleanedSkills,
       experience: data.experience,
+      experienceLevel: getExperienceLevel(data.experience),
       deadline: data.deadline || undefined,
       vacancies: data.vacancies ? Number(data.vacancies) : 1,
-      requirements: cleanedRequirements,
-      responsibilities: cleanedResponsibilities,
+      requirements: finalRequirements,
+      responsibilities: finalResponsibilities,
       status: "active" as JobStatus,
     };
+
+    (payload as { requirement?: string[] }).requirement = finalRequirements;
+    (payload as { responsibility?: string[] }).responsibility = finalResponsibilities;
 
     if (companyId) {
       (payload as { company?: string }).company = companyId;
@@ -303,12 +380,13 @@ export default function JobPost() {
             {/* Job Info */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-5">Job Details</h2>
+              <p className="mb-4 text-sm text-gray-500">Enter a clear title, work location, salary range, and a short role description.</p>
 
               <div className="mb-3">
                 <label className="mb-1.5 block text-sm font-semibold text-gray-700">Job Title *</label>
                 <input
                   {...register("title", { required: "Job title is required" })}
-                  placeholder="Senior Frontend Engineer"
+                  placeholder="e.g. ODDO Designer & Node.js Backend Engineer"
                   className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900"
                 />
                 {errors.title && <p className="mt-1 text-xs text-red-600">{errors.title.message}</p>}
@@ -318,7 +396,7 @@ export default function JobPost() {
                 <label className="mb-1.5 block text-sm font-semibold text-gray-700">Location *</label>
                 <input
                   {...register("location", { required: "Location is required" })}
-                  placeholder="Dhaka, Bangladesh"
+                  placeholder="e.g. Chattogram, Bangladesh or Remote"
                   className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900"
                 />
                 {errors.location && <p className="mt-1 text-xs text-red-600">{errors.location.message}</p>}
@@ -329,14 +407,14 @@ export default function JobPost() {
                   type="number"
                   min={0}
                   {...register("salaryMin", { valueAsNumber: true })}
-                  placeholder="Min"
+                  placeholder="Min salary"
                   className="rounded-xl border border-gray-300 bg-white px-4 py-3"
                 />
                 <input
                   type="number"
                   min={0}
                   {...register("salaryMax", { valueAsNumber: true })}
-                  placeholder="Max"
+                  placeholder="Max salary"
                   className="rounded-xl border border-gray-300 bg-white px-4 py-3"
                 />
                 <select {...register("currency")} className="rounded-xl border border-gray-300 bg-white px-4 py-3">
@@ -362,12 +440,16 @@ export default function JobPost() {
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <input type="date" {...register("deadline")} className="rounded-xl border border-gray-300 bg-white px-4 py-3" />
+                <input
+                  type="date"
+                  {...register("deadline")}
+                  className="rounded-xl border border-gray-300 bg-white px-4 py-3"
+                />
                 <input
                   type="number"
                   min={1}
                   {...register("vacancies", { valueAsNumber: true, min: 1 })}
-                  placeholder="Vacancies"
+                  placeholder="Number of openings"
                   className="rounded-xl border border-gray-300 bg-white px-4 py-3"
                 />
               </div>
@@ -377,7 +459,7 @@ export default function JobPost() {
                 <textarea
                   {...register("description", { required: "Job description is required" })}
                   rows={4}
-                  placeholder="Describe the role, impact, and expectations..."
+                  placeholder="Describe what the person will do, the tools they will use, and the kind of candidate you need."
                   className="w-full resize-none rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900"
                 />
                 {errors.description && <p className="mt-1 text-xs text-red-600">{errors.description.message}</p>}
@@ -392,9 +474,10 @@ export default function JobPost() {
                   <Plus className="w-5 h-5" />
                 </button>
               </div>
+              <p className="mb-3 text-xs text-gray-500">Add the main technologies or abilities required for this role.</p>
               {skills.map((_, i) => (
                 <div key={i} className="flex gap-2 mb-3">
-                  <input {...register(`skills.${i}`)} placeholder="React, Node.js..." className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white" />
+                  <input {...register(`skills.${i}`)} placeholder="e.g. React, Node.js, MongoDB" className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white" />
                   {skills.length > 1 && (
                     <button type="button" onClick={() => removeField("skills", i)} className="text-red-600 p-2 rounded-lg">
                       <X className="w-5 h-5" />
@@ -417,9 +500,10 @@ export default function JobPost() {
                   <Plus className="w-5 h-5" />
                 </button>
               </div>
+              <p className="mb-3 text-xs text-gray-500">Write must-have qualifications, experience, and hard requirements.</p>
               {requirements.map((_, i) => (
                 <div key={i} className="flex gap-2 mb-3">
-                  <input {...register(`requirements.${i}`)} placeholder="3+ years experience..." className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white" />
+                  <input {...register(`requirements.${i}`)} placeholder="e.g. Strong Node.js and Express.js knowledge" className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white" />
                   {requirements.length > 1 && (
                     <button type="button" onClick={() => removeField("requirements", i)} className="text-red-600 p-2 rounded-lg">
                       <X className="w-5 h-5" />
@@ -437,9 +521,10 @@ export default function JobPost() {
                   <Plus className="w-5 h-5" />
                 </button>
               </div>
+              <p className="mb-3 text-xs text-gray-500">Describe the daily tasks and what the hire will be responsible for.</p>
               {responsibilities.map((_, i) => (
                 <div key={i} className="flex gap-2 mb-3">
-                  <input {...register(`responsibilities.${i}`)} placeholder="Build scalable apps..." className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white" />
+                  <input {...register(`responsibilities.${i}`)} placeholder="e.g. Develop and maintain backend APIs" className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white" />
                   {responsibilities.length > 1 && (
                     <button type="button" onClick={() => removeField("responsibilities", i)} className="text-red-600 p-2 rounded-lg">
                       <X className="w-5 h-5" />

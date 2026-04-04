@@ -35,13 +35,18 @@ const extractProfile = (payload: unknown): User | undefined => {
 
   if (response && typeof response === 'object') {
     if ('data' in response && response.data && typeof response.data === 'object') {
-      if ('user' in response.data && response.data.user) {
-        return response.data.user;
+      if (
+        'user' in response.data &&
+        response.data.user &&
+        typeof response.data.user === 'object'
+      ) {
+        return response.data.user as User;
       }
+
       return response.data as User;
     }
 
-    if ('user' in response) {
+    if ('user' in response && response.user && typeof response.user === 'object') {
       return response.user;
     }
   }
@@ -276,6 +281,10 @@ export const useAllUsers = (role?: string) => {
         name: input.name || 'User',
         email: input.email || '',
         role: (input.role as User['role']) || 'candidate',
+        status: input.status,
+        approvalStatus: input.approvalStatus,
+        recruiterApprovalStatus: input.recruiterApprovalStatus,
+        isApproved: input.isApproved,
         isActive: typeof input.isActive === 'boolean' ? input.isActive : !input.isSuspended,
         createdAt: input.createdAt || new Date().toISOString(),
         updatedAt: input.updatedAt || new Date().toISOString(),
@@ -285,6 +294,7 @@ export const useAllUsers = (role?: string) => {
         companyName: input.companyName,
         companyLogo: input.companyLogo,
         bio: input.bio,
+        biodata: input.biodata || input.bio,
         skills: input.skills,
         experience: input.experience,
         education: input.education,

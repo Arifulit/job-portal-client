@@ -58,35 +58,37 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
       ? job.company
       : job.company?.name || 'Confidential Company';
 
+  const normalizedStatus = String(job.status || '').toLowerCase();
+  const statusStyles =
+    normalizedStatus === 'approved'
+      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+      : normalizedStatus === 'pending'
+        ? 'bg-amber-50 text-amber-700 border-amber-200'
+        : 'bg-slate-100 text-slate-600 border-slate-200';
+
   return (
     <Link
       to={`/jobs/${job._id}`}
-      className="block bg-white rounded-lg border border-gray-200 hover:border-blue-400 hover:shadow-lg transition-all duration-300 p-6"
+      className="group block rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_16px_34px_rgba(30,64,175,0.16)]"
     >
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex items-start space-x-4">
-          <div>
-            <h3 className="text-xl font-semibold text-gray-800 hover:text-blue-600 mb-1">
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h3 className="mb-1 line-clamp-1 text-xl font-semibold tracking-tight text-slate-900 transition-colors group-hover:text-blue-700">
               {job.title}
-            </h3>
-            <p className="text-gray-600 font-medium">
-              {companyName}
-            </p>
-          </div>
+          </h3>
+          <p className="line-clamp-1 text-sm font-medium text-slate-600">{companyName}</p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           {job.status && (
-            <span className={`badge ${
-              job.status === 'approved' ? 'badge-success' : 
-              job.status === 'pending' ? 'badge-warning' : 
-              'badge-neutral'
-            }`}>{job.status}</span>
+            <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${statusStyles}`}>
+              {job.status}
+            </span>
           )}
           {user?.role === 'candidate' && (
             <button
               onClick={handleSaveToggle}
-              className="btn btn-ghost btn-sm btn-circle"
+              className="rounded-full border border-slate-200 p-2 text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
               disabled={saveJobMutation.isPending || unsaveJobMutation.isPending}
             >
               {saved ? (
@@ -99,38 +101,42 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <div className="flex items-center text-sm text-gray-600">
-          <MapPin className="w-4 h-4 mr-1" />
-          {job.location}
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="inline-flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">
+          <MapPin className="h-4 w-4" />
+          <span className="line-clamp-1">{job.location || 'Location not specified'}</span>
         </div>
-        <div className="flex items-center text-sm text-gray-600">
-          <Briefcase className="w-4 h-4 mr-1" />
-          {job.jobType?.replace('-', ' ') || 'Full Time'}
+        <div className="inline-flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">
+          <Briefcase className="h-4 w-4" />
+          <span className="capitalize">{job.jobType?.replace('-', ' ') || 'Full Time'}</span>
         </div>
-        <div className="flex items-center text-sm text-gray-600">
-          <DollarSign className="w-4 h-4 mr-1" />
+        <div className="inline-flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">
+          <DollarSign className="h-4 w-4" />
           {formatSalary(job.salaryMin, job.salaryMax, job.currency)}
         </div>
-        <div className="flex items-center text-sm text-gray-600">
-          <Clock className="w-4 h-4 mr-1" />
+        <div className="inline-flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">
+          <Clock className="h-4 w-4" />
           {formatRelativeTime(job.createdAt)}
         </div>
       </div>
 
-      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+      <p className="mb-5 line-clamp-2 text-sm leading-6 text-slate-600">
         {job.description ? job.description.substring(0, 150) + '...' : 'No description available'}
       </p>
 
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="mb-3 flex flex-wrap gap-2">
         {job.experienceLevel && (
-          <span className="badge badge-outline capitalize">{job.experienceLevel}</span>
+          <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold capitalize text-blue-700">{job.experienceLevel}</span>
         )}
         {job.skills && job.skills.length > 0 && (
           job.skills.slice(0, 3).map((skill, index) => (
-            <span key={index} className="badge badge-outline">{skill}</span>
+            <span key={index} className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600">{skill}</span>
           ))
         )}
+      </div>
+
+      <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 transition-colors group-hover:text-blue-800">
+        View Job Details
       </div>
     </Link>
   );

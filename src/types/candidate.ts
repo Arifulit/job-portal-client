@@ -5,6 +5,7 @@ export interface User {
   role: string;
   isEmailVerified?: boolean;
   isSuspended?: boolean;
+  resume?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -16,10 +17,15 @@ export interface CandidateProfile {
   phone?: string;
   skills: string[];
   location?: string;
+  address?: string;
+  biodata?: string;
+  bio?: string;
   headline?: string;
   experienceLevel?: string;
   summary?: string;
-  applications?: any[];
+  email?: string;
+  resume?: string;
+  applications?: Array<Record<string, unknown>>;
   createdAt: string;
   updatedAt: string;
   __v: number;

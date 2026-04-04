@@ -2,6 +2,33 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, handleApiError } from '../utils/api';
 import { Job, JobFilters, PaginatedResponse, ApiResponse, RecommendedJob } from '../types';
 import { toast } from 'sonner';
+import axios from 'axios';
+
+const extractJob = (payload: unknown): Job | undefined => {
+  if (!payload || typeof payload !== 'object') {
+    return undefined;
+  }
+
+  const response = payload as {
+    success?: boolean;
+    data?: Job | { job?: Job };
+    job?: Job;
+  };
+
+  if (response.data && typeof response.data === 'object') {
+    if ('job' in response.data && response.data.job) {
+      return response.data.job;
+    }
+
+    return response.data as Job;
+  }
+
+  if (response.job && typeof response.job === 'object') {
+    return response.job;
+  }
+
+  return undefined;
+};
 
 
 export const useJobs = (filters?: JobFilters) => {
@@ -26,10 +53,7 @@ export const useJobs = (filters?: JobFilters) => {
         });
       }
       
-      console.log('API Request:', `/jobs/search?${params}`); // Debug log
-      
       const response = await api.get<PaginatedResponse<Job>>(`/jobs/search?${params}`);
-      console.log('API Response:', response.data); // Debug log
       return response.data;
     },
   });
@@ -139,8 +163,30 @@ export const useJob = (id: string | undefined) => {
     queryKey: ['job', id],
     queryFn: async () => {
       if (!id) throw new Error('Job ID is required');
-      const response = await api.get<ApiResponse<Job>>(`/jobs/${id}`);
-      return response.data.data;
+      const endpoints = [`/jobs/${id}`, `/jobs/job/${id}`];
+      let lastError: unknown;
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await api.get(endpoint);
+          const job = extractJob(response.data);
+
+          if (!job) {
+            throw new Error('Job data missing from response');
+          }
+
+          return job;
+        } catch (error) {
+          if (axios.isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 405)) {
+            lastError = error;
+            continue;
+          }
+
+          throw error;
+        }
+      }
+
+      throw lastError || new Error('Failed to fetch job');
     },
     enabled: !!id,
   });
@@ -154,17 +200,19 @@ export const useCreateJob = () => {
   return useMutation<Job, Error, Partial<Job>>({
     mutationFn: async (jobData) => {
       try {
-        const response = await api.post<ApiResponse<Job>>('/jobs/create', jobData);
+        const response = await api.post('/jobs/create', jobData);
+        const payload = response.data as { success?: boolean; message?: string };
+        const job = extractJob(response.data);
         
-        if (!response.data.success) {
-          throw new Error(response.data.message || 'Failed to create job');
+        if (payload?.success === false) {
+          throw new Error(payload.message || 'Failed to create job');
         }
         
-        if (!response.data.data) {
+        if (!job) {
           throw new Error('No job data returned from server');
         }
         
-        return response.data.data;
+        return job;
       } catch (error: unknown) {
         console.error('Error creating job:', error);
         throw new Error(handleApiError(error));
@@ -188,8 +236,40 @@ export const useUpdateJob = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Job> }) => {
-      const response = await api.put<ApiResponse<Job>>(`/jobs/${id}`, data);
-      return response.data.data;
+      const requests = [
+        () => api.put(`/jobs/${id}`, data),
+        () => api.patch(`/jobs/${id}`, data),
+        () => api.put(`/jobs/update/${id}`, data),
+      ];
+
+      let lastError: unknown;
+
+      for (const sendRequest of requests) {
+        try {
+          const response = await sendRequest();
+          const payload = response.data as { success?: boolean; message?: string };
+          const job = extractJob(response.data);
+
+          if (payload?.success === false) {
+            throw new Error(payload.message || 'Failed to update job');
+          }
+
+          if (!job) {
+            throw new Error('Updated job missing from response');
+          }
+
+          return job;
+        } catch (error) {
+          if (axios.isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 405)) {
+            lastError = error;
+            continue;
+          }
+
+          throw error;
+        }
+      }
+
+      throw lastError || new Error('Failed to update job');
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });

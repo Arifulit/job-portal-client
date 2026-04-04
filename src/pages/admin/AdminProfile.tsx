@@ -1,13 +1,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
-import { format } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Loader } from '../../components/Loader';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { useProfile, useUpdateProfile } from '../../services/userService';
-import { CalendarDays, MapPin, Phone, ShieldCheck, UserCircle2 } from 'lucide-react';
+import { MapPin, Phone, ShieldCheck, UserCircle2 } from 'lucide-react';
 
 const AdminProfile = (): JSX.Element => {
   const navigate = useNavigate();
@@ -19,14 +18,14 @@ const AdminProfile = (): JSX.Element => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [location, setLocation] = useState('');
-  const [bio, setBio] = useState('');
+  const [biodata, setBiodata] = useState('');
 
   useEffect(() => {
     if (!profile) return;
     setName(profile.name || '');
     setPhone(profile.phone || '');
     setLocation(profile.location || '');
-    setBio(profile.bio || '');
+    setBiodata(profile.biodata || profile.bio || '');
   }, [profile]);
 
   const initials = useMemo(() => {
@@ -42,7 +41,8 @@ const AdminProfile = (): JSX.Element => {
         name: name.trim(),
         phone: phone.trim() || undefined,
         location: location.trim() || undefined,
-        bio: bio.trim() || undefined,
+        biodata: biodata.trim() || undefined,
+        bio: biodata.trim() || undefined,
       },
       {
         onSuccess: () => {
@@ -57,7 +57,7 @@ const AdminProfile = (): JSX.Element => {
     setName(profile.name || '');
     setPhone(profile.phone || '');
     setLocation(profile.location || '');
-    setBio(profile.bio || '');
+    setBiodata(profile.biodata || profile.bio || '');
     setIsEditing(false);
   };
 
@@ -121,29 +121,6 @@ const AdminProfile = (): JSX.Element => {
         </CardHeader>
 
         <CardContent className="space-y-6 p-6">
-          <div className="grid gap-3 lg:grid-cols-3">
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Account ID</p>
-              <p className="mt-2 break-all text-sm font-medium text-slate-800">{profile._id}</p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <CalendarDays className="h-3.5 w-3.5" /> Created
-              </p>
-              <p className="mt-2 text-sm text-slate-800">
-                {profile.createdAt ? format(new Date(profile.createdAt), "MMMM d, yyyy 'at' h:mm a") : 'N/A'}
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <CalendarDays className="h-3.5 w-3.5" /> Last Updated
-              </p>
-              <p className="mt-2 text-sm text-slate-800">
-                {profile.updatedAt ? format(new Date(profile.updatedAt), "MMMM d, yyyy 'at' h:mm a") : 'N/A'}
-              </p>
-            </div>
-          </div>
-
           <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
             <h2 className="text-sm font-black uppercase tracking-wide text-slate-700">Profile Details</h2>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -171,6 +148,22 @@ const AdminProfile = (): JSX.Element => {
                 />
               </div>
               <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Email</label>
+                <input
+                  value={profile.email || ''}
+                  disabled
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-offset-2 transition focus:border-slate-500 focus:ring-2 focus:ring-slate-300 disabled:bg-slate-100"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Role</label>
+                <input
+                  value={String(profile.role || 'Admin')}
+                  disabled
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-offset-2 transition focus:border-slate-500 focus:ring-2 focus:ring-slate-300 disabled:bg-slate-100"
+                />
+              </div>
+              <div>
                 <label className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-slate-700">
                   <MapPin className="h-4 w-4" /> Location
                 </label>
@@ -179,17 +172,17 @@ const AdminProfile = (): JSX.Element => {
                   onChange={(event) => setLocation(event.target.value)}
                   disabled={!isEditing || isUpdating}
                   className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-offset-2 transition focus:border-slate-500 focus:ring-2 focus:ring-slate-300 disabled:bg-slate-100"
-                  placeholder="Add location"
+                  placeholder="Dhaka, Bangladesh"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Bio</label>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Biodata</label>
                 <textarea
-                  value={bio}
-                  onChange={(event) => setBio(event.target.value)}
+                  value={biodata}
+                  onChange={(event) => setBiodata(event.target.value)}
                   disabled={!isEditing || isUpdating}
                   className="min-h-[108px] w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-offset-2 transition focus:border-slate-500 focus:ring-2 focus:ring-slate-300 disabled:bg-slate-100"
-                  placeholder="Add a short admin bio"
+                  placeholder="Write a short admin biodata"
                 />
               </div>
             </div>

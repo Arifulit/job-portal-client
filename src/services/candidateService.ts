@@ -7,6 +7,9 @@ export interface UpdateCandidateProfileData {
   phone?: string;
   headline?: string;
   location?: string;
+  address?: string;
+  biodata?: string;
+  bio?: string;
   experienceLevel?: string;
   summary?: string;
   skills?: string[];

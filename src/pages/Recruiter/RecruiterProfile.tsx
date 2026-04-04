@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import Badge from '@/components/ui/badge';
-import { Building2, Briefcase, Phone, Globe, Users } from 'lucide-react';
+import { Building2, Briefcase, Phone, Globe, Users, MapPin } from 'lucide-react';
 import recruiterService from '@/services/recruiterService';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
 interface Agency {
   _id: string;
@@ -24,8 +25,10 @@ interface RecruiterProfile {
     role?: string;
   };
   bio?: string;
+  biodata?: string;
   designation: string;
   phone: string;
+  location?: string;
   agency?: Agency;
   createdAt: string;
   updatedAt: string;
@@ -35,6 +38,8 @@ interface ProfileFormValues {
   name: string;
   phone: string;
   designation: string;
+  location: string;
+  biodata: string;
   bio: string;
 }
 
@@ -45,6 +50,7 @@ interface AgencyFormValues {
 }
 
 const RecruiterProfile = () => {
+  const { updateUser } = useAuth();
   const [profile, setProfile] = useState<RecruiterProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -54,6 +60,8 @@ const RecruiterProfile = () => {
     name: '',
     phone: '',
     designation: '',
+    location: '',
+    biodata: '',
     bio: '',
   });
   const [agencyFormValues, setAgencyFormValues] = useState<AgencyFormValues>({
@@ -93,7 +101,9 @@ const RecruiterProfile = () => {
             name: nextProfile?.user?.name || '',
             phone: nextProfile?.phone || '',
             designation: nextProfile?.designation || '',
-            bio: nextProfile?.bio || '',
+            location: nextProfile?.location || '',
+            biodata: nextProfile?.biodata || nextProfile?.bio || '',
+            bio: nextProfile?.biodata || nextProfile?.bio || '',
           });
           setAgencyFormValues({
             name: nextProfile?.agency?.name || '',
@@ -128,7 +138,9 @@ const RecruiterProfile = () => {
       name: profile.user?.name || '',
       phone: profile.phone || '',
       designation: profile.designation || '',
-      bio: profile.bio || '',
+      location: profile.location || '',
+      biodata: profile.biodata || profile.bio || '',
+      bio: profile.biodata || profile.bio || '',
     });
     setIsEditing(false);
   };
@@ -140,8 +152,15 @@ const RecruiterProfile = () => {
         name: formValues.name.trim(),
         phone: formValues.phone.trim(),
         designation: formValues.designation.trim(),
-        bio: formValues.bio.trim(),
+        location: formValues.location.trim(),
+        biodata: formValues.biodata.trim(),
+        bio: formValues.biodata.trim(),
       };
+
+      if (!payload.name || !payload.phone || !payload.designation) {
+        toast.error('Name, phone and designation are required');
+        return;
+      }
 
       const response = await recruiterService.updateRecruiterProfile(payload);
       if (!response?.success) {
@@ -154,12 +173,20 @@ const RecruiterProfile = () => {
           ...prev,
           phone: payload.phone,
           designation: payload.designation,
-          bio: payload.bio,
+          location: payload.location,
+          biodata: payload.biodata,
+          bio: payload.biodata,
           user: {
             ...prev.user,
             name: payload.name,
           },
         };
+      });
+
+      updateUser({
+        name: payload.name,
+        phone: payload.phone,
+        designation: payload.designation,
       });
 
       setIsEditing(false);
@@ -355,13 +382,33 @@ const RecruiterProfile = () => {
               <p className="text-sm text-muted-foreground">Bio</p>
               {isEditing ? (
                 <textarea
-                  value={formValues.bio}
-                  onChange={(e) => handleInputChange('bio', e.target.value)}
+                  value={formValues.biodata}
+                  onChange={(e) => {
+                    handleInputChange('biodata', e.target.value);
+                    handleInputChange('bio', e.target.value);
+                  }}
                   rows={3}
                   className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
                 />
               ) : (
-                <p className="font-medium">{profile.bio || 'N/A'}</p>
+                <p className="font-medium">{profile.biodata || profile.bio || 'N/A'}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Location</p>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={formValues.location}
+                  onChange={(e) => handleInputChange('location', e.target.value)}
+                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
+                  placeholder="Dhaka, Bangladesh"
+                />
+              ) : (
+                <p className="font-medium flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  {profile.location || 'N/A'}
+                </p>
               )}
             </div>
             <div>

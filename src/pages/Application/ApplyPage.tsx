@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useJob } from '../../services/jobService';
 import { useCandidateProfile } from '../../services/candidateService';
@@ -27,13 +27,24 @@ const ApplyPage = () => {
   const job = jobData;
   const profile = profileData?.data;
   const normalizedRole = String(user?.role || '').toLowerCase();
-  const canApply = normalizedRole === 'candidate';
+  const canApply = ['candidate', 'seeker', 'job_seeker'].includes(normalizedRole);
+  const existingResumeUrl =
+    (profile?.user as { resume?: string } | undefined)?.resume ||
+    (profile as { resume?: string } | undefined)?.resume ||
+    '';
 
   // Form state
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState('');
   const [expectedSalary, setExpectedSalary] = useState('');
   const [coverLetter, setCoverLetter] = useState('');
+  const [resumeUrl, setResumeUrl] = useState(existingResumeUrl);
+
+  useEffect(() => {
+    if (existingResumeUrl) {
+      setResumeUrl(existingResumeUrl);
+    }
+  }, [existingResumeUrl]);
 
   const companyName =
     typeof job?.company === 'string'
@@ -68,25 +79,27 @@ const ApplyPage = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!resumeFile) {
-      setFileError('Please upload your resume file');
-      return;
-    }
-
     if (!jobId) {
       toast.error('Invalid job ID');
       return;
     }
 
+    if (!resumeFile && !resumeUrl.trim()) {
+      setFileError('Please upload a resume or use your saved resume URL');
+      return;
+    }
+
+    setFileError('');
+
     applyForJob(
       {
         jobId,
         coverLetter: coverLetter.trim() || undefined,
-        resumeFile,
+        resumeFile: resumeFile || undefined,
+        resumeUrl: resumeUrl.trim() || undefined,
       },
       {
         onSuccess: () => {
-          toast.success('Application submitted successfully! Good luck!');
           navigate('/candidate/applications', { replace: true });
         },
       }
@@ -288,9 +301,38 @@ const ApplyPage = () => {
                 {/* Resume Upload */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Customized CV
-                    <span className="text-red-500">*</span>
+                    Resume / CV
                   </label>
+                  {existingResumeUrl && (
+                    <div className="mb-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+                      <p className="font-medium">Saved resume found</p>
+                      <p className="mt-1 break-all text-xs text-blue-800">{existingResumeUrl}</p>
+                      <button
+                        type="button"
+                        onClick={() => setResumeUrl(existingResumeUrl)}
+                        className="mt-2 text-xs font-semibold text-blue-700 hover:text-blue-800"
+                      >
+                        Use saved resume URL
+                      </button>
+                    </div>
+                  )}
+                  <div className="mb-3">
+                    <label className="block text-xs font-medium text-gray-500 mb-2">Resume URL</label>
+                    <input
+                      type="url"
+                      value={resumeUrl}
+                      onChange={(e) => {
+                        setResumeUrl(e.target.value);
+                        if (e.target.value.trim()) {
+                          setFileError('');
+                        }
+                      }}
+                      placeholder="https://example.com/my-resume.pdf"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                      disabled={isSubmitting}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">If you already have a hosted resume link, paste it here. Otherwise upload a file below.</p>
+                  </div>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 hover:bg-blue-50 transition cursor-pointer">
                     <input
                       type="file"
@@ -307,7 +349,7 @@ const ApplyPage = () => {
                           <span className="text-green-600">✓ {resumeFile.name}</span>
                         ) : (
                           <>
-                            Click to upload or drag and drop
+                            Click to upload a resume file or keep using the URL above
                             <br />
                             <span className="text-xs text-gray-500">PDF, DOC, DOCX (Max 5MB)</span>
                           </>
@@ -315,10 +357,12 @@ const ApplyPage = () => {
                       </p>
                     </label>
                   </div>
-                  {fileError && <p className="mt-2 text-xs text-red-600 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {fileError}
-                  </p>}
+                  {fileError && (
+                    <p className="mt-2 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {fileError}
+                    </p>
+                  )}
                 </div>
 
                 {/* Cover Letter */}
@@ -351,7 +395,7 @@ const ApplyPage = () => {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={!resumeFile || isSubmitting}
+                    disabled={(!resumeFile && !resumeUrl.trim()) || isSubmitting}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                   >
                     {isSubmitting ? 'Submitting...' : 'Submit Application'}

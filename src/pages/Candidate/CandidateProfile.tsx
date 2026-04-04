@@ -136,9 +136,14 @@ import { toast } from 'sonner';
 const CandidateProfile = () => {
   const { data, isLoading, error } = useCandidateProfile();
   const profile = data?.data;
+  const displayEmail = profile?.user?.email || profile?.email || '';
+  const displayLocation = profile?.location || profile?.address || '';
+  const displayBiodata = profile?.biodata || profile?.bio || profile?.summary || '';
+  const displayHeadline = profile?.headline || 'Full Stack Developer';
+  const displayExperience = profile?.experienceLevel || 'Mid Level';
 
   const [isEditing, setIsEditing] = useState(false);
-  const [form, setForm] = useState({ name: '', phone: '', headline: '', location: '', experienceLevel: '', summary: '', skills: [] as string[] });
+  const [form, setForm] = useState({ name: '', phone: '', headline: '', location: '', experienceLevel: '', biodata: '', summary: '', skills: [] as string[] });
   const [skillInput, setSkillInput] = useState('');
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateCandidateProfile();
 
@@ -148,9 +153,10 @@ const CandidateProfile = () => {
       name: profile.name || '',
       phone: profile.phone || '',
       headline: profile.headline || '',
-      location: profile.location || '',
+      location: profile.location || profile.address || '',
       experienceLevel: profile.experienceLevel || '',
-      summary: profile.summary || '',
+      biodata: profile.biodata || profile.bio || profile.summary || '',
+      summary: profile.biodata || profile.bio || profile.summary || '',
       skills: [...(profile.skills || [])],
     });
     setIsEditing(true);
@@ -223,51 +229,54 @@ const CandidateProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-12 px-4">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.10),_transparent_38%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)] py-12 px-4">
       <div className="max-w-5xl mx-auto">
 
         {/* Main Profile Card */}
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-200">
+        <div className="bg-white rounded-[2rem] shadow-[0_24px_80px_rgba(15,23,42,0.10)] overflow-hidden border border-slate-200/80">
 
           {/* Hero Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-12 text-white">
+          <div className="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 px-8 py-10 text-white">
             <div className="flex flex-col md:flex-row items-center gap-8">
               {/* Avatar */}
               <div className="relative">
-                <div className="h-32 w-32 rounded-full bg-white/20 backdrop-blur-sm border-4 border-white/30 flex items-center justify-center text-5xl font-bold shadow-2xl">
-                  {profile.name.charAt(0).toUpperCase()}
+                <div className="h-28 w-28 md:h-32 md:w-32 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-4xl md:text-5xl font-bold shadow-2xl shadow-black/20">
+                  {(profile.name || profile.user?.name || 'C').charAt(0).toUpperCase()}
                 </div>
-                <div className="absolute -bottom-2 -right-2 bg-green-500 h-10 w-10 rounded-full border-4 border-white flex items-center justify-center">
-                  <div className="h-4 w-4 bg-white rounded-full"></div>
+                <div className="absolute -bottom-2 -right-2 bg-emerald-500 h-9 w-9 rounded-full border-4 border-slate-900 flex items-center justify-center">
+                  <div className="h-3.5 w-3.5 bg-white rounded-full"></div>
                 </div>
               </div>
 
               {/* Info */}
               <div className="text-center md:text-left flex-1">
-                <h1 className="text-4xl font-bold mb-2">{profile.name}</h1>
-                <p className="text-xl text-blue-100 mb-3">{profile.headline || 'Full Stack Developer'}</p>
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm">
-                  {profile.location && (
-                    <span className="flex items-center gap-2">
+                <div className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium tracking-wide text-blue-100 backdrop-blur-sm">
+                  Candidate Profile
+                </div>
+                <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white md:text-5xl">{profile.name || profile.user?.name}</h1>
+                <p className="mt-3 max-w-2xl text-base md:text-lg text-slate-200">{displayHeadline}</p>
+                <div className="mt-5 flex flex-wrap items-center justify-center md:justify-start gap-3 text-sm text-slate-200">
+                  {displayLocation && (
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 backdrop-blur-sm">
                       <MapPin className="w-4 h-4" />
-                      {profile.location}
+                      {displayLocation}
                     </span>
                   )}
-                  <span className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 backdrop-blur-sm">
                     <Briefcase className="w-4 h-4" />
-                    {profile.experienceLevel || 'Mid Level'}
+                    {displayExperience}
                   </span>
                 </div>
               </div>
 
               {/* Role Badge & Edit */}
-              <div className="flex flex-col items-end gap-3">
-                <Badge className="bg-white/20 text-white border-white/30 text-lg px-6 py-3 backdrop-blur-sm">
-                  {profile.user.role.charAt(0).toUpperCase() + profile.user.role.slice(1)}
+              <div className="flex flex-col items-center md:items-end gap-3">
+                <Badge className="border border-white/20 bg-white/10 text-white text-sm px-4 py-2.5 backdrop-blur-sm">
+                  {profile.user?.role ? profile.user.role.charAt(0).toUpperCase() + profile.user.role.slice(1) : 'Candidate'}
                 </Badge>
                 <button
                   onClick={openEdit}
-                  className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white text-sm font-medium px-4 py-2 rounded-full backdrop-blur-sm transition-all"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/15"
                 >
                   <Pencil className="w-4 h-4" />
                   Edit Profile
@@ -277,51 +286,61 @@ const CandidateProfile = () => {
           </div>
 
           {/* Body Content */}
-          <div className="p-8 lg:p-12">
-            <div className="grid lg:grid-cols-3 gap-10">
+          <div className="p-6 sm:p-8 lg:p-12">
+            <div className="grid lg:grid-cols-3 gap-8 lg:gap-10">
 
               {/* Left Column - Contact & Info */}
               <div className="lg:col-span-1 space-y-8">
                 {/* Contact Info */}
-                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
-                  <h3 className="text-xl font-bold text-gray-900 mb-5 flex items-center gap-3">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-6 shadow-sm">
+                  <h3 className="mb-5 flex items-center gap-3 text-lg font-semibold text-slate-900">
                     <Mail className="w-6 h-6 text-blue-600" />
                     Contact Information
                   </h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-5 h-5 text-gray-500" />
-                      <span className="text-gray-700">{profile.user.email}</span>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200">
+                      <Mail className="mt-0.5 h-5 w-5 text-slate-500" />
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-500">Email</p>
+                        <span className="font-medium text-slate-900">{displayEmail}</span>
+                      </div>
                     </div>
                     {profile.phone && (
-                      <div className="flex items-center gap-3">
-                        <Phone className="w-5 h-5 text-gray-500" />
-                        <span className="text-gray-700">{profile.phone}</span>
+                      <div className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200">
+                        <Phone className="mt-0.5 h-5 w-5 text-slate-500" />
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-500">Phone</p>
+                          <span className="font-medium text-slate-900">{profile.phone}</span>
+                        </div>
                       </div>
                     )}
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-5 h-5 text-gray-500" />
-                      <span className="text-gray-700">
-                        Joined {new Date(profile.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                        })}
-                      </span>
+                    <div className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200">
+                      <Calendar className="mt-0.5 h-5 w-5 text-slate-500" />
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-500">Member since</p>
+                        <span className="font-medium text-slate-900">
+                          {new Date(profile.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Quick Stats */}
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-6 text-white">
-                  <h3 className="text-lg font-bold mb-4">Profile Strength</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span>Skills Added</span>
-                      <span className="font-bold">{profile.skills?.length || 0}</span>
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <h3 className="mb-4 text-lg font-semibold text-slate-900">Profile Snapshot</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+                      <span className="text-slate-600">Skills Added</span>
+                      <span className="font-semibold text-slate-900">{profile.skills?.length || 0}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Applications</span>
-                      <span className="font-bold">{profile.applications?.length || 0}</span>
+                    <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+                      <span className="text-slate-600">Applications</span>
+                      <span className="font-semibold text-slate-900">{profile.applications?.length || 0}</span>
                     </div>
                   </div>
                 </div>
@@ -330,21 +349,23 @@ const CandidateProfile = () => {
               {/* Right Column - Skills & About */}
               <div className="lg:col-span-2 space-y-8">
 
-                {/* About / Summary */}
-                {profile.summary && (
-                  <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-3">
-                      <Award className="w-6 h-6 text-blue-600" />
-                      Professional Summary
+                {/* About / Biodata */}
+                {displayBiodata && (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <h3 className="mb-4 flex items-center gap-3 text-lg font-semibold text-slate-900">
+                      <Award className="w-5 h-5 text-blue-600" />
+                      Biodata
                     </h3>
-                    <p className="text-gray-700 leading-relaxed">{profile.summary}</p>
+                    <div className="border-l-4 border-blue-500 pl-4">
+                      <p className="text-slate-700 leading-7">{displayBiodata}</p>
+                    </div>
                   </div>
                 )}
 
                 {/* Skills */}
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-5 flex items-center gap-3">
-                    <Award className="w-6 h-6 text-blue-600" />
+                  <h3 className="mb-5 flex items-center gap-3 text-lg font-semibold text-slate-900">
+                    <Award className="w-5 h-5 text-blue-600" />
                     Skills
                   </h3>
                   {profile.skills && profile.skills.length > 0 ? (
@@ -352,14 +373,14 @@ const CandidateProfile = () => {
                       {profile.skills.map((skill, index) => (
                         <Badge
                           key={index}
-                          className="bg-blue-100 text-blue-800 hover:bg-blue-200 border border-blue-300 text-sm px-5 py-2.5 font-medium transition-all"
+                          className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                         >
                           {skill}
                         </Badge>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-gray-500 italic">No skills added yet</p>
+                    <p className="text-sm italic text-slate-500">No skills added yet</p>
                   )}
                 </div>
               </div>
@@ -370,55 +391,58 @@ const CandidateProfile = () => {
 
       {/* Edit Profile Modal */}
       {isEditing && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">Edit Profile</h2>
-              <button onClick={() => setIsEditing(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[1.75rem] border border-slate-200 bg-white shadow-[0_30px_100px_rgba(15,23,42,0.28)]">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
+              <div>
+                <h2 className="text-2xl font-semibold text-slate-900">Edit Profile</h2>
+                <p className="mt-1 text-sm text-slate-500">Update your public candidate details.</p>
+              </div>
+              <button onClick={() => setIsEditing(false)} className="rounded-full p-2 transition-colors hover:bg-slate-100">
                 <X className="w-5 h-5 text-gray-600" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5 p-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Name</label>
+                <label className="mb-1 block text-sm font-semibold text-slate-700">Name</label>
                 <input
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Phone</label>
+                <label className="mb-1 block text-sm font-semibold text-slate-700">Phone</label>
                 <input
                   value={form.phone}
                   onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Headline</label>
+                <label className="mb-1 block text-sm font-semibold text-slate-700">Headline</label>
                 <input
                   value={form.headline}
                   onChange={e => setForm(f => ({ ...f, headline: e.target.value }))}
                   placeholder="e.g. Full Stack Developer"
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Location</label>
+                <label className="mb-1 block text-sm font-semibold text-slate-700">Location</label>
                 <input
                   value={form.location}
                   onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
                   placeholder="e.g. Dhaka, Bangladesh"
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Experience Level</label>
+                <label className="mb-1 block text-sm font-semibold text-slate-700">Experience Level</label>
                 <select
                   value={form.experienceLevel}
                   onChange={e => setForm(f => ({ ...f, experienceLevel: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 >
                   <option value="">Select level</option>
                   <option value="entry">Entry Level</option>
@@ -429,34 +453,34 @@ const CandidateProfile = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Professional Summary</label>
+                <label className="mb-1 block text-sm font-semibold text-slate-700">Biodata</label>
                 <textarea
                   rows={4}
-                  value={form.summary}
-                  onChange={e => setForm(f => ({ ...f, summary: e.target.value }))}
+                  value={form.biodata}
+                  onChange={e => setForm(f => ({ ...f, biodata: e.target.value, summary: e.target.value }))}
                   placeholder="Write a short bio about yourself..."
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full resize-none rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Skills</label>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">Skills</label>
                 <div className="flex gap-2 mb-3">
                   <input
                     value={skillInput}
                     onChange={e => setSkillInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSkill(); } }}
                     placeholder="Type a skill and press Enter or Add"
-                    className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                   />
-                  <button type="button" onClick={addSkill} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium transition-colors">
+                  <button type="button" onClick={addSkill} className="rounded-xl bg-slate-900 px-4 py-2.5 font-medium text-white transition-colors hover:bg-slate-800">
                     Add
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {form.skills.map(skill => (
-                    <span key={skill} className="flex items-center gap-1.5 bg-blue-100 text-blue-800 text-sm px-3 py-1.5 rounded-full font-medium">
+                    <span key={skill} className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700">
                       {skill}
-                      <button type="button" onClick={() => removeSkill(skill)} className="text-blue-500 hover:text-red-600 transition-colors">
+                      <button type="button" onClick={() => removeSkill(skill)} className="text-slate-500 transition-colors hover:text-red-600">
                         <X className="w-3 h-3" />
                       </button>
                     </span>
@@ -467,14 +491,14 @@ const CandidateProfile = () => {
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="flex-1 border border-gray-300 text-gray-700 font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors"
+                  className="flex-1 rounded-xl border border-slate-300 py-3 font-semibold text-slate-700 transition-colors hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isUpdating}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
+                  className="flex-1 rounded-xl bg-blue-600 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isUpdating ? 'Saving...' : 'Save Changes'}
                 </button>

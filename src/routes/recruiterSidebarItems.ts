@@ -1,11 +1,15 @@
 // ========== recruiterSidebarItems.tsx ==========
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import * as React from 'react';
 import { LayoutDashboard, Briefcase, User, FileText } from "lucide-react";
-import { RecruiterDashboard } from "../pages/Recruiter/RecruiterDashboard";
-import RecruiterProfile from "../pages/Recruiter/RecruiterProfile";
-import JobPost from "../pages/Recruiter/JobPost";
-import MyJob from "@/pages/Recruiter/MyJob";
-import RecruiterApplications from "@/pages/Recruiter/RecruiterApplications";
+
+const RecruiterDashboard = React.lazy(() =>
+  import("../pages/Recruiter/RecruiterDashboard").then((module) => ({ default: module.RecruiterDashboard }))
+);
+const RecruiterProfile = React.lazy(() => import("../pages/Recruiter/RecruiterProfile"));
+const JobPost = React.lazy(() => import("../pages/Recruiter/JobPost"));
+const MyJob = React.lazy(() => import("@/pages/Recruiter/MyJob"));
+const RecruiterApplications = React.lazy(() => import("@/pages/Recruiter/RecruiterApplications"));
 
 interface ISidebarItem {
   title: string;
@@ -13,7 +17,7 @@ interface ISidebarItem {
     title: string;
     url: string;
     icon: any;
-    component: React.ComponentType<any>;
+    component: React.ComponentType<any> | React.LazyExoticComponent<React.ComponentType<any>>;
   }[];
 }
 

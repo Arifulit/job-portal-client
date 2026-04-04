@@ -6,7 +6,7 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router-dom';
-import { Menu, Search, Bell, User, Settings, LogOut, Home } from 'lucide-react';
+import { Menu, Search, Bell, User, LogOut, Home } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import {
   Avatar,
@@ -21,6 +21,7 @@ import { Button } from '../ui/button';
 import { adminSidebarItems } from '@/routes/adminSidebarItems';
 import { recruiterSidebarItems } from '@/routes/recruiterSidebarItems';
 import { userSidebarItems } from '@/routes/userSidebarItems';
+import { prefetchRoute } from '@/routes/prefetch';
 
 interface ISidebarItem {
   title: string;
@@ -193,6 +194,8 @@ const DashboardLayout: React.FC = () => {
                     key={j}
                     to={item.url}
                     onClick={handleSidebarNavigate(item.url)}
+                    onMouseEnter={() => prefetchRoute(item.url)}
+                    onFocus={() => prefetchRoute(item.url)}
                     className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium ${
                       active
                         ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm'
@@ -321,13 +324,6 @@ const DashboardLayout: React.FC = () => {
                       >
                         <User className="w-4 h-4" /> Profile
                       </button>
-                      <Link
-                        to="/settings"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-slate-200"
-                      >
-                        <Settings className="w-4 h-4" /> Settings
-                      </Link>
                     </div>
                     <div className="border-t border-gray-200 dark:border-slate-700 pt-2">
                       <button

@@ -1,11 +1,15 @@
 // ========== userSidebarItems.tsx ==========
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import * as React from 'react';
 import { LayoutDashboard, User, Briefcase, FileText } from "lucide-react";
-import { CandidateDashboard } from "../pages/Candidate/CandidateDashboard";
-import CandidateProfile from "../pages/Candidate/CandidateProfile";
 // import Jobs from "@/pages/Jobs/Jobs";
-import MyApplications from "@/pages/Candidate/MyApplications";
-import Jobs from "@/pages/Job/Jobs";
+
+const CandidateDashboard = React.lazy(() =>
+  import("../pages/Candidate/CandidateDashboard").then((module) => ({ default: module.CandidateDashboard }))
+);
+const CandidateProfile = React.lazy(() => import("../pages/Candidate/CandidateProfile"));
+const MyApplications = React.lazy(() => import("@/pages/Candidate/MyApplications"));
+const Jobs = React.lazy(() => import("@/pages/Job/Jobs"));
 
 interface ISidebarItem {
   title: string;
@@ -13,7 +17,7 @@ interface ISidebarItem {
     title: string;
     url: string;
     icon: any;
-    component: React.ComponentType<any>;
+    component: React.ComponentType<any> | React.LazyExoticComponent<React.ComponentType<any>>;
   }[];
 }
 

@@ -16,6 +16,7 @@ import {
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../hooks/useTheme';
+import { prefetchRoute } from '../../routes/prefetch';
 
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
@@ -87,12 +88,19 @@ export const Navbar = () => {
     normalizedRole === 'recruiter' ? '/recruiter/applications' : '/candidate/applications';
 
   const accountMenuItems = useMemo(
-    () => [
-      { label: 'Dashboard', href: dashboardLink, icon: LayoutDashboard },
-      { label: 'My Profile', href: profileLink, icon: User },
-      { label: 'Applications', href: appliedJobsLink, icon: FileText },
-    ],
-    [dashboardLink, profileLink, appliedJobsLink]
+    () => {
+      const baseItems = [
+        { label: 'Dashboard', href: dashboardLink, icon: LayoutDashboard },
+        { label: 'My Profile', href: profileLink, icon: User },
+      ];
+
+      if (normalizedRole !== 'admin') {
+        baseItems.push({ label: 'Applications', href: appliedJobsLink, icon: FileText });
+      }
+
+      return baseItems;
+    },
+    [dashboardLink, profileLink, appliedJobsLink, normalizedRole]
   );
 
   const profileName = user?.name || 'Account';
@@ -165,6 +173,8 @@ export const Navbar = () => {
               <Link
                 key={item.label}
                 to={item.href}
+                onMouseEnter={() => prefetchRoute(item.href)}
+                onFocus={() => prefetchRoute(item.href)}
                 className={`relative rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
                   isActive(item.href)
                     ? isDark
@@ -303,6 +313,8 @@ export const Navbar = () => {
                                 key={item.label}
                                 to={item.href}
                                 onClick={() => setProfileOpen(false)}
+                                onMouseEnter={() => prefetchRoute(item.href)}
+                                onFocus={() => prefetchRoute(item.href)}
                                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                                   isDark
                                     ? 'text-slate-300 hover:bg-slate-800 hover:text-white'
@@ -364,6 +376,8 @@ export const Navbar = () => {
                             key={item.label}
                             to={item.href}
                             onClick={() => setRecruiterOpen(false)}
+                            onMouseEnter={() => prefetchRoute(item.href)}
+                            onFocus={() => prefetchRoute(item.href)}
                             className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                               isDark
                                 ? 'text-slate-300 hover:bg-slate-800 hover:text-white'
@@ -380,6 +394,8 @@ export const Navbar = () => {
 
                 <Link
                   to="/register/candidate"
+                  onMouseEnter={() => prefetchRoute('/register/candidate')}
+                  onFocus={() => prefetchRoute('/register/candidate')}
                   className={`inline-flex h-9 items-center rounded-lg border px-4 text-sm font-semibold transition-colors ${
                     isDark
                       ? 'border-slate-700 text-slate-300 hover:border-slate-600 hover:bg-slate-800 hover:text-white'
@@ -390,6 +406,8 @@ export const Navbar = () => {
                 </Link>
                 <Link
                   to="/login"
+                  onMouseEnter={() => prefetchRoute('/login')}
+                  onFocus={() => prefetchRoute('/login')}
                   className="inline-flex h-9 items-center rounded-lg bg-[#0E5EA8] px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#0a4d8f]"
                 >
                   Sign In
@@ -444,6 +462,8 @@ export const Navbar = () => {
                   key={item.label}
                   to={item.href}
                   onClick={() => setMobileOpen(false)}
+                  onMouseEnter={() => prefetchRoute(item.href)}
+                  onFocus={() => prefetchRoute(item.href)}
                   className={`flex items-center rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${
                     isActive(item.href)
                       ? isDark
@@ -500,6 +520,8 @@ export const Navbar = () => {
                         key={item.label}
                         to={item.href}
                         onClick={() => setMobileOpen(false)}
+                        onMouseEnter={() => prefetchRoute(item.href)}
+                        onFocus={() => prefetchRoute(item.href)}
                         className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${
                           isDark ? 'text-slate-300 hover:bg-slate-800 hover:text-white' : 'text-slate-700 hover:bg-slate-50'
                         }`}
@@ -524,6 +546,8 @@ export const Navbar = () => {
                   <Link
                     to="/login"
                     onClick={() => setMobileOpen(false)}
+                    onMouseEnter={() => prefetchRoute('/login')}
+                    onFocus={() => prefetchRoute('/login')}
                     className="block rounded-lg bg-[#0E5EA8] px-3 py-2.5 text-center text-sm font-semibold text-white hover:bg-[#0a4d8f]"
                   >
                     Sign In
@@ -531,6 +555,8 @@ export const Navbar = () => {
                   <Link
                     to="/register/candidate"
                     onClick={() => setMobileOpen(false)}
+                    onMouseEnter={() => prefetchRoute('/register/candidate')}
+                    onFocus={() => prefetchRoute('/register/candidate')}
                     className={`block rounded-lg border px-3 py-2.5 text-center text-sm font-semibold transition-colors ${
                       isDark
                         ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
@@ -549,6 +575,8 @@ export const Navbar = () => {
                         key={item.label}
                         to={item.href}
                         onClick={() => setMobileOpen(false)}
+                        onMouseEnter={() => prefetchRoute(item.href)}
+                        onFocus={() => prefetchRoute(item.href)}
                         className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                           isDark ? 'text-slate-300 hover:bg-slate-800 hover:text-white' : 'text-slate-600 hover:bg-slate-50'
                         }`}

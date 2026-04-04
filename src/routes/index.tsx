@@ -1,24 +1,30 @@
 /* eslint-disable react-refresh/only-export-components */
+import * as React from 'react';
 import { createBrowserRouter, Navigate } from "react-router-dom";
-import HomePage from "../public/Home"; 
-import About from "../public/About";
-import Features from "../public/Features";
-import ContactPage from "../public/Contact";
-import FAQ from "../public/FAQ";
-import Jobs from "../pages/Job/Jobs";
-import JobDetails from "../pages/Job/JobDetails";
-import ApplyPage from "../pages/Application/ApplyPage";
-import { Login, Register, RecruiterRegister } from "../components/auth";
-import Unauthorized from "../pages/status/Unauthorized";
-import NotFound from "../pages/status/NotFound";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import MainLayout from "../components/layout/MainLayout";
-import JobPost from "../pages/Recruiter/JobPost";
 import { withAuth } from "../utils/withAuth";
 import { generateRoutes } from "../utils/generateRoutes";
 import { adminSidebarItems } from "./adminSidebarItems";
 import { recruiterSidebarItems } from "./recruiterSidebarItems";
 import { userSidebarItems } from "./userSidebarItems";
+
+const HomePage = React.lazy(() => import("../public/Home"));
+const About = React.lazy(() => import("../public/About"));
+const Features = React.lazy(() => import("../public/Features"));
+const ContactPage = React.lazy(() => import("../public/Contact"));
+const FAQ = React.lazy(() => import("../public/FAQ"));
+const Jobs = React.lazy(() => import("../pages/Job/Jobs"));
+const JobDetails = React.lazy(() => import("../pages/Job/JobDetails"));
+const ApplyPage = React.lazy(() => import("../pages/Application/ApplyPage"));
+const Register = React.lazy(() => import("../components/auth/Register"));
+const RecruiterRegister = React.lazy(() => import("../components/auth/RecruiterRegister"));
+const Login = React.lazy(() =>
+  import("../components/auth/Login").then((module) => ({ default: module.Login }))
+);
+const Unauthorized = React.lazy(() => import("../pages/status/Unauthorized"));
+const NotFound = React.lazy(() => import("../pages/status/NotFound"));
+const JobPost = React.lazy(() => import("../pages/Recruiter/JobPost"));
 
 // Simple inline RouteError component used as errorElement fallback
 function RouteError({ error }: { error?: unknown }) {
@@ -34,6 +40,16 @@ function RouteError({ error }: { error?: unknown }) {
   );
 }
 
+const RouteLoader = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900" />
+  </div>
+);
+
+const withSuspense = (element: React.ReactElement) => (
+  <React.Suspense fallback={<RouteLoader />}>{element}</React.Suspense>
+);
+
 // Create authenticated layout components
 const AdminDashboardLayout = withAuth(DashboardLayout, "admin");
 const recruiterDashboardLayout = withAuth(DashboardLayout, "recruiter");
@@ -48,11 +64,11 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HomePage />,
+        element: withSuspense(<HomePage />),
       },
       {
         path: "login",
-        element: <Login />,
+        element: withSuspense(<Login />),
       },
       {
         path: "register",
@@ -60,47 +76,47 @@ export const router = createBrowserRouter([
       },
       {
         path: "register/candidate",
-        element: <Register />,
+        element: withSuspense(<Register />),
       },
       {
         path: "register/recruiter",
-        element: <RecruiterRegister />,
+        element: withSuspense(<RecruiterRegister />),
       },
       {
         path: "about",
-        element: <About />,
+        element: withSuspense(<About />),
       },
       {
         path: "features",
-        element: <Features />,
+        element: withSuspense(<Features />),
       },
       {
         path: "contact",
-        element: <ContactPage />,
+        element: withSuspense(<ContactPage />),
       },
       {
         path: "faq",
-        element: <FAQ />,
+        element: withSuspense(<FAQ />),
       },
       {
         path: "jobs",
-        element: <Jobs />,
+        element: withSuspense(<Jobs />),
       },
       {
         path: "jobs/:id",
-        element: <JobDetails />,
+        element: withSuspense(<JobDetails />),
       },
       {
         path: "jobs/:jobId/apply",
-        element: <ApplyPage />,
+        element: withSuspense(<ApplyPage />),
       },
       {
         path: "unauthorized",
-        element: <Unauthorized />,
+        element: withSuspense(<Unauthorized />),
       },
       {
         path: "*",
-        element: <NotFound />,
+        element: withSuspense(<NotFound />),
       },
     ],
   },
@@ -123,7 +139,7 @@ export const router = createBrowserRouter([
     errorElement: <RouteError />,
     children: [
       { index: true, element: <Navigate to="/recruiter/dashboard" replace /> },
-      { path: "jobs/edit/:jobId", element: <JobPost /> },
+      { path: "jobs/edit/:jobId", element: withSuspense(<JobPost />) },
       ...generateRoutes(recruiterSidebarItems),
     ],
   },

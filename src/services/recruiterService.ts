@@ -2,9 +2,11 @@ import { api } from '@/utils/api';
 import axios from 'axios';
 
 export interface RecruiterProfileUpdatePayload {
-  name?: string;
-  phone?: string;
-  designation?: string;
+  name: string;
+  phone: string;
+  designation: string;
+  location?: string;
+  biodata?: string;
   bio?: string;
 }
 
@@ -16,12 +18,42 @@ export interface RecruiterAgencyPayload {
 
 type ProfilePayload = {
   success?: boolean;
-  data?: unknown;
+  data?: {
+    user?: unknown;
+    profile?: unknown;
+  } | unknown;
   user?: unknown;
 };
 
 const parseProfileData = (payload: ProfilePayload): unknown => {
   if (payload?.data && typeof payload.data === 'object') {
+    const data = payload.data as Record<string, unknown>;
+
+    // If response already contains recruiter profile fields, return full data object.
+    if (
+      '_id' in data ||
+      'designation' in data ||
+      'phone' in data ||
+      'agency' in data ||
+      'company' in data ||
+      'biodata' in data
+    ) {
+      return payload.data;
+    }
+
+    if ('profile' in data && data.profile && typeof data.profile === 'object') {
+      return data.profile;
+    }
+
+    if (
+      'user' in data &&
+      data.user &&
+      typeof data.user === 'object' &&
+      Object.keys(data).length === 1
+    ) {
+      return data.user;
+    }
+
     return payload.data;
   }
 

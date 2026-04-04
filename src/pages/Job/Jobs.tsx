@@ -60,15 +60,12 @@ const Jobs = () => {
     return acc;
   }, {});
 
-  console.log('Current filters being used:', filters); // Debug log
-
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Search is already handled by handleSearchChange
   };
 
   const handleSearchChange = debounce((value: string) => {
-    console.log('Search input changed:', value); // Debug log
     setFilters((prev) => {
       const newFilters = { ...prev, keyword: value, page: 1 };
       
@@ -81,8 +78,7 @@ const Jobs = () => {
       }
       params.set('page', '1');
       setSearchParams(params);
-      
-      console.log('Filters updated:', newFilters); // Debug log
+
       return newFilters;
     });
   }, 500);
@@ -136,7 +132,7 @@ const Jobs = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)]">
       {/* Hero Section with Statistics */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -257,19 +253,17 @@ const Jobs = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row gap-8">
           <aside className="w-full md:w-64 space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="font-semibold text-lg mb-4 flex items-center">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-4 flex items-center text-lg font-semibold text-slate-900">
                 <Filter className="w-5 h-5 mr-2" />
                 Filters
               </h3>
 
               <div className="space-y-4">
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Job Type</span>
-                  </label>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Job Type</label>
                   <select
-                    className="select select-bordered select-sm w-full"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     value={filters.jobType}
                     onChange={(e) => handleFilterChange('jobType', e.target.value)}
                   >
@@ -282,12 +276,10 @@ const Jobs = () => {
                   </select>
                 </div>
 
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Experience Level</span>
-                  </label>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Experience Level</label>
                   <select
-                    className="select select-bordered select-sm w-full"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     value={filters.experienceLevel}
                     onChange={(e) => handleFilterChange('experienceLevel', e.target.value)}
                   >
@@ -299,12 +291,10 @@ const Jobs = () => {
                   </select>
                 </div>
 
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Category</span>
-                  </label>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Category</label>
                   <select
-                    className="select select-bordered select-sm w-full"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     value={filters.category}
                     onChange={(e) => handleFilterChange('category', e.target.value)}
                   >
@@ -319,7 +309,7 @@ const Jobs = () => {
                 </div>
 
                 <button
-                  className="btn btn-ghost btn-sm w-full"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
                   onClick={() => {
                     setFilters({
                       keyword: '',
@@ -340,8 +330,8 @@ const Jobs = () => {
             </div>
 
             {/* Quick Links Section */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="font-semibold text-lg mb-4 flex items-center">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-4 flex items-center text-lg font-semibold text-slate-900">
                 <TrendingUp className="w-5 h-5 mr-2" />
                 QUICK LINKS
               </h3>
@@ -444,7 +434,7 @@ const Jobs = () => {
 
                 {data && data.data.length > 0 ? (
                   <>
-                    <div className="grid grid-cols-1 gap-6 mb-8">
+                    <div className="mb-8 grid grid-cols-1 gap-6">
                       {data.data.map((job) => (
                         <JobCard key={job._id} job={job} />
                       ))}
@@ -452,9 +442,9 @@ const Jobs = () => {
 
                     {totalPages > 1 && (
                       <div className="flex justify-center">
-                        <div className="join">
+                        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
                           <button
-                            className="join-item btn"
+                            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                             onClick={() => handlePageChange(filters.page! - 1)}
                             disabled={filters.page === 1}
                           >
@@ -464,8 +454,10 @@ const Jobs = () => {
                             (page) => (
                               <button
                                 key={page}
-                                className={`join-item btn ${
-                                  page === filters.page ? 'btn-active' : ''
+                                className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                                  page === filters.page
+                                    ? 'bg-blue-600 text-white'
+                                    : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
                                 }`}
                                 onClick={() => handlePageChange(page)}
                               >
@@ -474,7 +466,7 @@ const Jobs = () => {
                             )
                           )}
                           <button
-                            className="join-item btn"
+                            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                             onClick={() => handlePageChange(filters.page! + 1)}
                             disabled={filters.page === totalPages}
                           >

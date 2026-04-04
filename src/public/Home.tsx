@@ -412,7 +412,11 @@ const HomePage: React.FC = () => {
             ))
           ) : (
             featuredJobs.map((job) => (
-              <article key={job.routeId} className="rounded-xl border border-blue-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <Link
+                key={job.routeId}
+                to={job.routeId ? `/jobs/${job.routeId}` : "/jobs"}
+                className="group block rounded-xl border border-blue-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[#1f4f93]/40 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+              >
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-[#e9f2ff] px-3 py-1 text-xs font-bold uppercase text-[#1f4f93]">{job.type}</span>
                   <span className="rounded-full bg-[#ffeaf7] px-3 py-1 text-xs font-bold uppercase text-[#b42880]">Featured</span>
@@ -427,11 +431,11 @@ const HomePage: React.FC = () => {
                   <p className="col-span-2 inline-flex items-center gap-2"><CalendarClock className="h-4 w-4 text-slate-400" />{job.deadline}</p>
                 </div>
 
-                <div className="mt-4 flex items-center justify-between">
-                  <Link to={job.routeId ? `/jobs/${job.routeId}` : "/jobs"} className="text-sm font-semibold text-[#1f4f93] hover:text-[#153a6f]">See details</Link>
-                  <Button className="h-10 rounded-md bg-[#cf2f92] px-4 text-sm text-white hover:bg-[#b42880]">Apply Now</Button>
+                <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#1f4f93] group-hover:text-[#153a6f]">
+                  See details
+                  <ArrowUpRight className="h-4 w-4" />
                 </div>
-              </article>
+              </Link>
             ))
           )}
         </div>

@@ -24,6 +24,8 @@ const roleBadgeClass = (role: string) => {
 const UserManagement = () => {
 	const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'recruiter' | 'candidate'>('all');
 	const [search, setSearch] = useState('');
+	const [approvingUserId, setApprovingUserId] = useState<string | null>(null);
+	const [approvedUserIds, setApprovedUserIds] = useState<Record<string, boolean>>({});
 
 	const { data, isLoading, isError, refetch } = useAllUsers(roleFilter === 'all' ? undefined : roleFilter);
 	const { mutate: updateUserStatus, isPending: updatingStatus } = useUpdateUserStatus();
@@ -54,9 +56,34 @@ const UserManagement = () => {
 		return { total, active, recruiters, candidates };
 	}, [users]);
 
+	const isRecruiterApproved = (user: User) => {
+		const serverStatus = String(
+			user.recruiterApprovalStatus || user.approvalStatus || user.status || ''
+		).toLowerCase();
+		const serverApproved = user.isApproved === true || ['shortlisted', 'approved', 'active'].includes(serverStatus);
+		const localApproved = approvedUserIds[user._id];
+
+		if (typeof localApproved === 'boolean') {
+			return localApproved;
+		}
+
+		return serverApproved;
+	};
+
 	const handleRoleChange = (user: User, role: string) => {
-		if (normalizeRole(user.role) === normalizeRole(role)) return;
-		updateUserRole({ userId: user._id, role });
+		const currentRole = normalizeRole(user.role);
+		const nextRole = normalizeRole(role);
+		const isCurrentUpdatableRole = currentRole === 'candidate' || currentRole === 'recruiter';
+		const isNextUpdatableRole = nextRole === 'candidate' || nextRole === 'recruiter';
+
+		if (currentRole === nextRole) return;
+
+		if (!isCurrentUpdatableRole || !isNextUpdatableRole) {
+			toast.error('Only candidate and recruiter roles can be changed');
+			return;
+		}
+
+		updateUserRole({ userId: user._id, role: nextRole });
 	};
 
 	const handleStatusToggle = (user: User) => {
@@ -75,11 +102,29 @@ const UserManagement = () => {
 	};
 
 	const handleApproveRecruiter = (user: User) => {
-		approveRecruiter({ userId: user._id, status: 'shortlisted' });
+		setApprovingUserId(user._id);
+		approveRecruiter(
+			{ userId: user._id, status: 'shortlisted' },
+			{
+				onSuccess: () => {
+					setApprovedUserIds((prev) => ({ ...prev, [user._id]: true }));
+				},
+				onSettled: () => {
+					setApprovingUserId(null);
+				},
+			}
+		);
 	};
 
 	const handleRejectRecruiter = (user: User) => {
-		rejectRecruiter({ userId: user._id });
+		rejectRecruiter(
+			{ userId: user._id },
+			{
+				onSuccess: () => {
+					setApprovedUserIds((prev) => ({ ...prev, [user._id]: false }));
+				},
+			}
+		);
 	};
 
 	if (isLoading) return <Loader />;
@@ -188,13 +233,20 @@ const UserManagement = () => {
 										<select
 											value={normalizeRole(user.role)}
 											onChange={(event) => handleRoleChange(user, event.target.value)}
-											disabled={updatingRole}
+											disabled={updatingRole || normalizeRole(user.role) === 'admin'}
 											className="block w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
 										>
-											<option value="admin">Admin</option>
-											<option value="recruiter">Recruiter</option>
 											<option value="candidate">Candidate</option>
+											<option value="recruiter">Recruiter</option>
 										</select>
+										{normalizeRole(user.role) === 'admin' && (
+											<p className="text-xs text-slate-500">Admin role is locked.</p>
+										)}
+										{normalizeRole(user.role) === 'recruiter' && isRecruiterApproved(user) && (
+											<span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+												Approved
+											</span>
+										)}
 									</div>
 								</td>
 								<td className="px-4 py-3">
@@ -216,10 +268,10 @@ const UserManagement = () => {
 													size="sm"
 													variant="outline"
 													onClick={() => handleApproveRecruiter(user)}
-													disabled={approvingRecruiter}
+													disabled={approvingRecruiter || approvingUserId === user._id}
 													className="border-emerald-300 text-emerald-700"
 												>
-													Approve
+													{approvingUserId === user._id ? 'Approving...' : 'Approve'}
 												</Button>
 
 												<Button

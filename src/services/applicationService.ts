@@ -135,8 +135,8 @@ export const useApplyJob = () => {
     }) => {
       let resumeUrl = data.resumeUrl;
 
-      // Backend expects resumeUrl in JSON payload.
-      if (!resumeUrl && data.resumeFile) {
+      // Prefer a fresh upload when the user selected a file.
+      if (data.resumeFile) {
         resumeUrl = await uploadToCloudinary(data.resumeFile);
       }
 

@@ -17,11 +17,16 @@ export interface User {
   email: string;
   role: UserRole;
   phone?: string;
+  status?: string;
+  approvalStatus?: string;
+  recruiterApprovalStatus?: string;
+  isApproved?: boolean;
   avatar?: string;
   profileImage?: string;
   companyName?: string;
   companyLogo?: string;
   bio?: string;
+  biodata?: string;
   skills?: string[];
   experience?: string;
   education?: string;
