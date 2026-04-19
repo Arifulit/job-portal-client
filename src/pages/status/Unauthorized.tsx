@@ -1,3 +1,4 @@
+// এই ফাইলটি status/error/authorization সংক্রান্ত fallback page দেখায়।
 
 import { Link } from 'react-router-dom';
 import { Shield, Chrome as Home, ArrowLeft } from 'lucide-react';

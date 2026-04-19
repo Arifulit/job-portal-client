@@ -1,3 +1,4 @@
+// এই ফাইলটি app layout (navbar/sidebar/footer/outlet) structure নিয়ন্ত্রণ করে।
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {

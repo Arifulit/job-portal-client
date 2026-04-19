@@ -1,3 +1,4 @@
+// এই ফাইলটি admin panel এর একটি page UI ও business flow পরিচালনা করে।
 
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';

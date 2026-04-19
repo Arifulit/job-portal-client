@@ -1,18 +1,18 @@
-import React from 'react';
+// এই ফাইলটি candidate dashboard এর একটি page UI ও interaction flow পরিচালনা করে।
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { Loader2, ExternalLink } from 'lucide-react';
 import { useDeleteApplication, useMyApplications } from '../../services/applicationService';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { ApplicationStatus } from '../../types';
 
 const statusBadgeClassMap: Record<ApplicationStatus, string> = {
   applied: 'bg-blue-100 text-blue-700 border border-blue-200',
   shortlisted: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
   interview: 'bg-amber-100 text-amber-700 border border-amber-200',
-  offered: 'bg-indigo-100 text-indigo-700 border border-indigo-200',
   hired: 'bg-green-100 text-green-700 border border-green-200',
   rejected: 'bg-rose-100 text-rose-700 border border-rose-200',
-  withdrawn: 'bg-slate-100 text-slate-700 border border-slate-200',
 };
 
 const toTitleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
@@ -20,12 +20,19 @@ const toTitleCase = (value: string) => value.charAt(0).toUpperCase() + value.sli
 const MyApplications: React.FC = () => {
   const { data, isLoading, isError, refetch } = useMyApplications();
   const { mutate: withdrawApplication, isPending: isWithdrawing } = useDeleteApplication();
+  const [confirmWithdrawId, setConfirmWithdrawId] = useState<string | null>(null);
   const applications = data?.data || [];
 
   const handleWithdraw = (applicationId: string) => {
-    const confirmed = window.confirm('Are you sure you want to withdraw this application?');
-    if (!confirmed) return;
-    withdrawApplication(applicationId);
+    setConfirmWithdrawId(applicationId);
+  };
+
+  const handleConfirmWithdraw = () => {
+    if (!confirmWithdrawId) return;
+    withdrawApplication(confirmWithdrawId, {
+      onSuccess: () => setConfirmWithdrawId(null),
+      onError: () => setConfirmWithdrawId(null),
+    });
   };
 
   if (isLoading) {
@@ -56,8 +63,9 @@ const MyApplications: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <>
+      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-900">My Applications</h1>
           <p className="text-gray-600 mt-1">
@@ -92,13 +100,12 @@ const MyApplications: React.FC = () => {
                   {applications.map((application) => {
                     const jobData = application.job;
                     const jobTitle = jobData?.title || 'Untitled Job';
+                    const resumeLink = application.downloadUrl || application.resume;
                     const appliedDate =
                       application.createdAt ||
                       application.appliedAt ||
                       application.updatedAt;
                     const jobId = application.jobId || jobData?._id;
-                    const canWithdraw = application.status !== 'withdrawn';
-
                     return (
                       <tr key={application._id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4">
@@ -113,11 +120,15 @@ const MyApplications: React.FC = () => {
                           ) : null}
                         </td>
                         <td className="px-6 py-4">
-                          {application.resume ? (
+                          {resumeLink ? (
                             <a
-                              href={application.resume}
+                              href={resumeLink}
                               target="_blank"
-                              rel="noreferrer"
+                              rel="noopener noreferrer"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                window.open(resumeLink, '_blank', 'noopener,noreferrer');
+                              }}
                               className="text-blue-600 hover:underline"
                             >
                               View Resume
@@ -136,16 +147,14 @@ const MyApplications: React.FC = () => {
                             >
                               {toTitleCase(application.status)}
                             </span>
-                            {canWithdraw ? (
-                              <button
-                                type="button"
-                                onClick={() => handleWithdraw(application._id)}
-                                disabled={isWithdrawing}
-                                className="inline-flex items-center rounded-md border border-red-300 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
-                              >
-                                Withdraw
-                              </button>
-                            ) : null}
+                            <button
+                              type="button"
+                              onClick={() => handleWithdraw(application._id)}
+                              disabled={isWithdrawing}
+                              className="inline-flex items-center rounded-md border border-red-300 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+                            >
+                              Withdraw
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -156,8 +165,20 @@ const MyApplications: React.FC = () => {
             </div>
           </div>
         )}
+        </div>
       </div>
-    </div>
+
+      <ConfirmDialog
+        open={Boolean(confirmWithdrawId)}
+        title="Withdraw Application"
+        description="Are you sure you want to withdraw this application? This action cannot be undone."
+        confirmLabel="Yes, Withdraw"
+        cancelLabel="Cancel"
+        loading={isWithdrawing}
+        onConfirm={handleConfirmWithdraw}
+        onCancel={() => setConfirmWithdrawId(null)}
+      />
+    </>
   );
 };
 

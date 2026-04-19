@@ -1,11 +1,23 @@
+// এই ফাইলটি job listing/details related page rendering ও data flow পরিচালনা করে।
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useJobs } from '../../services/jobService';
 import { JobCard } from '../../components/JobCard';
 import { Loader } from '../../components/Loader';
-import { Search, Filter, MapPin, Briefcase, Building, TrendingUp, Clock } from 'lucide-react';
+import { motion } from 'framer-motion';
+import type { Variants } from 'framer-motion';
+import { Search, Briefcase, Star, SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { JobFilters } from '../../types';
 import { debounce } from '../../utils/helpers';
+
+const sectionReveal: Variants = {
+  hidden: { opacity: 0, y: 18 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.35 },
+  },
+};
 
 const Jobs = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -17,7 +29,7 @@ const Jobs = () => {
     jobType: '',
     experienceLevel: '',
     page: 1,
-    limit: 12,
+    limit: 10,
   });
 
   // Read URL parameters and update filters
@@ -29,7 +41,7 @@ const Jobs = () => {
       jobType: searchParams.get('jobType') || '',
       experienceLevel: searchParams.get('experienceLevel') || '',
       page: parseInt(searchParams.get('page') || '1'),
-      limit: 12,
+      limit: Number(searchParams.get('limit') || '10'),
     };
     setFilters(urlFilters);
   }, [searchParams]);
@@ -38,31 +50,61 @@ const Jobs = () => {
   const jobs = data?.data || [];
   const totalPages = data?.pagination?.pages || 1;
   const totalJobs = data?.pagination?.total || 0;
-  const fullTimeCount = jobs.filter((job) => String(job.jobType || '').toLowerCase() === 'full-time').length;
-  const uniqueCompanyCount = new Set(
-    jobs
-      .map((job) => {
-        if (typeof job.company === 'string') return job.company;
-        return job.company?.name || null;
-      })
-      .filter(Boolean)
-  ).size;
-  const newJobsCount = jobs.filter((job) => {
-    if (!job.createdAt) return false;
-    const createdTime = new Date(job.createdAt).getTime();
-    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    return createdTime >= sevenDaysAgo;
-  }).length;
-  const locationCounts = jobs.reduce<Record<string, number>>((acc, job) => {
-    const location = String(job.location || '').toLowerCase();
-    if (location.includes('dhaka')) acc.Dhaka = (acc.Dhaka || 0) + 1;
-    if (location.includes('chittagong')) acc.Chittagong = (acc.Chittagong || 0) + 1;
-    return acc;
-  }, {});
+  const totalVacancies = jobs.reduce((sum, job) => sum + (typeof job.vacancies === 'number' ? job.vacancies : 0), 0);
+  const activeFilterCount = [
+    filters.keyword,
+    filters.location,
+    filters.jobType,
+    filters.category,
+    filters.experienceLevel,
+  ].filter(Boolean).length;
+  const currentPage = filters.page || 1;
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Search is already handled by handleSearchChange
+  const getPaginationItems = (page: number, pages: number): Array<number | 'ellipsis'> => {
+    if (pages <= 7) {
+      return Array.from({ length: pages }, (_, i) => i + 1);
+    }
+
+    const items: Array<number | 'ellipsis'> = [1];
+    let start = Math.max(2, page - 1);
+    let end = Math.min(pages - 1, page + 1);
+
+    if (page <= 3) {
+      end = 4;
+    }
+
+    if (page >= pages - 2) {
+      start = pages - 3;
+    }
+
+    if (start > 2) {
+      items.push('ellipsis');
+    }
+
+    for (let p = start; p <= end; p += 1) {
+      items.push(p);
+    }
+
+    if (end < pages - 1) {
+      items.push('ellipsis');
+    }
+
+    items.push(pages);
+
+    return items;
+  };
+
+  const paginationItems = getPaginationItems(currentPage, totalPages);
+
+  const handleLimitChange = (value: number) => {
+    setFilters((prev) => {
+      const newFilters = { ...prev, limit: value, page: 1 };
+      const params = new URLSearchParams(searchParams);
+      params.set('limit', String(value));
+      params.set('page', '1');
+      setSearchParams(params);
+      return newFilters;
+    });
   };
 
   const handleSearchChange = debounce((value: string) => {
@@ -115,14 +157,27 @@ const Jobs = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const clearAllFilters = () => {
+    setFilters({
+      keyword: '',
+      category: '',
+      location: '',
+      jobType: '',
+      experienceLevel: '',
+      page: 1,
+      limit: 10,
+    });
+    setSearchParams(new URLSearchParams());
+  };
+
   if (isError) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-xl text-red-600 mb-4">Failed to load jobs</p>
+      <div className="min-h-screen bg-[linear-gradient(180deg,_#f8fbff_0%,_#eef4ff_56%,_#f8fafc_100%)] flex items-center justify-center px-4">
+        <div className="w-full max-w-md rounded-2xl border border-red-200 bg-red-50 p-6 text-center shadow-sm">
+          <p className="mb-4 text-xl font-semibold text-red-700">Failed to load jobs</p>
           <button
             onClick={() => window.location.reload()}
-            className="btn btn-primary"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
             Try Again
           </button>
@@ -132,361 +187,305 @@ const Jobs = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)]">
-      {/* Hero Section with Statistics */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Briefcase className="w-6 h-6 mr-2" />
-                <span className="text-2xl font-bold">{totalJobs}</span>
-              </div>
-              <span className="text-sm">LIVE JOBS</span>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Clock className="w-6 h-6 mr-2" />
-                <span className="text-2xl font-bold">{fullTimeCount}</span>
-              </div>
-              <span className="text-sm">FULL TIME</span>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Building className="w-6 h-6 mr-2" />
-                <span className="text-2xl font-bold">{uniqueCompanyCount}</span>
-              </div>
-              <span className="text-sm">COMPANIES</span>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <TrendingUp className="w-6 h-6 mr-2" />
-                <span className="text-2xl font-bold">{newJobsCount}</span>
-              </div>
-              <span className="text-sm">NEW JOBS</span>
-            </div>
-          </div>
+    <div className="min-h-screen bg-[#f1f3f5] px-4 py-6">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-300 pb-3">
+          <p className="text-3xl font-extrabold leading-none text-[#0b3d66] md:text-4xl">
+            {totalJobs} Jobs <span className="mx-2 text-slate-500">|</span>
+            <span className="text-2xl text-[#334e68] md:text-3xl">{totalVacancies || `${Math.max(totalJobs * 4, totalJobs)}`}+ Vacancies</span>
+          </p>
 
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">Find Your Dream Job</h1>
-          <p className="text-lg mb-8 text-blue-100">Discover opportunities that match your skills</p>
-
-          {/* Professional Search Bar */}
-          <div className="bg-white rounded-xl shadow-xl p-6">
-            <form onSubmit={handleSearchSubmit}>
-              <div className="flex flex-col lg:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${filters.keyword ? 'text-blue-500' : 'text-gray-400'}`} />
-                  <input
-                    type="text"
-                    placeholder="Search by keyword"
-                    value={filters.keyword}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 placeholder-gray-500 ${
-                      filters.keyword ? 'border-blue-300 bg-blue-50' : 'border-gray-300'
-                    }`}
-                  />
-                </div>
-                <div className="relative lg:w-48">
-                  <MapPin className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${filters.location ? 'text-blue-500' : 'text-gray-400'}`} />
-                  <input
-                    type="text"
-                    placeholder="Location"
-                    value={filters.location}
-                    onChange={(e) => handleFilterChange('location', e.target.value)}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 placeholder-gray-500 ${
-                      filters.location ? 'border-blue-300 bg-blue-50' : 'border-gray-300'
-                    }`}
-                  />
-                </div>
-                <div className="relative lg:w-48">
-                  <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <select
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 appearance-none"
-                    value={filters.jobType}
-                    onChange={(e) => handleFilterChange('jobType', e.target.value)}
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2 rounded-xl">
+              <button
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <span className="inline-flex items-center gap-1">
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </span>
+              </button>
+              {paginationItems.map((item, idx) =>
+                item === 'ellipsis' ? (
+                  <span key={`ellipsis-top-${idx}`} className="px-1 text-lg font-semibold text-slate-500">...</span>
+                ) : (
+                  <button
+                    key={item}
+                    className={`h-11 w-11 rounded-xl text-sm font-bold ${item === currentPage ? 'bg-[#0b77b7] text-white' : 'bg-transparent text-slate-700'}`}
+                    onClick={() => handlePageChange(item)}
                   >
-                    <option value="">Job Type</option>
-                    <option value="full-time">Full Time</option>
-                    <option value="part-time">Part Time</option>
-                    <option value="contract">Contract</option>
-                    <option value="internship">Internship</option>
-                    <option value="remote">Remote</option>
-                  </select>
-                </div>
-                <button 
-                  type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors duration-200 shadow-lg"
-                >
-                  Search
-                </button>
-              </div>
-            </form>
-
-            {/* Location Pills */}
-            <div className="flex flex-wrap gap-2 mt-4">
-              <button 
-                onClick={() => handleFilterChange('location', 'Dhaka')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  filters.location === 'Dhaka' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                    {item}
+                  </button>
+                )
+              )}
+              <button
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
               >
-                Dhaka ({locationCounts.Dhaka || 0})
-              </button>
-              <button 
-                onClick={() => handleFilterChange('location', 'Chittagong')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  filters.location === 'Chittagong' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Chittagong ({locationCounts.Chittagong || 0})
+                <span className="inline-flex items-center gap-1">
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </span>
               </button>
             </div>
-          </div>
+          )}
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col md:flex-row gap-8">
-          <aside className="w-full md:w-64 space-y-6">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="mb-4 flex items-center text-lg font-semibold text-slate-900">
-                <Filter className="w-5 h-5 mr-2" />
-                Filters
-              </h3>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Job Type</label>
-                  <select
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    value={filters.jobType}
-                    onChange={(e) => handleFilterChange('jobType', e.target.value)}
-                  >
-                    <option value="">All Types</option>
-                    <option value="full-time">Full Time</option>
-                    <option value="part-time">Part Time</option>
-                    <option value="contract">Contract</option>
-                    <option value="internship">Internship</option>
-                    <option value="remote">Remote</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Experience Level</label>
-                  <select
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    value={filters.experienceLevel}
-                    onChange={(e) => handleFilterChange('experienceLevel', e.target.value)}
-                  >
-                    <option value="">All Levels</option>
-                    <option value="entry">Entry Level</option>
-                    <option value="mid">Mid Level</option>
-                    <option value="senior">Senior Level</option>
-                    <option value="lead">Lead</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Category</label>
-                  <select
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    value={filters.category}
-                    onChange={(e) => handleFilterChange('category', e.target.value)}
-                  >
-                    <option value="">All Categories</option>
-                    <option value="technology">Technology</option>
-                    <option value="marketing">Marketing</option>
-                    <option value="design">Design</option>
-                    <option value="sales">Sales</option>
-                    <option value="finance">Finance</option>
-                    <option value="hr">Human Resources</option>
-                  </select>
-                </div>
-
-                <button
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-                  onClick={() => {
-                    setFilters({
-                      keyword: '',
-                      category: '',
-                      location: '',
-                      jobType: '',
-                      experienceLevel: '',
-                      page: 1,
-                      limit: 12,
-                    });
-                    // Clear all URL parameters
-                    setSearchParams(new URLSearchParams());
-                  }}
-                >
-                  Clear Filters
-                </button>
-              </div>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[340px_1fr]">
+        <aside className="space-y-4 lg:sticky lg:top-20 lg:h-fit">
+          <motion.div
+            variants={sectionReveal}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            className="rounded-xl border border-slate-300 bg-white shadow-sm"
+          >
+            <div className="border-b border-slate-200 p-4">
+              <label className="relative block">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[#0b77b7]" />
+                <input
+                  type="text"
+                  placeholder="Search for Jobs..."
+                  value={filters.keyword}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="h-12 w-full rounded-xl border border-slate-300 bg-[#f8f9fa] pl-11 pr-3 text-base font-medium text-slate-700 outline-none focus:border-[#0b77b7]"
+                />
+              </label>
             </div>
 
-            {/* Quick Links Section */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="mb-4 flex items-center text-lg font-semibold text-slate-900">
-                <TrendingUp className="w-5 h-5 mr-2" />
-                QUICK LINKS
-              </h3>
+            <div className="p-5">
+              <h3 className="mb-3 text-2xl font-bold text-slate-700">More Filters</h3>
               <div className="space-y-3">
-                <button 
-                  onClick={() => {
-                    setFilters(prev => ({ ...prev, location: '', jobType: '', keyword: '', page: 1 }));
-                    setSearchParams(new URLSearchParams());
-                  }}
-                  className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-between"
+              <div>
+                <label className="mb-1.5 block text-base font-medium text-slate-700">Job Type</label>
+                <select
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none"
+                  value={filters.jobType}
+                  onChange={(e) => handleFilterChange('jobType', e.target.value)}
                 >
-                  <span className="font-medium text-gray-700">All Jobs</span>
-                  <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-xs font-semibold">{totalJobs}</span>
-                </button>
-                <button 
-                  onClick={() => {
-                    setFilters(prev => ({ ...prev, jobType: 'full-time', page: 1 }));
-                    const params = new URLSearchParams();
-                    params.set('jobType', 'full-time');
-                    setSearchParams(params);
-                  }}
-                  className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-between"
-                >
-                  <span className="font-medium text-gray-700">Full Time Jobs</span>
-                  <span className="bg-green-100 text-green-600 px-2 py-1 rounded-full text-xs font-semibold">{fullTimeCount}</span>
-                </button>
-                <button 
-                  onClick={() => {
-                    setFilters(prev => ({ ...prev, keyword: 'top', page: 1 }));
-                    const params = new URLSearchParams();
-                    params.set('search', 'top');
-                    setSearchParams(params);
-                  }}
-                  className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-between"
-                >
-                  <span className="font-medium text-gray-700">Top Companies</span>
-                  <span className="bg-purple-100 text-purple-600 px-2 py-1 rounded-full text-xs font-semibold">{uniqueCompanyCount}</span>
-                </button>
-                <button 
-                  onClick={() => {
-                    setFilters(prev => ({ ...prev, keyword: 'new', page: 1 }));
-                    const params = new URLSearchParams();
-                    params.set('search', 'new');
-                    setSearchParams(params);
-                  }}
-                  className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-between"
-                >
-                  <span className="font-medium text-gray-700">New Openings</span>
-                  <span className="bg-orange-100 text-orange-600 px-2 py-1 rounded-full text-xs font-semibold">{newJobsCount}</span>
-                </button>
+                  <option value="">All Types</option>
+                  <option value="full-time">Full Time</option>
+                  <option value="part-time">Part Time</option>
+                  <option value="contract">Contract</option>
+                  <option value="internship">Internship</option>
+                  <option value="remote">Remote</option>
+                </select>
               </div>
-            </div>
-          </aside>
 
-          <main className="flex-1">
-            {isLoading ? (
-              <Loader />
-            ) : (
-              <>
-                <div className="mb-6 flex items-center justify-between">
-                  <div className="flex items-center text-gray-600">
-                    <Briefcase className="w-5 h-5 mr-2" />
-                    <span className="font-medium">
-                      {isLoading ? 'Searching...' : `${data?.pagination?.total || 0} jobs found`}
+              <div>
+                <label className="mb-1.5 block text-base font-medium text-slate-700">Experience Level</label>
+                <select
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none"
+                  value={filters.experienceLevel}
+                  onChange={(e) => handleFilterChange('experienceLevel', e.target.value)}
+                >
+                  <option value="">All Levels</option>
+                  <option value="entry">Entry Level</option>
+                  <option value="mid">Mid Level</option>
+                  <option value="senior">Senior Level</option>
+                  <option value="lead">Lead</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-base font-medium text-slate-700">Category</label>
+                <select
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none"
+                  value={filters.category}
+                  onChange={(e) => handleFilterChange('category', e.target.value)}
+                >
+                  <option value="">All Categories</option>
+                  <option value="technology">Technology</option>
+                  <option value="marketing">Marketing</option>
+                  <option value="design">Design</option>
+                  <option value="sales">Sales</option>
+                  <option value="finance">Finance</option>
+                  <option value="hr">Human Resources</option>
+                </select>
+              </div>
+
+              <button
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                onClick={clearAllFilters}
+              >
+                Clear Filters
+              </button>
+            </div>
+            </div>
+          </motion.div>
+        </aside>
+
+        <main>
+          {isLoading ? (
+            <Loader />
+          ) : (
+            <>
+              <motion.div
+                variants={sectionReveal}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.2 }}
+                className="mb-4 rounded-xl border border-slate-300 bg-white p-5 shadow-sm"
+              >
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="inline-flex items-center gap-2 text-2xl font-bold text-slate-900">
+                    <Star className="h-5 w-5 text-[#ff922b]" />
+                    Featured
+                  </h2>
+
+                  <label className="inline-flex items-center gap-2 text-sm text-slate-700 md:text-base">
+                    Jobs per page
+                    <select
+                      value={Number(filters.limit || 10)}
+                      onChange={(e) => handleLimitChange(Number(e.target.value))}
+                      className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm font-semibold text-slate-700"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={30}>30</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center text-slate-700">
+                    <Briefcase className="mr-2 h-4 w-4 text-[#0b77b7]" />
+                    <span className="text-sm font-medium">
+                      {`${data?.pagination?.total || 0} jobs found`}
                       {filters.keyword && ` for "${filters.keyword}"`}
                       {filters.location && ` in "${filters.location}"`}
                     </span>
                   </div>
-                  {(filters.keyword || filters.location) && (
-                    <div className="flex gap-2">
+
+                  <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    {activeFilterCount} active filters
+                  </div>
+
+                  {(filters.keyword || filters.location || filters.jobType || filters.category || filters.experienceLevel) && (
+                    <div className="flex flex-wrap gap-2">
                       {filters.keyword && (
                         <button
                           onClick={() => {
-                            setFilters(prev => ({ ...prev, keyword: '', page: 1 }));
+                            setFilters((prev) => ({ ...prev, keyword: '', page: 1 }));
                             const params = new URLSearchParams(searchParams);
                             params.delete('search');
+                            params.set('page', '1');
                             setSearchParams(params);
                           }}
-                          className="text-sm text-gray-500 hover:text-gray-700"
+                          className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
                         >
-                          Clear search
+                          Search
+                          <X className="h-3.5 w-3.5" />
                         </button>
                       )}
                       {filters.location && (
                         <button
                           onClick={() => {
-                            setFilters(prev => ({ ...prev, location: '', page: 1 }));
+                            setFilters((prev) => ({ ...prev, location: '', page: 1 }));
                             const params = new URLSearchParams(searchParams);
                             params.delete('location');
+                            params.set('page', '1');
                             setSearchParams(params);
                           }}
-                          className="text-sm text-gray-500 hover:text-gray-700"
+                          className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
                         >
-                          Clear location
+                          Location
+                          <X className="h-3.5 w-3.5" />
                         </button>
                       )}
+                      <button
+                        onClick={clearAllFilters}
+                        className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+                      >
+                        Reset All
+                      </button>
                     </div>
                   )}
                 </div>
+              </motion.div>
 
-                {data && data.data.length > 0 ? (
-                  <>
-                    <div className="mb-8 grid grid-cols-1 gap-6">
-                      {data.data.map((job) => (
-                        <JobCard key={job._id} job={job} />
-                      ))}
-                    </div>
-
-                    {totalPages > 1 && (
-                      <div className="flex justify-center">
-                        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
-                          <button
-                            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                            onClick={() => handlePageChange(filters.page! - 1)}
-                            disabled={filters.page === 1}
-                          >
-                            Previous
-                          </button>
-                          {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                            (page) => (
-                              <button
-                                key={page}
-                                className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                                  page === filters.page
-                                    ? 'bg-blue-600 text-white'
-                                    : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
-                                }`}
-                                onClick={() => handlePageChange(page)}
-                              >
-                                {page}
-                              </button>
-                            )
-                          )}
-                          <button
-                            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                            onClick={() => handlePageChange(filters.page! + 1)}
-                            disabled={filters.page === totalPages}
-                          >
-                            Next
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-center py-12 bg-white rounded-lg shadow">
-                    <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-xl text-gray-600">No jobs found</p>
-                    <p className="text-gray-500 mt-2">Try adjusting your filters</p>
+              {data && data.data.length > 0 ? (
+                <>
+                  <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                    {data.data.map((job, idx) => (
+                      <motion.div
+                        key={job._id}
+                        initial={{ opacity: 0, y: 12 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, amount: 0.16 }}
+                        transition={{ duration: 0.28, delay: Math.min(idx * 0.03, 0.2) }}
+                      >
+                        <JobCard job={job} />
+                      </motion.div>
+                    ))}
                   </div>
-                )}
-              </>
-            )}
-          </main>
-        </div>
+
+                  {totalPages > 1 && (
+                    <div className="flex justify-center">
+                      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-300 bg-white p-2 shadow-sm">
+                        <button
+                          className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            <ChevronLeft className="h-4 w-4" />
+                            Previous
+                          </span>
+                        </button>
+                        {paginationItems.map((item, idx) =>
+                          item === 'ellipsis' ? (
+                            <span key={`ellipsis-bottom-${idx}`} className="px-1 text-lg font-semibold text-slate-500">...</span>
+                          ) : (
+                            <button
+                              key={item}
+                              className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                                item === currentPage
+                                  ? 'bg-[#0b77b7] text-white'
+                                  : 'border border-slate-300 text-slate-700 hover:bg-slate-50'
+                              }`}
+                              onClick={() => handlePageChange(item)}
+                            >
+                              {item}
+                            </button>
+                          )
+                        )}
+                        <button
+                          className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            Next
+                            <ChevronRight className="h-4 w-4" />
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="rounded-xl border border-slate-300 bg-white py-12 text-center shadow-sm">
+                  <Briefcase className="mx-auto mb-3 h-12 w-12 text-slate-300" />
+                  <p className="text-xl font-semibold text-slate-700">No jobs found</p>
+                  <p className="mt-1.5 text-sm text-slate-500">Try updating your filters or clearing search criteria.</p>
+                  <button
+                    onClick={clearAllFilters}
+                    className="mt-5 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                  >
+                    Show All Jobs
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </main>
+      </div>
       </div>
     </div>
   );

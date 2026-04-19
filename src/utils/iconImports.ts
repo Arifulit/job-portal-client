@@ -1,3 +1,4 @@
+// এই ফাইলটি project wide helper, route utility অথবা shared function প্রদান করে।
 
 import React from 'react';
 // Safe imports that use fallbacks for commonly blocked icons

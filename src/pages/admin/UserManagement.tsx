@@ -1,3 +1,4 @@
+// এই ফাইলটি admin panel এর একটি page UI ও business flow পরিচালনা করে।
 import { useMemo, useState } from 'react';
 import {
 	useAllUsers,
@@ -9,6 +10,7 @@ import {
 } from '../../services/userService';
 import { Loader } from '../../components/Loader';
 import { Button } from '../../components/ui/button';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { User } from '../../types';
 import { toast } from 'sonner';
 
@@ -26,6 +28,7 @@ const UserManagement = () => {
 	const [search, setSearch] = useState('');
 	const [approvingUserId, setApprovingUserId] = useState<string | null>(null);
 	const [approvedUserIds, setApprovedUserIds] = useState<Record<string, boolean>>({});
+	const [deleteTargetUser, setDeleteTargetUser] = useState<User | null>(null);
 
 	const { data, isLoading, isError, refetch } = useAllUsers(roleFilter === 'all' ? undefined : roleFilter);
 	const { mutate: updateUserStatus, isPending: updatingStatus } = useUpdateUserStatus();
@@ -91,10 +94,19 @@ const UserManagement = () => {
 	};
 
 	const handleDelete = (user: User) => {
-		const ok = window.confirm(`Delete user ${user.name || user.email}?`);
-		if (!ok) return;
+		setDeleteTargetUser(user);
+	};
+
+	const handleConfirmDelete = () => {
+		if (!deleteTargetUser) return;
 		const loadingToastId = toast.loading('Deleting user...');
-		deleteUser(user._id, {
+		deleteUser(deleteTargetUser._id, {
+			onSuccess: () => {
+				setDeleteTargetUser(null);
+			},
+			onError: () => {
+				setDeleteTargetUser(null);
+			},
 			onSettled: () => {
 				toast.dismiss(loadingToastId);
 			},
@@ -141,6 +153,7 @@ const UserManagement = () => {
 	}
 
 	return (
+		<>
 		<div className="space-y-5">
 			<div className="rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-900 to-slate-700 p-6 text-white shadow-sm">
 				<div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -321,6 +334,18 @@ const UserManagement = () => {
 				</table>
 			</div>
 		</div>
+
+		<ConfirmDialog
+			open={Boolean(deleteTargetUser)}
+			title="Delete User"
+			description={`Are you sure you want to delete ${deleteTargetUser?.name || deleteTargetUser?.email || 'this user'}? This action cannot be undone.`}
+			confirmLabel="Yes, Delete"
+			cancelLabel="Cancel"
+			loading={deletingUser}
+			onConfirm={handleConfirmDelete}
+			onCancel={() => setDeleteTargetUser(null)}
+		/>
+		</>
 	);
 };
 

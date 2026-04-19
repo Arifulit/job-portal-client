@@ -1,3 +1,4 @@
+// এই ফাইলটি নির্দিষ্ট feature/component UI ও interaction logic বাস্তবায়ন করে।
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';

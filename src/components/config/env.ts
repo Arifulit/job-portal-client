@@ -1,3 +1,4 @@
+// এই ফাইলটি environment/configuration value expose ও manage করে।
 /**
  * Environment Configuration
  * Centralized environment variable management

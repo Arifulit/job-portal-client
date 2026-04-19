@@ -1,6 +1,7 @@
+// এই ফাইলটি authentication related form, input validation ও submit behavior সামলায়।
 import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertCircle, ArrowRight, CheckCircle2, Code, Eye, EyeOff, Lock, Mail, Phone, User, X } from 'lucide-react';
+import { AlertCircle, ArrowRight, CheckCircle2, Code, Eye, EyeOff, FileText, Lock, Mail, MapPin, Phone, User, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
@@ -11,6 +12,8 @@ interface CandidateRegisterForm {
   password: string;
   confirmPassword: string;
   phone: string;
+  biodata: string;
+  location: string;
   skills: string[];
   skillInput: string;
 }
@@ -21,6 +24,8 @@ const initialForm: CandidateRegisterForm = {
   password: '',
   confirmPassword: '',
   phone: '',
+  biodata: '',
+  location: '',
   skills: [],
   skillInput: '',
 };
@@ -59,22 +64,40 @@ export const Register = () => {
 
   const passwordStrength = useMemo(() => getPasswordStrength(formData.password), [formData.password]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const getRedirectPath = (role?: string) => {
+    const normalizedRole = String(role || '').toLowerCase();
+
+    if (normalizedRole === 'admin') return '/admin/dashboard';
+    if (normalizedRole === 'recruiter') return '/recruiter/dashboard';
+    return '/';
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (error) setError(null);
   };
 
   const addSkill = () => {
-    const skill = formData.skillInput.trim();
+    const incomingSkills = formData.skillInput
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
 
-    if (!skill || formData.skills.includes(skill)) {
+    if (incomingSkills.length === 0) {
+      return;
+    }
+
+    const uniqueToAdd = incomingSkills.filter((skill) => !formData.skills.includes(skill));
+
+    if (uniqueToAdd.length === 0) {
+      setFormData((prev) => ({ ...prev, skillInput: '' }));
       return;
     }
 
     setFormData((prev) => ({
       ...prev,
-      skills: [...prev.skills, skill],
+      skills: [...prev.skills, ...uniqueToAdd],
       skillInput: '',
     }));
   };
@@ -92,6 +115,8 @@ export const Register = () => {
     if (formData.password.length < 6) return 'Password must be at least 6 characters';
     if (formData.password !== formData.confirmPassword) return 'Password and confirm password do not match';
     if (!formData.phone.trim()) return 'Phone is required';
+    if (!formData.biodata.trim()) return 'Biodata is required';
+    if (!formData.location.trim()) return 'Location is required';
     if (formData.skills.length === 0) return 'Please add at least one skill';
 
     return null;
@@ -112,12 +137,14 @@ export const Register = () => {
     setSuccess(null);
 
     try {
-      await register({
+      const registeredUser = await register({
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
         role: 'candidate',
         phone: formData.phone.trim(),
+        biodata: formData.biodata.trim(),
+        location: formData.location.trim(),
         skills: formData.skills,
       });
 
@@ -125,7 +152,7 @@ export const Register = () => {
       toast.success('Candidate registration successful');
 
       setTimeout(() => {
-        navigate('/candidate/dashboard');
+        navigate(getRedirectPath(registeredUser.role));
       }, 1000);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Registration failed';
@@ -139,17 +166,17 @@ export const Register = () => {
   const disabled = isSubmitting || loading;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 flex p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.14),_transparent_36%),linear-gradient(180deg,_#f8fbff_0%,_#eef3ff_100%)] dark:bg-slate-950 flex p-4 relative overflow-hidden">
 
       <div className="container mx-auto flex items-center justify-center relative z-10">
         <motion.div initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-xl">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+          <div className="bg-white/95 dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 backdrop-blur-sm">
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
               <h2 className="text-2xl font-bold text-white">Candidate Registration</h2>
               <p className="text-blue-100 text-sm mt-1">Create your candidate profile with skills</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[calc(100vh-180px)] overflow-y-auto">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[calc(100vh-180px)] overflow-y-auto" autoComplete="off">
               <AnimatePresence>
                 {error && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -166,39 +193,39 @@ export const Register = () => {
               </AnimatePresence>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-gray-700">Full Name *</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Full Name *</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full h-10 pl-10 pr-3 border border-gray-300 rounded-lg" placeholder="rahim" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input type="text" name="name" autoComplete="name" value={formData.name} onChange={handleChange} className="w-full h-10 pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="rahim" />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-gray-700">Email Address *</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Email Address *</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full h-10 pl-10 pr-3 border border-gray-300 rounded-lg" placeholder="rahimcandidate@gmail.com" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input type="email" name="email" autoComplete="email" value={formData.email} onChange={handleChange} className="w-full h-10 pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="rahimcandidate@gmail.com" />
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-gray-700">Password *</label>
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Password *</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleChange} className="w-full h-10 pl-10 pr-10 border border-gray-300 rounded-lg" placeholder="123456" />
-                    <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input type={showPassword ? 'text' : 'password'} name="password" autoComplete="new-password" spellCheck={false} value={formData.password} onChange={handleChange} className="w-full h-10 pl-10 pr-10 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="123456" />
+                    <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-gray-700">Confirm Password *</label>
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Confirm Password *</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="w-full h-10 pl-10 pr-10 border border-gray-300 rounded-lg" placeholder="123456" />
-                    <button type="button" onClick={() => setShowConfirmPassword((prev) => !prev)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" autoComplete="new-password" spellCheck={false} value={formData.confirmPassword} onChange={handleChange} className="w-full h-10 pl-10 pr-10 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="123456" />
+                    <button type="button" onClick={() => setShowConfirmPassword((prev) => !prev)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
@@ -211,24 +238,47 @@ export const Register = () => {
                     <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                       <div className={`h-full ${passwordStrength.color}`} style={{ width: `${passwordStrength.width}%` }} />
                     </div>
-                    <span className="text-xs font-medium text-gray-600">{passwordStrength.label}</span>
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{passwordStrength.label}</span>
                   </div>
                 </div>
               )}
 
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-gray-700">Phone *</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Phone *</label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full h-10 pl-10 pr-3 border border-gray-300 rounded-lg" placeholder="01712345678" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full h-10 pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="01712345678" />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-gray-700">Skills *</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Location *</label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input type="text" name="location" value={formData.location} onChange={handleChange} className="w-full h-10 pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Dhaka, Bangladesh" />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Biodata *</label>
+                <div className="relative">
+                  <FileText className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                  <textarea
+                    name="biodata"
+                    value={formData.biodata}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    placeholder="Junior frontend developer with internship experience."
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Skills *</label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <Code className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Code className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type="text"
                       name="skillInput"
@@ -240,7 +290,7 @@ export const Register = () => {
                           addSkill();
                         }
                       }}
-                      className="w-full h-10 pl-10 pr-3 border border-gray-300 rounded-lg"
+                      className="w-full h-10 pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                       placeholder="JavaScript, React, Node.js"
                     />
                   </div>
@@ -252,9 +302,9 @@ export const Register = () => {
                 {formData.skills.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {formData.skills.map((skill) => (
-                      <span key={skill} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                      <span key={skill} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-200 rounded text-xs font-medium">
                         {skill}
-                        <button type="button" onClick={() => removeSkill(skill)} className="hover:bg-blue-200 rounded-full p-0.5">
+                        <button type="button" onClick={() => removeSkill(skill)} className="hover:bg-blue-200 dark:hover:bg-blue-400/20 rounded-full p-0.5">
                           <X className="w-3 h-3" />
                         </button>
                       </span>
@@ -268,14 +318,14 @@ export const Register = () => {
                 {!disabled && <ArrowRight className="w-4 h-4" />}
               </button>
 
-              <p className="text-center text-sm text-gray-600 pt-1">
+              <p className="text-center text-sm text-slate-600 dark:text-slate-400 pt-1">
                 Want to register as recruiter?{' '}
                 <Link to="/register/recruiter" className="font-semibold text-blue-600 hover:text-blue-700">
                   Recruiter Registration
                 </Link>
               </p>
 
-              <p className="text-center text-sm text-gray-600">
+              <p className="text-center text-sm text-slate-600 dark:text-slate-400">
                 Already have an account?{' '}
                 <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-700">
                   Sign In

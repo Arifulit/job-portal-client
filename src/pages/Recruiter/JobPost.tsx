@@ -1,3 +1,4 @@
+// এই ফাইলটি recruiter dashboard এর একটি page UI ও কাজের flow পরিচালনা করে।
 
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useEffect } from "react";
@@ -13,15 +14,24 @@ import recruiterService from "@/services/recruiterService";
 interface JobFormData {
   title: string;
   description: string;
+  jobContext: string;
   location: string;
   salaryMin: number;
   salaryMax: number;
   currency: string;
   jobType: string;
   experience: string;
+  ageMin: number;
+  ageMax: number;
+  genderPreference: string;
+  preferredIndustryExperience: string;
+  preferredExperienceYears: number;
   deadline: string;
   vacancies: number;
+  education: string[];
   requirements: string[];
+  additionalRequirements: string[];
+  businessAreas: string[];
   responsibilities: string[];
   skills: string[];
 }
@@ -71,21 +81,33 @@ export default function JobPost() {
     defaultValues: {
       title: "",
       description: "",
+      jobContext: "",
       location: "",
       salaryMin: 10000,
       salaryMax: 60000,
       currency: "BDT",
       jobType: "full-time",
       experience: "1-2 years",
+      ageMin: 18,
+      ageMax: 65,
+      genderPreference: "any",
+      preferredIndustryExperience: "",
+      preferredExperienceYears: 1,
       deadline: "",
       vacancies: 1,
+      education: [""],
       requirements: [""],
+      additionalRequirements: [""],
+      businessAreas: [""],
       responsibilities: [""],
       skills: [""],
     },
   });
 
+  const education = watch("education");
   const requirements = watch("requirements");
+  const additionalRequirements = watch("additionalRequirements");
+  const businessAreas = watch("businessAreas");
   const responsibilities = watch("responsibilities");
   const skills = watch("skills");
 
@@ -113,12 +135,26 @@ export default function JobPost() {
       requirement?: string[] | string;
       responsibilities?: string[];
       responsibility?: string[] | string;
+      education?: string[] | string;
+      additionalRequirements?: string[] | string;
+      businessAreas?: string[] | string;
+      jobContext?: string;
+      ageMin?: number;
+      ageMax?: number;
+      genderPreference?: string;
+      preferredIndustryExperience?: string;
+      preferredExperienceYears?: number;
       salary?: { min?: number; max?: number; currency?: string } | number;
     };
 
+    const normalizedEducation = normalizeStringList(safeExistingJob.education);
     const normalizedRequirements = normalizeStringList(
       safeExistingJob.requirements ?? safeExistingJob.requirement
     );
+    const normalizedAdditionalRequirements = normalizeStringList(
+      safeExistingJob.additionalRequirements
+    );
+    const normalizedBusinessAreas = normalizeStringList(safeExistingJob.businessAreas);
     const normalizedResponsibilities = normalizeStringList(
       safeExistingJob.responsibilities ?? safeExistingJob.responsibility
     );
@@ -130,15 +166,27 @@ export default function JobPost() {
 
     setValue("title", safeExistingJob.title || "");
     setValue("description", safeExistingJob.description || "");
+    setValue("jobContext", safeExistingJob.jobContext || "");
     setValue("location", safeExistingJob.location || "");
     setValue("salaryMin", Number(safeExistingJob.salaryMin ?? 0));
     setValue("salaryMax", Number(safeExistingJob.salaryMax ?? 0));
     setValue("currency", safeExistingJob.currency ?? "BDT");
     setValue("jobType", safeExistingJob.jobType || "full-time");
     setValue("experience", safeExistingJob.experience || "1-2 years");
+    setValue("ageMin", Number(safeExistingJob.ageMin ?? 18));
+    setValue("ageMax", Number(safeExistingJob.ageMax ?? 65));
+    setValue("genderPreference", safeExistingJob.genderPreference || "any");
+    setValue("preferredIndustryExperience", safeExistingJob.preferredIndustryExperience || "");
+    setValue("preferredExperienceYears", Number(safeExistingJob.preferredExperienceYears ?? 1));
     setValue("deadline", deadlineValue);
     setValue("vacancies", Number(safeExistingJob.vacancies ?? 1));
+    setValue("education", normalizedEducation.length ? normalizedEducation : [""]);
     setValue("requirements", normalizedRequirements.length ? normalizedRequirements : [""]);
+    setValue(
+      "additionalRequirements",
+      normalizedAdditionalRequirements.length ? normalizedAdditionalRequirements : [""]
+    );
+    setValue("businessAreas", normalizedBusinessAreas.length ? normalizedBusinessAreas : [""]);
     setValue(
       "responsibilities",
       normalizedResponsibilities.length ? normalizedResponsibilities : [""]
@@ -146,11 +194,28 @@ export default function JobPost() {
     setValue("skills", normalizedSkills.length ? normalizedSkills : [""]);
   }, [existingJob, isEditMode, setValue]);
 
-  const addField = (field: "requirements" | "responsibilities" | "skills") => {
+  const addField = (
+    field:
+      | "education"
+      | "requirements"
+      | "additionalRequirements"
+      | "businessAreas"
+      | "responsibilities"
+      | "skills"
+  ) => {
     setValue(field, [...watch(field), ""], { shouldDirty: true, shouldValidate: true });
   };
 
-  const removeField = (field: "requirements" | "responsibilities" | "skills", i: number) => {
+  const removeField = (
+    field:
+      | "education"
+      | "requirements"
+      | "additionalRequirements"
+      | "businessAreas"
+      | "responsibilities"
+      | "skills",
+    i: number
+  ) => {
     setValue(
       field,
       watch(field).filter((_, idx) => idx !== i),
@@ -240,7 +305,12 @@ export default function JobPost() {
     if (!companyId && !isEditMode) return toast.error("Company profile is required");
 
     const cleanedSkills = data.skills.map((item) => item.trim()).filter(Boolean);
+    const cleanedEducation = data.education.map((item) => item.trim()).filter(Boolean);
     const cleanedRequirements = data.requirements.map((item) => item.trim()).filter(Boolean);
+    const cleanedAdditionalRequirements = data.additionalRequirements
+      .map((item) => item.trim())
+      .filter(Boolean);
+    const cleanedBusinessAreas = data.businessAreas.map((item) => item.trim()).filter(Boolean);
     const cleanedResponsibilities = data.responsibilities.map((item) => item.trim()).filter(Boolean);
     const existingRequirements = normalizeStringList(
       (existingJob as { requirements?: unknown; requirement?: unknown } | undefined)?.requirements ??
@@ -264,7 +334,10 @@ export default function JobPost() {
         : cleanedResponsibilities;
 
     if (!cleanedSkills.length) return toast.error("Add at least one skill");
+    if (!cleanedEducation.length) return toast.error("Add at least one education requirement");
     if (!finalRequirements.length) return toast.error("Add at least one requirement");
+    if (!cleanedAdditionalRequirements.length) return toast.error("Add at least one additional requirement");
+    if (!cleanedBusinessAreas.length) return toast.error("Add at least one business area");
     if (!finalResponsibilities.length) return toast.error("Add at least one responsibility");
     if (data.salaryMax > 0 && data.salaryMin > data.salaryMax) {
       return toast.error("Minimum salary cannot be greater than maximum salary");
@@ -288,6 +361,7 @@ export default function JobPost() {
     const payload = {
       title: data.title.trim(),
       description: data.description.trim(),
+      jobContext: data.jobContext.trim(),
       location: data.location.trim(),
       jobType: normalizedJobType,
       salaryMin: data.salaryMin ? Number(data.salaryMin) : 0,
@@ -296,9 +370,17 @@ export default function JobPost() {
       skills: cleanedSkills,
       experience: data.experience,
       experienceLevel: getExperienceLevel(data.experience),
+      ageMin: data.ageMin ? Number(data.ageMin) : 0,
+      ageMax: data.ageMax ? Number(data.ageMax) : 0,
+      genderPreference: data.genderPreference,
+      preferredIndustryExperience: data.preferredIndustryExperience.trim(),
+      preferredExperienceYears: data.preferredExperienceYears ? Number(data.preferredExperienceYears) : 0,
       deadline: data.deadline || undefined,
       vacancies: data.vacancies ? Number(data.vacancies) : 1,
+      education: cleanedEducation,
       requirements: finalRequirements,
+      additionalRequirements: cleanedAdditionalRequirements,
+      businessAreas: cleanedBusinessAreas,
       responsibilities: finalResponsibilities,
       status: "active" as JobStatus,
     };
@@ -464,6 +546,73 @@ export default function JobPost() {
                 />
                 {errors.description && <p className="mt-1 text-xs text-red-600">{errors.description.message}</p>}
               </div>
+
+              <div className="mt-4">
+                <label className="mb-1.5 block text-sm font-semibold text-gray-700">Job Context</label>
+                <textarea
+                  {...register("jobContext")}
+                  rows={4}
+                  placeholder="Add company background, team context, or why this role exists."
+                  className="w-full resize-none rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900"
+                />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Hiring Preferences</h3>
+              <p className="mb-4 text-xs text-gray-500">Set eligibility and profile preferences so candidates can understand the fit quickly.</p>
+
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">Min Age</label>
+                  <input
+                    type="number"
+                    min={0}
+                    {...register("ageMin", { valueAsNumber: true, min: 0 })}
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">Max Age</label>
+                  <input
+                    type="number"
+                    min={0}
+                    {...register("ageMax", { valueAsNumber: true, min: 0 })}
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">Gender Preference</label>
+                  <select {...register("genderPreference")} className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3">
+                    <option value="any">Any</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">Required Experience (Years)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.5"
+                    {...register("preferredExperienceYears", { valueAsNumber: true, min: 0 })}
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-gray-700">Preferred Industry Experience</label>
+                <input
+                  {...register("preferredIndustryExperience")}
+                  placeholder="e.g. Boutique/Fashion, E-commerce, Retail"
+                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900"
+                />
+              </div>
             </div>
 
             {/* Skills */}
@@ -506,6 +655,78 @@ export default function JobPost() {
                   <input {...register(`requirements.${i}`)} placeholder="e.g. Strong Node.js and Express.js knowledge" className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white" />
                   {requirements.length > 1 && (
                     <button type="button" onClick={() => removeField("requirements", i)} className="text-red-600 p-2 rounded-lg">
+                      <X className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Education</h3>
+                <button type="button" onClick={() => addField("education")} className="text-blue-600 p-2 rounded-lg">
+                  <Plus className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="mb-3 text-xs text-gray-500">List accepted degrees or academic backgrounds for this role.</p>
+              {education.map((_, i) => (
+                <div key={i} className="flex gap-2 mb-3">
+                  <input
+                    {...register(`education.${i}`)}
+                    placeholder="e.g. Bachelor of Science in CSE"
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white"
+                  />
+                  {education.length > 1 && (
+                    <button type="button" onClick={() => removeField("education", i)} className="text-red-600 p-2 rounded-lg">
+                      <X className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Additional Requirements</h3>
+                <button type="button" onClick={() => addField("additionalRequirements")} className="text-blue-600 p-2 rounded-lg">
+                  <Plus className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="mb-3 text-xs text-gray-500">Add age, gender, soft skills, or any other extra hiring condition.</p>
+              {additionalRequirements.map((_, i) => (
+                <div key={i} className="flex gap-2 mb-3">
+                  <input
+                    {...register(`additionalRequirements.${i}`)}
+                    placeholder="e.g. Aggressive problem diagnosis and creative problem solving"
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white"
+                  />
+                  {additionalRequirements.length > 1 && (
+                    <button type="button" onClick={() => removeField("additionalRequirements", i)} className="text-red-600 p-2 rounded-lg">
+                      <X className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Business Areas</h3>
+                <button type="button" onClick={() => addField("businessAreas")} className="text-blue-600 p-2 rounded-lg">
+                  <Plus className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="mb-3 text-xs text-gray-500">Mention the industries or business categories this role supports.</p>
+              {businessAreas.map((_, i) => (
+                <div key={i} className="flex gap-2 mb-3">
+                  <input
+                    {...register(`businessAreas.${i}`)}
+                    placeholder="e.g. E-commerce, Retail, Fashion"
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white"
+                  />
+                  {businessAreas.length > 1 && (
+                    <button type="button" onClick={() => removeField("businessAreas", i)} className="text-red-600 p-2 rounded-lg">
                       <X className="w-5 h-5" />
                     </button>
                   )}

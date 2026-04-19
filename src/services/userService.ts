@@ -1,3 +1,4 @@
+// এই ফাইলটি API call এবং server data operation এর service layer হিসেবে কাজ করে।
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, handleApiError } from '../utils/api';
 import { User, ApiResponse, DashboardStats, PaginatedResponse } from '../types';
@@ -129,7 +130,6 @@ const extractDashboardStats = (payload: unknown): DashboardStats => {
           pendingApplications: getStatusCount('pending'),
           shortlistedCount: getStatusCount('shortlisted'),
           hiredCount: getStatusCount('hired'),
-          withdrawnCount: getStatusCount('withdrawn'),
           totalNotifications: notifications.totalNotifications || 0,
           unreadNotifications: notifications.unreadNotifications || 0,
         };

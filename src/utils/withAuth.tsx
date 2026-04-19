@@ -1,3 +1,4 @@
+// এই ফাইলটি project wide helper, route utility অথবা shared function প্রদান করে।
 // ========== withAuth.tsx ==========
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Navigate } from "react-router-dom";
@@ -19,7 +20,15 @@ export function withAuth<P extends object>(
   };
 
   return function ProtectedComponent(props: P) {
-    const { isAuthenticated, user } = useAuth();
+    const { isAuthenticated, user, loading } = useAuth();
+
+    if (loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-300 border-t-blue-600" />
+        </div>
+      );
+    }
 
     if (!isAuthenticated) {
       return <Navigate to="/login" replace />;

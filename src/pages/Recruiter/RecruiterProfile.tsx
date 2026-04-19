@@ -1,3 +1,4 @@
+// এই ফাইলটি recruiter dashboard এর একটি page UI ও কাজের flow পরিচালনা করে।
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -164,7 +165,8 @@ const RecruiterProfile = () => {
 
       const response = await recruiterService.updateRecruiterProfile(payload);
       if (!response?.success) {
-        throw new Error(response?.message || 'Failed to update profile');
+        const responseMessage = (response as Record<string, unknown> | undefined)?.message;
+        throw new Error(typeof responseMessage === 'string' && responseMessage ? responseMessage : 'Failed to update profile');
       }
 
       setProfile((prev) => {
@@ -263,11 +265,11 @@ const RecruiterProfile = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <Skeleton className="h-10 w-64 mb-6" />
+      <div className="container mx-auto min-h-[calc(100vh-5rem)] bg-slate-50 p-6 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+        <Skeleton className="mb-6 h-10 w-64 bg-slate-200 dark:bg-slate-800" />
         <div className="grid gap-6">
-          <Skeleton className="h-64 w-full" />
-          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-64 w-full bg-slate-200 dark:bg-slate-800" />
+          <Skeleton className="h-64 w-full bg-slate-200 dark:bg-slate-800" />
         </div>
       </div>
     );
@@ -275,8 +277,11 @@ const RecruiterProfile = () => {
 
   if (error) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+      <div className="container mx-auto min-h-[calc(100vh-5rem)] bg-slate-50 p-6 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+        <div
+          className="relative rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200"
+          role="alert"
+        >
           <strong className="font-bold">Error: </strong>
           <span className="block sm:inline">{error}</span>
         </div>
@@ -286,21 +291,21 @@ const RecruiterProfile = () => {
 
   if (!profile) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto min-h-[calc(100vh-5rem)] bg-slate-50 p-6 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <p>No profile data available</p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto min-h-[calc(100vh-5rem)] space-y-6 bg-slate-50 p-6 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Recruiter Profile</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Recruiter Profile</h1>
         {!isEditing ? (
           <button
             type="button"
             onClick={() => setIsEditing(true)}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
           >
             Edit Profile
           </button>
@@ -310,7 +315,7 @@ const RecruiterProfile = () => {
               type="button"
               onClick={handleCancel}
               disabled={isSaving}
-              className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+              className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900"
             >
               Cancel
             </button>
@@ -318,7 +323,7 @@ const RecruiterProfile = () => {
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
             >
               {isSaving ? 'Saving...' : 'Save Changes'}
             </button>
@@ -328,48 +333,48 @@ const RecruiterProfile = () => {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Personal Information */}
-        <Card>
+        <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Briefcase className="h-5 w-5 text-blue-600" />
+              <Briefcase className="h-5 w-5 text-slate-600 dark:text-slate-300" />
               Personal Information
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-sm text-muted-foreground">Name</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Name</p>
               {isEditing ? (
                 <input
                   type="text"
                   value={formValues.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
+                  className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
                 />
               ) : (
                 <p className="font-medium">{profile.user?.name || 'N/A'}</p>
               )}
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Designation</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Designation</p>
               {isEditing ? (
                 <input
                   type="text"
                   value={formValues.designation}
                   onChange={(e) => handleInputChange('designation', e.target.value)}
-                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
+                  className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
                 />
               ) : (
                 <p className="font-medium">{profile.designation}</p>
               )}
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Phone</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Phone</p>
               {isEditing ? (
                 <input
                   type="text"
                   value={formValues.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
+                  className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
                 />
               ) : (
                 <p className="font-medium flex items-center gap-2">
@@ -379,7 +384,7 @@ const RecruiterProfile = () => {
               )}
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Bio</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Bio</p>
               {isEditing ? (
                 <textarea
                   value={formValues.biodata}
@@ -388,20 +393,20 @@ const RecruiterProfile = () => {
                     handleInputChange('bio', e.target.value);
                   }}
                   rows={3}
-                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
+                  className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
                 />
               ) : (
                 <p className="font-medium">{profile.biodata || profile.bio || 'N/A'}</p>
               )}
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Location</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Location</p>
               {isEditing ? (
                 <input
                   type="text"
                   value={formValues.location}
                   onChange={(e) => handleInputChange('location', e.target.value)}
-                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
+                  className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
                   placeholder="Dhaka, Bangladesh"
                 />
               ) : (
@@ -412,7 +417,7 @@ const RecruiterProfile = () => {
               )}
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Member Since</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Member Since</p>
               <p className="font-medium">
                 {new Date(profile.createdAt).toLocaleDateString()}
               </p>
@@ -421,18 +426,18 @@ const RecruiterProfile = () => {
         </Card>
 
         {/* Agency Information */}
-        <Card>
+        <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
               <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-blue-600" />
+                <Building2 className="h-5 w-5 text-slate-600 dark:text-slate-300" />
                 Agency Information
               </CardTitle>
               {!isAgencyEditing ? (
                 <button
                   type="button"
                   onClick={() => setIsAgencyEditing(true)}
-                  className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                  className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
                 >
                   {profile.agency?._id ? 'Edit Agency' : 'Create Agency'}
                 </button>
@@ -442,7 +447,7 @@ const RecruiterProfile = () => {
                     type="button"
                     onClick={handleAgencyCancel}
                     disabled={isAgencySaving}
-                    className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                    className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900"
                   >
                     Cancel
                   </button>
@@ -450,7 +455,7 @@ const RecruiterProfile = () => {
                     type="button"
                     onClick={handleAgencySave}
                     disabled={isAgencySaving}
-                    className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                    className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
                   >
                     {isAgencySaving ? 'Saving...' : 'Save'}
                   </button>
@@ -460,37 +465,37 @@ const RecruiterProfile = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-sm text-muted-foreground">Agency Name</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Agency Name</p>
               {isAgencyEditing ? (
                 <input
                   type="text"
                   value={agencyFormValues.name}
                   onChange={(e) => handleAgencyInputChange('name', e.target.value)}
-                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
+                  className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
                 />
               ) : (
                 <p className="font-medium">{profile.agency?.name || 'Not set'}</p>
               )}
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Industry</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Industry</p>
               <Badge variant="outline">{profile.agency?.industry || 'Not set'}</Badge>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Company Size</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Company Size</p>
               <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <Users className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                 <span>{profile.agency?.size ? `${profile.agency.size} employees` : 'Not set'}</span>
               </div>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Description</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Description</p>
               {isAgencyEditing ? (
                 <textarea
                   value={agencyFormValues.description}
                   onChange={(e) => handleAgencyInputChange('description', e.target.value)}
                   rows={3}
-                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
+                  className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
                 />
               ) : (
                 <p className="font-medium">{profile.agency?.description || 'Not set'}</p>
@@ -498,22 +503,22 @@ const RecruiterProfile = () => {
             </div>
             {isAgencyEditing ? (
               <div>
-                <p className="text-sm text-muted-foreground">Website</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Website</p>
                 <input
                   type="text"
                   value={agencyFormValues.website}
                   onChange={(e) => handleAgencyInputChange('website', e.target.value)}
-                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
+                  className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
                 />
               </div>
             ) : profile.agency?.website ? (
               <div>
-                <p className="text-sm text-muted-foreground">Website</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Website</p>
                 <a
                   href={profile.agency.website.startsWith('http') ? profile.agency.website : `https://${profile.agency.website}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline flex items-center gap-1"
+                  className="flex items-center gap-1 text-slate-700 hover:underline dark:text-slate-300"
                 >
                   <Globe className="h-4 w-4" />
                   {profile.agency.website.replace(/^https?:\/\//, '')}

@@ -1,3 +1,4 @@
+// এই ফাইলটি public facing informational page বা section render করে।
 import React from "react";
 
 const faqs: { q: string; a: string }[] = [

@@ -1,16 +1,16 @@
+// এই ফাইলটি API call এবং server data operation এর service layer হিসেবে কাজ করে।
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, handleApiError, uploadToCloudinary } from '../utils/api';
+import { api, handleApiError } from '../utils/api';
 import { Application, ApplicationStatus, ApiResponse, PaginatedResponse } from '../types';
 import { toast } from 'sonner';
 
 const allowedStatuses: ApplicationStatus[] = [
   'applied',
+  'reviewed',
   'shortlisted',
   'interview',
-  'offered',
   'hired',
   'rejected',
-  'withdrawn',
 ];
 
 const normalizeApplicationStatus = (status: unknown): ApplicationStatus => {
@@ -35,7 +35,20 @@ const normalizeApplication = (application: Partial<Application> & Record<string,
     jobId: normalizedJobId,
     candidateId: application.candidateId || application.candidate?._id || application.candidate || '',
     recruiterId: normalizedRecruiterId,
-    resume: application.resume || '',
+    resume:
+      application.resume ||
+      application.downloadUrl ||
+      application.resumeUrl ||
+      application.resumeURL ||
+      application.resume_file ||
+      '',
+    downloadUrl:
+      application.downloadUrl ||
+      application.resume ||
+      application.resumeUrl ||
+      application.resumeURL ||
+      application.resume_file ||
+      '',
     appliedAt:
       application.appliedAt ||
       application.createdAt ||
@@ -49,7 +62,10 @@ export const useApplications = () => {
     queryKey: ['applications'],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Application>>('/applications');
-      return response.data;
+      return {
+        ...response.data,
+        data: (response.data.data || []).map(normalizeApplication),
+      };
     },
   });
 };
@@ -133,22 +149,22 @@ export const useApplyJob = () => {
       resumeUrl?: string;
       resumeFile?: File;
     }) => {
-      let resumeUrl = data.resumeUrl;
+      const formData = new FormData();
+      formData.append('jobId', data.jobId);
 
-      // Prefer a fresh upload when the user selected a file.
+      if (data.coverLetter) {
+        formData.append('coverLetter', data.coverLetter);
+      }
+
       if (data.resumeFile) {
-        resumeUrl = await uploadToCloudinary(data.resumeFile);
+        formData.append('resume', data.resumeFile);
+      } else if (data.resumeUrl) {
+        formData.append('resumeUrl', data.resumeUrl);
+      } else {
+        throw new Error('Resume is required');
       }
 
-      if (!resumeUrl) {
-        throw new Error('Resume URL is required');
-      }
-
-      const response = await api.post<ApiResponse<Application>>('/applications', {
-        jobId: data.jobId,
-        coverLetter: data.coverLetter,
-        resumeUrl,
-      });
+      const response = await api.post<ApiResponse<Application>>('/applications', formData);
 
       if (!response.data.data) {
         throw new Error(response.data.message || 'Application submission failed');
@@ -157,6 +173,7 @@ export const useApplyJob = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
+      queryClient.invalidateQueries({ queryKey: ['my-applications'] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       toast.success('Application submitted successfully!');
     },
@@ -211,7 +228,7 @@ export const useDeleteApplication = () => {
       queryClient.invalidateQueries({ queryKey: ['my-applications'] });
       queryClient.invalidateQueries({ queryKey: ['job-applications'] });
       queryClient.invalidateQueries({ queryKey: ['recruiter-all-applications'] });
-      toast.success('Application withdrawn successfully');
+      toast.success('Application removed successfully');
     },
     onError: (error) => {
       toast.error(handleApiError(error));
@@ -219,7 +236,7 @@ export const useDeleteApplication = () => {
   });
 };
 
-export const useMyApplications = () => {
+export const useMyApplications = (enabled = true) => {
   return useQuery({
     queryKey: ['my-applications'],
     queryFn: async () => {
@@ -232,5 +249,6 @@ export const useMyApplications = () => {
         data: (response.data.data || []).map(normalizeApplication),
       };
     },
+    enabled,
   });
 };

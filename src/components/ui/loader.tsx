@@ -1,3 +1,4 @@
+// এই ফাইলটি reusable UI primitive/component সরবরাহ করে।
 import React from 'react';
 
 interface LoaderProps {

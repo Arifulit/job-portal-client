@@ -1,3 +1,4 @@
+// এই ফাইলটি অ্যাপের entry point; provider সেট করে router চালু করে।
 
 import React from "react";
 import ReactDOM from "react-dom/client";
@@ -32,7 +33,7 @@ if (!root) throw new Error("Root element not found");
 ReactDOM.createRoot(root).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="job-portal-theme">
+      <ThemeProvider defaultTheme="system" storageKey="job-portal-theme">
         <AuthProvider>
           <RouterProvider router={router} />
           <Toaster richColors position="top-right" />

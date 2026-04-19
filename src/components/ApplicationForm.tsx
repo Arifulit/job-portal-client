@@ -1,3 +1,4 @@
+// এই ফাইলটি নির্দিষ্ট feature/component UI ও interaction logic বাস্তবায়ন করে।
 import React, { useState } from 'react';
 import { Button } from './ui/button';
 

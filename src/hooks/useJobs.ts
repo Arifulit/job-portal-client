@@ -1,10 +1,11 @@
+// এই ফাইলটি custom React hook হিসেবে reusable stateful logic দেয়।
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 // import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
 // Create axios instance with interceptor
 const api = axios.create({

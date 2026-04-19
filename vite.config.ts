@@ -1,3 +1,4 @@
+// এই ফাইলটি Vite build/dev server configuration এবং plugin setup নির্ধারণ করে।
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";

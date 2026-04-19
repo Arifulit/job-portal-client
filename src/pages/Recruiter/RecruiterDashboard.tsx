@@ -1,3 +1,4 @@
+// এই ফাইলটি recruiter dashboard এর একটি page UI ও কাজের flow পরিচালনা করে।
 import { useDashboardStats } from '../../services/userService';
 import { useRecruiterJobs } from '../../services/jobService';
 import { Loader } from '../../components/Loader';

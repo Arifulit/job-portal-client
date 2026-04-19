@@ -1,3 +1,4 @@
+// এই ফাইলটি status/error/authorization সংক্রান্ত fallback page দেখায়।
 import { AlertTriangle, Mail, Phone } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

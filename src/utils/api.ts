@@ -1,6 +1,7 @@
+// এই ফাইলটি project wide helper, route utility অথবা shared function প্রদান করে।
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -90,6 +91,52 @@ export const uploadToCloudinary = async (file: File): Promise<string> => {
     return response.data.secure_url;
   } catch {
     throw new Error('Failed to upload file');
+  }
+};
+
+type ResumeUploadResponse = {
+  success?: boolean;
+  message?: string;
+  data?: {
+    downloadUrl?: string;
+    fileUrl?: string;
+    sourceUrl?: string;
+    resumeUrl?: string;
+    url?: string;
+  };
+};
+
+export const uploadResumeToBackend = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('resume', file);
+
+  try {
+    const response = await api.post<ResumeUploadResponse>('/candidate/resume', formData);
+    const payload = response.data;
+
+    if (payload.success === false) {
+      throw new Error(payload.message || 'Failed to upload resume');
+    }
+
+    const resumeUrl =
+      payload.data?.downloadUrl ||
+      payload.data?.fileUrl ||
+      payload.data?.sourceUrl ||
+      payload.data?.resumeUrl ||
+      payload.data?.url;
+
+    if (!resumeUrl) {
+      throw new Error(payload.message || 'Resume upload response did not include a file URL');
+    }
+
+    return resumeUrl;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || error.message || 'Failed to upload resume');
+    }
+
+    throw error instanceof Error ? error : new Error('Failed to upload resume');
   }
 };
 

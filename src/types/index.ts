@@ -1,15 +1,29 @@
+// এই ফাইলটি TypeScript type/interface declaration সংরক্ষণ করে।
 export type UserRole = 'candidate' | 'recruiter' | 'admin';
 
 export type JobStatus = 'active' | 'expired' | 'draft' | 'pending';
 
+export interface JobCompany {
+  _id?: string;
+  name?: string;
+  industry?: string;
+  logo?: string;
+}
+
+export interface JobStatusHistoryEntry {
+  status?: string;
+  date?: string;
+  note?: string;
+  changedBy?: string | { _id?: string; name?: string };
+}
+
 export type ApplicationStatus =
   | 'applied'
+  | 'reviewed'
   | 'shortlisted'
   | 'interview'
-  | 'offered'
   | 'hired'
-  | 'rejected'
-  | 'withdrawn';
+  | 'rejected';
 
 export interface User {
   _id: string;
@@ -43,6 +57,10 @@ export interface Job {
   title: string;
   description: string;
   requirements: string[];
+  additionalRequirements?: string[];
+  education?: string[];
+  businessAreas?: string[];
+  jobContext?: string;
   location: string;
   jobType: 'full-time' | 'part-time' | 'contract' | 'internship' | 'remote';
   salary?: number;
@@ -50,7 +68,12 @@ export interface Job {
   salaryMax?: number;
   currency?: string;
   experience?: string;
-  experienceLevel?: 'internship' | 'entry' | 'mid' | 'senior' | 'lead';
+  experienceLevel?: 'internship' | 'entry' | 'mid' | 'mid-level' | 'senior' | 'lead';
+  ageMin?: number;
+  ageMax?: number;
+  genderPreference?: string;
+  preferredIndustryExperience?: string;
+  preferredExperienceYears?: number;
   deadline?: string;
   vacancies?: number;
   skills?: string[];
@@ -59,10 +82,10 @@ export interface Job {
     name: string;
     email: string;
   };
-  company?: any;
+  company?: string | JobCompany | null;
   status?: string;
   isApproved?: boolean;
-  statusHistory?: any[];
+  statusHistory?: JobStatusHistoryEntry[];
   createdAt: string;
   updatedAt: string;
   __v?: number;
@@ -102,6 +125,7 @@ export interface Application {
   recruiterId: string;
   status: ApplicationStatus;
   resume: string;
+  downloadUrl?: string;
   coverLetter?: string;
   appliedAt: string;
   createdAt?: string;
@@ -186,7 +210,6 @@ export interface DashboardStats {
   closedJobs?: number;
   pendingApplications?: number;
   shortlistedCount?: number;
-  withdrawnCount?: number;
   hiredCount?: number;
   totalNotifications?: number;
   unreadNotifications?: number;

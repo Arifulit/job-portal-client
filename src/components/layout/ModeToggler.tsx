@@ -1,3 +1,4 @@
+// এই ফাইলটি app layout (navbar/sidebar/footer/outlet) structure নিয়ন্ত্রণ করে।
 // ...existing code...
 import React, { useState } from "react";
 import { Sun, Moon } from "lucide-react";

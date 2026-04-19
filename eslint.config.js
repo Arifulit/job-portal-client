@@ -1,3 +1,4 @@
+// এই ফাইলটি linting rule ও code quality configuration নির্ধারণ করে।
 import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';

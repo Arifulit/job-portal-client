@@ -1,3 +1,4 @@
+// এই ফাইলটি TypeScript type/interface declaration সংরক্ষণ করে।
 export interface User {
   _id: string;
   name: string;

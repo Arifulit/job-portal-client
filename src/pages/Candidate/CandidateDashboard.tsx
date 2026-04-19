@@ -1,3 +1,4 @@
+// এই ফাইলটি candidate dashboard এর একটি page UI ও interaction flow পরিচালনা করে।
 import { useDashboardStats } from '../../services/userService';
 import { useMyApplications } from '../../services/applicationService';
 import { Loader } from '../../components/Loader';
@@ -7,7 +8,6 @@ import {
   CalendarDays,
   Briefcase,
   Eye,
-  CheckCircle,
   Clock,
   FileText,
   Sparkles,
@@ -25,9 +25,9 @@ import { useCandidateRecommendations } from '../../services/candidateService';
 
 const statusClassMap: Record<string, string> = {
   applied: 'bg-blue-100 text-blue-700 border border-blue-200',
+  reviewed: 'bg-cyan-100 text-cyan-700 border border-cyan-200',
   shortlisted: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
   interview: 'bg-amber-100 text-amber-700 border border-amber-200',
-  offered: 'bg-indigo-100 text-indigo-700 border border-indigo-200',
   hired: 'bg-green-100 text-green-700 border border-green-200',
   rejected: 'bg-rose-100 text-rose-700 border border-rose-200',
 };
@@ -86,10 +86,7 @@ export const CandidateDashboard = () => {
 
   const appliedCount = applications.length;
   const interviewPipelineCount = applications.filter((item) =>
-    ['shortlisted', 'interview', 'offered', 'hired'].includes(String(item.status || '').toLowerCase())
-  ).length;
-  const offeredCount = applications.filter((item) =>
-    ['offered', 'hired'].includes(String(item.status || '').toLowerCase())
+    ['reviewed', 'shortlisted', 'interview', 'hired'].includes(String(item.status || '').toLowerCase())
   ).length;
   const rejectedCount = applications.filter(
     (item) => String(item.status || '').toLowerCase() === 'rejected'
@@ -97,12 +94,9 @@ export const CandidateDashboard = () => {
   const weeklyApplications = applications.filter(
     (item) => getDateValue(item.appliedAt || item.createdAt || item.updatedAt) >= sevenDaysAgo
   ).length;
-  const shortlistedCount =
-    stats?.shortlistedCount ??
-    applications.filter((item) => String(item.status || '').toLowerCase() === 'shortlisted').length;
   const pendingCount =
     stats?.pendingApplications ??
-    applications.filter((item) => String(item.status || '').toLowerCase() === 'applied').length;
+    applications.filter((item) => ['applied', 'reviewed'].includes(String(item.status || '').toLowerCase())).length;
   const totalApplications = stats?.totalApplications ?? appliedCount;
   const availableJobs = stats?.availableJobs ?? stats?.totalJobs ?? 0;
   const totalNotifications = stats?.totalNotifications ?? 0;
@@ -210,14 +204,16 @@ export const CandidateDashboard = () => {
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm font-semibold text-slate-500">Interview Pipeline</p>
             <p className="mt-2 text-2xl font-black text-slate-900">{interviewPipelineCount}</p>
-            <p className="mt-1 text-xs text-slate-500">Shortlisted, interview, offered and hired stages</p>
+            <p className="mt-1 text-xs text-slate-500">Shortlisted, interview and hired stages</p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-500">Offers / Hired</p>
-                <p className="mt-2 text-2xl font-black text-slate-900">{offeredCount}</p>
+                <p className="text-sm font-semibold text-slate-500">Hired</p>
+                <p className="mt-2 text-2xl font-black text-slate-900">
+                  {applications.filter((item) => String(item.status || '').toLowerCase() === 'hired').length}
+                </p>
                 <p className="mt-1 text-xs text-slate-500">Strong opportunity indicators</p>
               </div>
               <Trophy className="h-6 w-6 text-emerald-600" />

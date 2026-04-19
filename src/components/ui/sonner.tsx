@@ -1,3 +1,4 @@
+// এই ফাইলটি reusable UI primitive/component সরবরাহ করে।
 import { Toaster as Sonner } from 'sonner';
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;

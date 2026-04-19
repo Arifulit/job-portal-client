@@ -1,3 +1,4 @@
+// এই ফাইলটি API call এবং server data operation এর service layer হিসেবে কাজ করে।
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, handleApiError } from '../utils/api';
 import { CandidateProfileResponse } from '../types/candidate';

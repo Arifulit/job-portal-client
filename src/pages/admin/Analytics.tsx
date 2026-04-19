@@ -1,3 +1,4 @@
+// এই ফাইলটি admin panel এর একটি page UI ও business flow পরিচালনা করে।
 import { Link } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { useDashboardStats } from '../../services/userService';
@@ -6,6 +7,7 @@ import { useAdminJobApplications } from '../../services/applicationService';
 import { Loader } from '../../components/Loader';
 import { BarChart3, Briefcase, FileText, Users } from 'lucide-react';
 import { Button } from '../../components/ui/button';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 
 const Analytics = () => {
 	const [selectedJobId, setSelectedJobId] = useState<string>('');
@@ -17,6 +19,7 @@ const Analytics = () => {
 	const [applicationSearch, setApplicationSearch] = useState('');
 	const [applicationStatusFilter, setApplicationStatusFilter] = useState('all');
 	const [applicationPage, setApplicationPage] = useState(1);
+	const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
 
 	const { data: stats, isLoading } = useDashboardStats();
 	const { data: adminJobs = [], isLoading: jobsLoading } = useAdminAllJobs();
@@ -35,9 +38,15 @@ const Analytics = () => {
 	const conversionRate = totalApplications > 0 ? Math.round((hiredCount / totalApplications) * 100) : 0;
 
 	const handleDeleteJob = (jobId: string, title?: string) => {
-		const ok = window.confirm(`Delete job ${title || 'this job'}?`);
-		if (!ok) return;
-		deleteJob(jobId);
+		setDeleteTarget({ id: jobId, title: title || 'this job' });
+	};
+
+	const handleConfirmDeleteJob = () => {
+		if (!deleteTarget) return;
+		deleteJob(deleteTarget.id, {
+			onSuccess: () => setDeleteTarget(null),
+			onError: () => setDeleteTarget(null),
+		});
 	};
 
 	const handleViewApplications = (jobId: string) => {
@@ -92,6 +101,7 @@ const Analytics = () => {
 	if (isLoading) return <Loader />;
 
 	return (
+		<>
 		<div className="space-y-6">
 			<div className="rounded-2xl border border-violet-200 bg-gradient-to-r from-violet-700 to-indigo-700 p-6 text-white shadow-sm">
 				<h1 className="text-2xl font-black">Analytics and Moderation</h1>
@@ -209,6 +219,7 @@ const Analytics = () => {
 					>
 						<option value="all">All Status</option>
 						<option value="approved">Approved</option>
+						<option value="reviewed">Reviewed</option>
 						<option value="pending">Pending</option>
 						<option value="rejected">Rejected</option>
 						<option value="draft">Draft</option>
@@ -309,10 +320,8 @@ const Analytics = () => {
 							<option value="applied">Applied</option>
 							<option value="shortlisted">Shortlisted</option>
 							<option value="interview">Interview</option>
-							<option value="offered">Offered</option>
 							<option value="hired">Hired</option>
 							<option value="rejected">Rejected</option>
-							<option value="withdrawn">Withdrawn</option>
 						</select>
 						<div className="flex items-center justify-end text-xs text-slate-600">
 							Page {safeApplicationPage} / {totalApplicationPages}
@@ -360,6 +369,17 @@ const Analytics = () => {
 				</div>
 			)}
 		</div>
+		<ConfirmDialog
+			open={Boolean(deleteTarget)}
+			title="Delete Job"
+			description={`Are you sure you want to delete "${deleteTarget?.title || 'this job'}"? This action cannot be undone.`}
+			confirmLabel="Yes, Delete"
+			cancelLabel="Cancel"
+			loading={deletingJob}
+			onConfirm={handleConfirmDeleteJob}
+			onCancel={() => setDeleteTarget(null)}
+		/>
+		</>
 	);
 };
 

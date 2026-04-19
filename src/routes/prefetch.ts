@@ -1,3 +1,4 @@
+// এই ফাইলটি route সম্পর্কিত helper বা prefetch logic পরিচালনা করে।
 const prefetched = new Set<string>();
 
 type Loader = () => Promise<unknown>;

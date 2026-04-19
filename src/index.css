@@ -1,3 +1,4 @@
+/* এই ফাইলটি global CSS style, base layer এবং design token/style rule নির্ধারণ করে। */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,6 +10,19 @@
 
 	body {
 		@apply bg-white text-slate-900 antialiased transition-colors duration-200;
+		overflow-x: hidden;
+	}
+
+	img,
+	svg,
+	video,
+	canvas {
+		max-width: 100%;
+		height: auto;
+	}
+
+	#root {
+		min-height: 100dvh;
 	}
 
 	.dark body {
@@ -76,5 +90,57 @@
 	.dark .bg-violet-50,
 	.dark .bg-emerald-50 {
 		background-color: rgb(30 41 59) !important;
+	}
+
+	/* Handle hardcoded hex and gradient utility classes used across pages */
+	.dark [class*="bg-[#"] {
+		background-color: rgb(15 23 42) !important;
+	}
+
+	.dark [class*="text-[#"] {
+		color: rgb(226 232 240) !important;
+	}
+
+	.dark [class*="border-[#"] {
+		border-color: rgb(51 65 85) !important;
+	}
+
+	.dark [class*="bg-gradient"],
+	.dark [class*="bg-[linear-gradient"],
+	.dark [class*="bg-[radial-gradient"],
+	.dark [class*="from-[#"],
+	.dark [class*="via-[#"],
+	.dark [class*="to-[#"] {
+		background-image: none !important;
+		background-color: rgb(15 23 42) !important;
+	}
+
+	/* Keep interactive controls readable in dark mode even when classes are light-only */
+	.dark input,
+	.dark select,
+	.dark textarea {
+		background-color: rgb(15 23 42) !important;
+		color: rgb(241 245 249) !important;
+		border-color: rgb(51 65 85) !important;
+	}
+
+	.dark input::placeholder,
+	.dark textarea::placeholder {
+		color: rgb(148 163 184) !important;
+	}
+
+	.dark button[class*="bg-white"],
+	.dark a[class*="bg-white"] {
+		background-color: rgb(30 41 59) !important;
+		color: rgb(241 245 249) !important;
+		border-color: rgb(51 65 85) !important;
+	}
+
+	.dark [class*="hover:bg-[#"]:hover,
+	.dark [class*="hover:bg-blue"]:hover,
+	.dark [class*="hover:bg-indigo"]:hover,
+	.dark [class*="hover:bg-emerald"]:hover,
+	.dark [class*="hover:bg-violet"]:hover {
+		background-color: rgb(51 65 85) !important;
 	}
 }

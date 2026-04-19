@@ -1,3 +1,4 @@
+// এই ফাইলটি reusable UI primitive/component সরবরাহ করে।
 import * as React from 'react';
 import * as RechartsPrimitive from 'recharts';
 

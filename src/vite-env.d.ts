@@ -1,3 +1,4 @@
+// এই ফাইলটি Vite environment type declaration দেয়।
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {

@@ -1,3 +1,4 @@
+// এই ফাইলটি custom React hook হিসেবে reusable stateful logic দেয়।
 import { useContext } from "react";
 import { ThemeProviderContext } from "../context/theme.context";
 

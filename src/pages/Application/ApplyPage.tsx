@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+// এই ফাইলটি job application form submit flow ও validation পরিচালনা করে।
+import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useJob } from '../../services/jobService';
 import { useCandidateProfile } from '../../services/candidateService';
-import { useApplyJob } from '../../services/applicationService';
+import { useApplyJob, useMyApplications } from '../../services/applicationService';
 import { useAuth } from '../../context/AuthContext';
 import { Loader } from '../../components/Loader';
 import { Button } from '../../components/ui/button';
@@ -21,35 +22,42 @@ const ApplyPage = () => {
   const { user } = useAuth();
 
   const { data: jobData, isLoading: jobLoading } = useJob(jobId);
-  const { data: profileData, isLoading: profileLoading } = useCandidateProfile();
+  const { data: profileData, isLoading: profileLoading, error: profileError } = useCandidateProfile();
   const { mutate: applyForJob, isPending: isSubmitting } = useApplyJob();
 
   const job = jobData;
   const profile = profileData?.data;
+  const profileUnavailable = !!profileError && !profile;
   const normalizedRole = String(user?.role || '').toLowerCase();
   const canApply = ['candidate', 'seeker', 'job_seeker'].includes(normalizedRole);
-  const existingResumeUrl =
-    (profile?.user as { resume?: string } | undefined)?.resume ||
-    (profile as { resume?: string } | undefined)?.resume ||
-    '';
+  const { data: myApplicationsData, isLoading: applicationsLoading } = useMyApplications(canApply);
+  const currentUserId = String(user?._id || '');
+  const displayName = profile?.name || user?.name || 'Candidate';
+  const displayEmail = profile?.user?.email || profile?.email || user?.email || '';
+  const displayPhone = profile?.phone || user?.phone || '';
+  const displayLocation = profile?.location || profile?.address || '';
+  const displaySkills = profile?.skills || user?.skills || [];
+  const displayHeadline = profile?.headline || 'Ready to apply for the right role';
 
   // Form state
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState('');
   const [expectedSalary, setExpectedSalary] = useState('');
   const [coverLetter, setCoverLetter] = useState('');
-  const [resumeUrl, setResumeUrl] = useState(existingResumeUrl);
-
-  useEffect(() => {
-    if (existingResumeUrl) {
-      setResumeUrl(existingResumeUrl);
-    }
-  }, [existingResumeUrl]);
 
   const companyName =
     typeof job?.company === 'string'
       ? job.company
       : job?.company?.name || 'Confidential Company';
+  const hasAlreadyApplied =
+    !!jobId &&
+    (myApplicationsData?.data || []).some((application) => {
+      const applicationCandidateId = String(application.candidateId || application.candidate?._id || '');
+      if (!applicationCandidateId || applicationCandidateId !== currentUserId) return false;
+
+      const appliedJobId = application.jobId || application.job?._id;
+      return String(appliedJobId || '') === String(jobId);
+    });
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
@@ -84,8 +92,14 @@ const ApplyPage = () => {
       return;
     }
 
-    if (!resumeFile && !resumeUrl.trim()) {
-      setFileError('Please upload a resume or use your saved resume URL');
+    if (hasAlreadyApplied) {
+      toast.error('You have already applied to this job');
+      navigate('/candidate/applications', { replace: true });
+      return;
+    }
+
+    if (!resumeFile && !profile?.resume) {
+      setFileError('Please upload your resume file or complete your candidate profile resume');
       return;
     }
 
@@ -96,7 +110,7 @@ const ApplyPage = () => {
         jobId,
         coverLetter: coverLetter.trim() || undefined,
         resumeFile: resumeFile || undefined,
-        resumeUrl: resumeUrl.trim() || undefined,
+        resumeUrl: resumeFile ? undefined : profile?.resume || undefined,
       },
       {
         onSuccess: () => {
@@ -106,17 +120,17 @@ const ApplyPage = () => {
     );
   };
 
-  if (jobLoading || profileLoading) {
+  if (jobLoading || profileLoading || applicationsLoading) {
     return <Loader />;
   }
 
-  if (!job || !profile) {
+  if (!job) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Unable to Load</h2>
-          <p className="text-gray-600 mb-6">Job or profile information could not be loaded.</p>
+          <p className="text-gray-600 mb-6">Job information could not be loaded.</p>
           <Link to="/jobs" className="text-blue-600 hover:underline">
             ← Back to Jobs
           </Link>
@@ -138,6 +152,26 @@ const ApplyPage = () => {
             </Button>
             <Button asChild>
               <Link to="/login">Login</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasAlreadyApplied) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
+          <AlertCircle className="h-12 w-12 text-emerald-600 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Already Applied</h2>
+          <p className="text-gray-600 mb-6">You have already applied for this job.</p>
+          <div className="flex gap-3 justify-center">
+            <Button variant="outline" asChild>
+              <Link to="/candidate/applications">My Applications</Link>
+            </Button>
+            <Button asChild>
+              <Link to={`/jobs/${jobId}`}>Back to Job</Link>
             </Button>
           </div>
         </div>
@@ -213,43 +247,43 @@ const ApplyPage = () => {
               </h3>
               <div className="space-y-4">
                 <div>
-                  <p className="text-lg font-bold text-gray-900">{profile.name}</p>
-                  {profile.headline && <p className="text-sm text-gray-600">{profile.headline}</p>}
+                  <p className="text-lg font-bold text-gray-900">{displayName}</p>
+                  {displayHeadline && <p className="text-sm text-gray-600">{displayHeadline}</p>}
                 </div>
 
                 <div className="flex items-start gap-3 pt-3 border-t border-gray-200">
                   <Mail className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-xs text-gray-500">Email</p>
-                    <p className="text-gray-900 text-sm">{profile.user.email}</p>
+                    <p className="text-gray-900 text-sm">{displayEmail}</p>
                   </div>
                 </div>
 
-                {profile.phone && (
+                {displayPhone && (
                   <div className="flex items-start gap-3">
                     <Phone className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="text-xs text-gray-500">Phone</p>
-                      <p className="text-gray-900 text-sm">{profile.phone}</p>
+                      <p className="text-gray-900 text-sm">{displayPhone}</p>
                     </div>
                   </div>
                 )}
 
-                {profile.location && (
+                {displayLocation && (
                   <div className="flex items-start gap-3">
                     <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="text-xs text-gray-500">Location</p>
-                      <p className="text-gray-900 text-sm">{profile.location}</p>
+                      <p className="text-gray-900 text-sm">{displayLocation}</p>
                     </div>
                   </div>
                 )}
 
-                {profile.skills && profile.skills.length > 0 && (
+                {displaySkills.length > 0 && (
                   <div className="pt-3 border-t border-gray-200">
                     <p className="text-xs text-gray-500 mb-2">Skills</p>
                     <div className="flex flex-wrap gap-2">
-                      {profile.skills.slice(0, 5).map((skill) => (
+                      {displaySkills.slice(0, 5).map((skill) => (
                         <span
                           key={skill}
                           className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
@@ -257,10 +291,16 @@ const ApplyPage = () => {
                           {skill}
                         </span>
                       ))}
-                      {profile.skills.length > 5 && (
-                        <span className="text-xs text-gray-600">+{profile.skills.length - 5} more</span>
+                      {displaySkills.length > 5 && (
+                        <span className="text-xs text-gray-600">+{displaySkills.length - 5} more</span>
                       )}
                     </div>
+                  </div>
+                )}
+
+                {profileUnavailable && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    Your saved candidate profile is not available right now. You can still apply using your account details.
                   </div>
                 )}
               </div>
@@ -303,36 +343,6 @@ const ApplyPage = () => {
                   <label className="block text-sm font-semibold text-gray-900 mb-2">
                     Resume / CV
                   </label>
-                  {existingResumeUrl && (
-                    <div className="mb-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-                      <p className="font-medium">Saved resume found</p>
-                      <p className="mt-1 break-all text-xs text-blue-800">{existingResumeUrl}</p>
-                      <button
-                        type="button"
-                        onClick={() => setResumeUrl(existingResumeUrl)}
-                        className="mt-2 text-xs font-semibold text-blue-700 hover:text-blue-800"
-                      >
-                        Use saved resume URL
-                      </button>
-                    </div>
-                  )}
-                  <div className="mb-3">
-                    <label className="block text-xs font-medium text-gray-500 mb-2">Resume URL</label>
-                    <input
-                      type="url"
-                      value={resumeUrl}
-                      onChange={(e) => {
-                        setResumeUrl(e.target.value);
-                        if (e.target.value.trim()) {
-                          setFileError('');
-                        }
-                      }}
-                      placeholder="https://example.com/my-resume.pdf"
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
-                      disabled={isSubmitting}
-                    />
-                    <p className="mt-1 text-xs text-gray-500">If you already have a hosted resume link, paste it here. Otherwise upload a file below.</p>
-                  </div>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 hover:bg-blue-50 transition cursor-pointer">
                     <input
                       type="file"
@@ -349,7 +359,7 @@ const ApplyPage = () => {
                           <span className="text-green-600">✓ {resumeFile.name}</span>
                         ) : (
                           <>
-                            Click to upload a resume file or keep using the URL above
+                            Click to upload a resume file
                             <br />
                             <span className="text-xs text-gray-500">PDF, DOC, DOCX (Max 5MB)</span>
                           </>
@@ -357,6 +367,11 @@ const ApplyPage = () => {
                       </p>
                     </label>
                   </div>
+                  {profile?.resume && !resumeFile && (
+                    <p className="mt-2 text-xs text-emerald-700">
+                      Existing resume found in your profile. Uploading a new file is optional.
+                    </p>
+                  )}
                   {fileError && (
                     <p className="mt-2 text-xs text-red-600 flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
@@ -395,7 +410,7 @@ const ApplyPage = () => {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={(!resumeFile && !resumeUrl.trim()) || isSubmitting}
+                    disabled={isSubmitting || (!resumeFile && !profile?.resume)}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                   >
                     {isSubmitting ? 'Submitting...' : 'Submit Application'}

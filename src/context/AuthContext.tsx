@@ -1,3 +1,4 @@
+// এই ফাইলটি authentication state, login/register/logout এবং user session management পরিচালনা করে।
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
@@ -13,6 +14,8 @@ export interface User {
   email: string;
   role: Role;
   phone?: string;
+  biodata?: string;
+  location?: string;
   skills?: string[];
   designation?: string;
   agency?: string;
@@ -24,6 +27,8 @@ interface RegisterPayload {
   password: string;
   role: 'candidate' | 'recruiter';
   phone?: string;
+  biodata?: string;
+  location?: string;
   skills?: string[];
   designation?: string;
   agency?: string;
@@ -80,6 +85,8 @@ const normalizeUser = (input: Partial<User> | undefined): User => ({
   email: input?.email || '',
   role: normalizeRole(input?.role),
   phone: input?.phone,
+  biodata: input?.biodata,
+  location: input?.location,
   skills: input?.skills,
   designation: input?.designation,
   agency: input?.agency,
@@ -168,7 +175,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         const payload = response.data as { data?: { user?: Partial<User> }; user?: Partial<User> };
-        const serverUser = normalizeUser(payload.data?.user || payload.user || user || undefined);
+        const storedUser = (() => {
+          try {
+            const raw = localStorage.getItem('user');
+            if (!raw) return undefined;
+            return JSON.parse(raw) as Partial<User>;
+          } catch {
+            return undefined;
+          }
+        })();
+
+        const serverUser = normalizeUser(payload.data?.user || payload.user || storedUser || undefined);
 
         if (!serverUser.email) {
           throw new Error('Session expired. Please login again.');
@@ -184,7 +201,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     void initialize();
-  }, [clearAuth, token, user]);
+  }, [clearAuth, token]);
 
   const login = useCallback(
     async (email: string, password: string): Promise<User> => {

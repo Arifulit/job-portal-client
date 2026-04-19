@@ -1,3 +1,4 @@
+// এই ফাইলটি API call এবং server data operation এর service layer হিসেবে কাজ করে।
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, handleApiError } from '../utils/api';
 import { Job, JobFilters, PaginatedResponse, ApiResponse, RecommendedJob } from '../types';
@@ -30,6 +31,86 @@ const extractJob = (payload: unknown): Job | undefined => {
   return undefined;
 };
 
+const normalizePaginatedJobs = (payload: unknown): PaginatedResponse<Job> => {
+  const defaultPayload: PaginatedResponse<Job> = {
+    success: true,
+    data: [],
+    pagination: {
+      total: 0,
+      page: 1,
+      limit: 10,
+      pages: 1,
+    },
+  };
+
+  if (!payload || typeof payload !== 'object') {
+    return defaultPayload;
+  }
+
+  const response = payload as {
+    success?: boolean;
+    message?: string;
+    data?: Job[] | { jobs?: Job[]; data?: Job[]; pagination?: PaginatedResponse<Job>['pagination'] };
+    jobs?: Job[];
+    pagination?: PaginatedResponse<Job>['pagination'];
+  };
+
+  if (response.success === false) {
+    throw new Error(response.message || 'Failed to fetch jobs');
+  }
+
+  if (Array.isArray(response.data) && response.pagination) {
+    return {
+      success: true,
+      data: response.data,
+      pagination: {
+        total: response.pagination.total ?? response.data.length,
+        page: response.pagination.page ?? 1,
+        limit: response.pagination.limit ?? 10,
+        pages: response.pagination.pages ?? 1,
+      },
+    };
+  }
+
+  if (response.data && typeof response.data === 'object') {
+    const nestedData = response.data;
+    const nestedJobs = Array.isArray(nestedData.jobs)
+      ? nestedData.jobs
+      : Array.isArray(nestedData.data)
+      ? nestedData.data
+      : [];
+    const nestedPagination = nestedData.pagination || response.pagination;
+
+    if (nestedPagination) {
+      return {
+        success: true,
+        data: nestedJobs,
+        pagination: {
+          total: nestedPagination.total ?? nestedJobs.length,
+          page: nestedPagination.page ?? 1,
+          limit: nestedPagination.limit ?? 10,
+          pages: nestedPagination.pages ?? 1,
+        },
+      };
+    }
+  }
+
+  if (Array.isArray(response.jobs) && response.pagination) {
+    return {
+      success: true,
+      data: response.jobs,
+      pagination: {
+        total: response.pagination.total ?? response.jobs.length,
+        page: response.pagination.page ?? 1,
+        limit: response.pagination.limit ?? 10,
+        pages: response.pagination.pages ?? 1,
+      },
+    };
+  }
+
+  return defaultPayload;
+};
+
 
 export const useJobs = (filters?: JobFilters) => {
   return useQuery({
@@ -44,17 +125,32 @@ export const useJobs = (filters?: JobFilters) => {
               params.append('search', String(value));
             } else if (key === 'jobType') {
               params.append('jobType', String(value));
-              // params.append('type', String(value));  // Uncomment if needed
-              // params.append('employment_type', String(value));  // Uncomment if needed
             } else {
               params.append(key, String(value));
             }
           }
         });
       }
-      
-      const response = await api.get<PaginatedResponse<Job>>(`/jobs/search?${params}`);
-      return response.data;
+
+      const query = params.toString();
+      const endpoints = query ? [`/jobs?${query}`, `/jobs/search?${query}`] : ['/jobs', '/jobs/search'];
+      let lastError: unknown;
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await api.get(endpoint);
+          return normalizePaginatedJobs(response.data);
+        } catch (error) {
+          if (axios.isAxiosError(error) && [404, 405].includes(error.response?.status || 0)) {
+            lastError = error;
+            continue;
+          }
+
+          throw error;
+        }
+      }
+
+      throw lastError || new Error('Failed to fetch jobs');
     },
   });
 };

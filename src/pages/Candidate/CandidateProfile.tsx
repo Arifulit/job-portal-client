@@ -1,3 +1,4 @@
+// এই ফাইলটি candidate dashboard এর একটি page UI ও interaction flow পরিচালনা করে।
 // import React from 'react';
 // import { useCandidateProfile } from '../../services/candidateService';
 // import Badge from '../../components/ui/badge';
@@ -127,6 +128,7 @@
 // export default CandidateProfile;
 
 import React, { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { useCandidateProfile, useUpdateCandidateProfile } from '../../services/candidateService';
 import { Badge } from '../../components/ui/badge';
 import { Skeleton } from '../../components/ui/skeleton';
@@ -134,13 +136,37 @@ import { Mail, Phone, Calendar, Briefcase, MapPin, Award, User, Pencil, X } from
 import { toast } from 'sonner';
 
 const CandidateProfile = () => {
+  const { user } = useAuth();
   const { data, isLoading, error } = useCandidateProfile();
-  const profile = data?.data;
-  const displayEmail = profile?.user?.email || profile?.email || '';
-  const displayLocation = profile?.location || profile?.address || '';
-  const displayBiodata = profile?.biodata || profile?.bio || profile?.summary || '';
-  const displayHeadline = profile?.headline || 'Full Stack Developer';
-  const displayExperience = profile?.experienceLevel || 'Mid Level';
+  const profileData = data?.data;
+  const profile = profileData || {
+    _id: user?._id || '',
+    user: {
+      _id: user?._id || '',
+      name: user?.name || 'Candidate',
+      email: user?.email || '',
+      role: user?.role || 'candidate',
+      createdAt: '',
+      updatedAt: '',
+    },
+    name: user?.name || 'Candidate',
+    phone: user?.phone || '',
+    skills: user?.skills || [],
+    location: user?.location || '',
+    address: user?.location || '',
+    biodata: user?.biodata || '',
+    headline: '',
+    experienceLevel: '',
+    summary: user?.biodata || '',
+    createdAt: '',
+    updatedAt: '',
+    __v: 0,
+  };
+  const displayEmail = profile.user?.email || profile.email || user?.email || '';
+  const displayLocation = profile.location || profile.address || user?.location || '';
+  const displayBiodata = profile.biodata || profile.bio || profile.summary || user?.biodata || '';
+  const displayHeadline = profile.headline || 'Candidate Profile';
+  const displayExperience = profile.experienceLevel || 'Not specified';
 
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', headline: '', location: '', experienceLevel: '', biodata: '', summary: '', skills: [] as string[] });
@@ -181,29 +207,29 @@ const CandidateProfile = () => {
   // Loading State
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4">
+      <div className="min-h-screen bg-gray-50 py-12 px-4 dark:bg-slate-950">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-3xl shadow-xl p-8">
+          <div className="rounded-3xl bg-white p-8 shadow-xl dark:border dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center gap-6 mb-8">
-              <Skeleton className="h-28 w-28 rounded-full" />
+              <Skeleton className="h-28 w-28 rounded-full bg-slate-200 dark:bg-slate-800" />
               <div className="space-y-3 flex-1">
-                <Skeleton className="h-9 w-64" />
-                <Skeleton className="h-5 w-48" />
-                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-9 w-64 bg-slate-200 dark:bg-slate-800" />
+                <Skeleton className="h-5 w-48 bg-slate-200 dark:bg-slate-800" />
+                <Skeleton className="h-5 w-32 bg-slate-200 dark:bg-slate-800" />
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-4">
-                <Skeleton className="h-6 w-32" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-5/6" />
+                <Skeleton className="h-6 w-32 bg-slate-200 dark:bg-slate-800" />
+                <Skeleton className="h-4 w-full bg-slate-200 dark:bg-slate-800" />
+                <Skeleton className="h-4 w-5/6 bg-slate-200 dark:bg-slate-800" />
               </div>
               <div className="space-y-4">
-                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-6 w-24 bg-slate-200 dark:bg-slate-800" />
                 <div className="flex flex-wrap gap-2">
-                  <Skeleton className="h-8 w-24 rounded-full" />
-                  <Skeleton className="h-8 w-20 rounded-full" />
-                  <Skeleton className="h-8 w-28 rounded-full" />
+                  <Skeleton className="h-8 w-24 rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <Skeleton className="h-8 w-20 rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <Skeleton className="h-8 w-28 rounded-full bg-slate-200 dark:bg-slate-800" />
                 </div>
               </div>
             </div>
@@ -214,26 +240,26 @@ const CandidateProfile = () => {
   }
 
   // Error State
-  if (error || !profile) {
+  if (!profile) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
-        <div className="bg-white rounded-3xl shadow-xl p-10 text-center max-w-md">
-          <div className="bg-red-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <User className="w-10 h-10 text-red-600" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 dark:bg-slate-950">
+        <div className="max-w-md rounded-3xl bg-white p-10 text-center shadow-xl dark:border dark:border-slate-800 dark:bg-slate-900">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/40">
+            <User className="h-10 w-10 text-red-600 dark:text-red-300" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Profile Not Found</h2>
-          <p className="text-gray-600">We couldn't load the candidate profile. Please try again later.</p>
+          <h2 className="mb-3 text-2xl font-bold text-gray-900 dark:text-slate-100">Profile Not Found</h2>
+          <p className="text-gray-600 dark:text-slate-300">We couldn't load the candidate profile. Please try again later.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.10),_transparent_38%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)] py-12 px-4">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.10),_transparent_38%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)] py-12 px-4 dark:bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.22),_rgba(2,6,23,0)_36%),linear-gradient(180deg,_#020617_0%,_#0f172a_100%)]">
       <div className="max-w-5xl mx-auto">
 
         {/* Main Profile Card */}
-        <div className="bg-white rounded-[2rem] shadow-[0_24px_80px_rgba(15,23,42,0.10)] overflow-hidden border border-slate-200/80">
+        <div className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.10)] dark:border-slate-800 dark:bg-slate-900/95 dark:shadow-[0_24px_80px_rgba(2,6,23,0.55)]">
 
           {/* Hero Header */}
           <div className="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 px-8 py-10 text-white">
@@ -292,38 +318,40 @@ const CandidateProfile = () => {
               {/* Left Column - Contact & Info */}
               <div className="lg:col-span-1 space-y-8">
                 {/* Contact Info */}
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-6 shadow-sm">
-                  <h3 className="mb-5 flex items-center gap-3 text-lg font-semibold text-slate-900">
-                    <Mail className="w-6 h-6 text-blue-600" />
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-800/60">
+                  <h3 className="mb-5 flex items-center gap-3 text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    <Mail className="w-6 h-6 text-blue-600 dark:text-slate-300" />
                     Contact Information
                   </h3>
                   <div className="space-y-3 text-sm">
-                    <div className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200">
-                      <Mail className="mt-0.5 h-5 w-5 text-slate-500" />
+                    <div className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
+                      <Mail className="mt-0.5 h-5 w-5 text-slate-500 dark:text-slate-400" />
                       <div>
-                        <p className="text-xs uppercase tracking-wide text-slate-500">Email</p>
-                        <span className="font-medium text-slate-900">{displayEmail}</span>
+                        <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Email</p>
+                        <span className="font-medium text-slate-900 dark:text-slate-100">{displayEmail}</span>
                       </div>
                     </div>
                     {profile.phone && (
-                      <div className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200">
-                        <Phone className="mt-0.5 h-5 w-5 text-slate-500" />
+                      <div className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
+                        <Phone className="mt-0.5 h-5 w-5 text-slate-500 dark:text-slate-400" />
                         <div>
-                          <p className="text-xs uppercase tracking-wide text-slate-500">Phone</p>
-                          <span className="font-medium text-slate-900">{profile.phone}</span>
+                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Phone</p>
+                          <span className="font-medium text-slate-900 dark:text-slate-100">{profile.phone}</span>
                         </div>
                       </div>
                     )}
-                    <div className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200">
-                      <Calendar className="mt-0.5 h-5 w-5 text-slate-500" />
+                    <div className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
+                      <Calendar className="mt-0.5 h-5 w-5 text-slate-500 dark:text-slate-400" />
                       <div>
-                        <p className="text-xs uppercase tracking-wide text-slate-500">Member since</p>
-                        <span className="font-medium text-slate-900">
-                          {new Date(profile.createdAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                          })}
+                        <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Member since</p>
+                        <span className="font-medium text-slate-900 dark:text-slate-100">
+                          {profile.createdAt
+                            ? new Date(profile.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                              })
+                            : 'Recently joined'}
                         </span>
                       </div>
                     </div>
@@ -331,16 +359,16 @@ const CandidateProfile = () => {
                 </div>
 
                 {/* Quick Stats */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h3 className="mb-4 text-lg font-semibold text-slate-900">Profile Snapshot</h3>
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  <h3 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">Profile Snapshot</h3>
                   <div className="space-y-3 text-sm">
-                    <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
-                      <span className="text-slate-600">Skills Added</span>
-                      <span className="font-semibold text-slate-900">{profile.skills?.length || 0}</span>
+                    <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/70">
+                      <span className="text-slate-600 dark:text-slate-300">Skills Added</span>
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">{profile.skills?.length || 0}</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
-                      <span className="text-slate-600">Applications</span>
-                      <span className="font-semibold text-slate-900">{profile.applications?.length || 0}</span>
+                    <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/70">
+                      <span className="text-slate-600 dark:text-slate-300">Applications</span>
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">{profile.applications?.length || 0}</span>
                     </div>
                   </div>
                 </div>
@@ -351,21 +379,21 @@ const CandidateProfile = () => {
 
                 {/* About / Biodata */}
                 {displayBiodata && (
-                  <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h3 className="mb-4 flex items-center gap-3 text-lg font-semibold text-slate-900">
-                      <Award className="w-5 h-5 text-blue-600" />
+                  <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <h3 className="mb-4 flex items-center gap-3 text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      <Award className="w-5 h-5 text-blue-600 dark:text-slate-300" />
                       Biodata
                     </h3>
-                    <div className="border-l-4 border-blue-500 pl-4">
-                      <p className="text-slate-700 leading-7">{displayBiodata}</p>
+                    <div className="border-l-4 border-blue-500 pl-4 dark:border-slate-600">
+                      <p className="leading-7 text-slate-700 dark:text-slate-300">{displayBiodata}</p>
                     </div>
                   </div>
                 )}
 
                 {/* Skills */}
                 <div>
-                  <h3 className="mb-5 flex items-center gap-3 text-lg font-semibold text-slate-900">
-                    <Award className="w-5 h-5 text-blue-600" />
+                  <h3 className="mb-5 flex items-center gap-3 text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    <Award className="w-5 h-5 text-blue-600 dark:text-slate-300" />
                     Skills
                   </h3>
                   {profile.skills && profile.skills.length > 0 ? (
@@ -373,14 +401,14 @@ const CandidateProfile = () => {
                       {profile.skills.map((skill, index) => (
                         <Badge
                           key={index}
-                          className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                          className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-100"
                         >
                           {skill}
                         </Badge>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm italic text-slate-500">No skills added yet</p>
+                    <p className="text-sm italic text-slate-500 dark:text-slate-400">No skills added yet</p>
                   )}
                 </div>
               </div>
@@ -392,57 +420,57 @@ const CandidateProfile = () => {
       {/* Edit Profile Modal */}
       {isEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[1.75rem] border border-slate-200 bg-white shadow-[0_30px_100px_rgba(15,23,42,0.28)]">
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[1.75rem] border border-slate-200 bg-white shadow-[0_30px_100px_rgba(15,23,42,0.28)] dark:border-slate-700 dark:bg-slate-900 dark:shadow-[0_30px_100px_rgba(2,6,23,0.75)]">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5 dark:border-slate-700">
               <div>
-                <h2 className="text-2xl font-semibold text-slate-900">Edit Profile</h2>
-                <p className="mt-1 text-sm text-slate-500">Update your public candidate details.</p>
+                <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Edit Profile</h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Update your public candidate details.</p>
               </div>
-              <button onClick={() => setIsEditing(false)} className="rounded-full p-2 transition-colors hover:bg-slate-100">
-                <X className="w-5 h-5 text-gray-600" />
+              <button onClick={() => setIsEditing(false)} className="rounded-full p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
+                <X className="w-5 h-5 text-gray-600 dark:text-slate-300" />
               </button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-5 p-6">
               <div>
-                <label className="mb-1 block text-sm font-semibold text-slate-700">Name</label>
+                <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Name</label>
                 <input
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500 dark:focus:ring-slate-800"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-semibold text-slate-700">Phone</label>
+                <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Phone</label>
                 <input
                   value={form.phone}
                   onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500 dark:focus:ring-slate-800"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-semibold text-slate-700">Headline</label>
+                <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Headline</label>
                 <input
                   value={form.headline}
                   onChange={e => setForm(f => ({ ...f, headline: e.target.value }))}
                   placeholder="e.g. Full Stack Developer"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500 dark:focus:ring-slate-800"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-semibold text-slate-700">Location</label>
+                <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Location</label>
                 <input
                   value={form.location}
                   onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
                   placeholder="e.g. Dhaka, Bangladesh"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500 dark:focus:ring-slate-800"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-semibold text-slate-700">Experience Level</label>
+                <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Experience Level</label>
                 <select
                   value={form.experienceLevel}
                   onChange={e => setForm(f => ({ ...f, experienceLevel: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-500 dark:focus:ring-slate-800"
                 >
                   <option value="">Select level</option>
                   <option value="entry">Entry Level</option>
@@ -453,34 +481,34 @@ const CandidateProfile = () => {
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-semibold text-slate-700">Biodata</label>
+                <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Biodata</label>
                 <textarea
                   rows={4}
                   value={form.biodata}
                   onChange={e => setForm(f => ({ ...f, biodata: e.target.value, summary: e.target.value }))}
                   placeholder="Write a short bio about yourself..."
-                  className="w-full resize-none rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500 dark:focus:ring-slate-800"
                 />
               </div>
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Skills</label>
+                <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">Skills</label>
                 <div className="flex gap-2 mb-3">
                   <input
                     value={skillInput}
                     onChange={e => setSkillInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSkill(); } }}
                     placeholder="Type a skill and press Enter or Add"
-                    className="flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                    className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500 dark:focus:ring-slate-800"
                   />
-                  <button type="button" onClick={addSkill} className="rounded-xl bg-slate-900 px-4 py-2.5 font-medium text-white transition-colors hover:bg-slate-800">
+                  <button type="button" onClick={addSkill} className="rounded-xl bg-slate-900 px-4 py-2.5 font-medium text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white">
                     Add
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {form.skills.map(skill => (
-                    <span key={skill} className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700">
+                    <span key={skill} className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                       {skill}
-                      <button type="button" onClick={() => removeSkill(skill)} className="text-slate-500 transition-colors hover:text-red-600">
+                      <button type="button" onClick={() => removeSkill(skill)} className="text-slate-500 transition-colors hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400">
                         <X className="w-3 h-3" />
                       </button>
                     </span>
@@ -491,14 +519,14 @@ const CandidateProfile = () => {
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="flex-1 rounded-xl border border-slate-300 py-3 font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                  className="flex-1 rounded-xl border border-slate-300 py-3 font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isUpdating}
-                  className="flex-1 rounded-xl bg-blue-600 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex-1 rounded-xl bg-blue-600 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
                 >
                   {isUpdating ? 'Saving...' : 'Save Changes'}
                 </button>

@@ -1,3 +1,4 @@
+// এই ফাইলটি app layout (navbar/sidebar/footer/outlet) structure নিয়ন্ত্রণ করে।
 
 import React, { useState, useRef, useEffect } from 'react';
 import {
@@ -6,8 +7,9 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router-dom';
-import { Menu, Search, Bell, User, LogOut, Home } from 'lucide-react';
+import { Menu, Search, Bell, User, LogOut, Home, ChevronRight, Sun, Moon, Compass } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../hooks/useTheme';
 import {
   Avatar,
   AvatarFallback,
@@ -36,10 +38,14 @@ interface ISidebarItem {
 const DashboardLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
+  const { resolvedTheme, setTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [commandQuery, setCommandQuery] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const getSidebarItems = (): ISidebarItem[] => {
     if (!user) return [];
@@ -56,6 +62,12 @@ const DashboardLayout: React.FC = () => {
   };
 
   const sidebarItems = getSidebarItems();
+  const flatSidebarItems = sidebarItems.flatMap((section) =>
+    section.items.map((item) => ({ ...item, section: section.title }))
+  );
+  const commandItems = flatSidebarItems.filter((item, index, arr) => {
+    return arr.findIndex((entry) => entry.url === item.url) === index;
+  });
 
   const handleLogout = async () => {
     try {
@@ -82,6 +94,18 @@ const DashboardLayout: React.FC = () => {
 
     return matches[0] || '';
   };
+
+  const activeSidebarItem = flatSidebarItems
+    .filter((item) => isActiveRoute(item.url))
+    .sort((a, b) => b.url.length - a.url.length)[0];
+
+  const activeSectionTitle = activeSidebarItem?.section || 'Dashboard';
+  const activePageTitle = activeSidebarItem?.title || 'Overview';
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
 
   const getUserInitials = () => {
     if (!user) return 'U';
@@ -125,6 +149,34 @@ const DashboardLayout: React.FC = () => {
     navigate(url);
   };
 
+  const openCommandPalette = () => {
+    setCommandOpen(true);
+  };
+
+  const closeCommandPalette = () => {
+    setCommandOpen(false);
+    setCommandQuery('');
+  };
+
+  const handleCommandNavigate = (url: string) => {
+    closeCommandPalette();
+    setDropdownOpen(false);
+    setSidebarOpen(false);
+    navigate(url);
+  };
+
+  const normalizedCommandQuery = commandQuery.trim().toLowerCase();
+  const filteredCommandItems = commandItems
+    .filter((item) => {
+      if (!normalizedCommandQuery) return true;
+      return (
+        item.title.toLowerCase().includes(normalizedCommandQuery) ||
+        item.section.toLowerCase().includes(normalizedCommandQuery) ||
+        item.url.toLowerCase().includes(normalizedCommandQuery)
+      );
+    })
+    .slice(0, 8);
+
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
 
   const ControlledAvatarImage: React.FC<{ src?: string; alt?: string }> = ({ src, alt }) => {
@@ -158,6 +210,29 @@ const DashboardLayout: React.FC = () => {
 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [dropdownOpen]);
+
+  useEffect(() => {
+    const handleKeyboardOpen = (event: KeyboardEvent) => {
+      const isCommandShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k';
+      if (isCommandShortcut) {
+        event.preventDefault();
+        openCommandPalette();
+      }
+
+      if (event.key === 'Escape' && commandOpen) {
+        closeCommandPalette();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyboardOpen);
+    return () => document.removeEventListener('keydown', handleKeyboardOpen);
+  }, [commandOpen]);
+
+  useEffect(() => {
+    if (commandOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 0);
+    }
+  }, [commandOpen]);
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800">
@@ -242,7 +317,7 @@ const DashboardLayout: React.FC = () => {
     </div>
   );
 
-  if (!user) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
         <div className="text-center">
@@ -254,7 +329,7 @@ const DashboardLayout: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-slate-950">
+    <div className="flex min-h-screen overflow-x-clip bg-gray-50 dark:bg-slate-950">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-30">
         <SidebarContent />
@@ -268,11 +343,11 @@ const DashboardLayout: React.FC = () => {
       </Sheet>
 
       {/* Main Content */}
-      <div className="flex-1 lg:pl-64 flex flex-col">
+      <div className="flex min-w-0 flex-1 flex-col lg:pl-64">
         {/* Header */}
-        <header className="bg-white dark:bg-slate-900 shadow-sm border-b border-gray-200 dark:border-slate-800 sticky top-0 z-20">
+        <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95 dark:shadow-black/10">
           <div className="flex items-center justify-between px-4 py-3 lg:px-8">
-            <div className="flex items-center gap-4 flex-1">
+            <div className="flex min-w-0 items-center gap-4 flex-1">
               <Button
                 variant="ghost"
                 size="icon"
@@ -281,25 +356,66 @@ const DashboardLayout: React.FC = () => {
               >
                 <Menu className="h-5 w-5" />
               </Button>
-              <p className="text-sm text-gray-600 dark:text-slate-400 hidden sm:block">
-                Welcome back, <span className="font-medium">{getUserFullName()}</span>
-              </p>
+
+              <div className="min-w-0">
+                <div className="hidden items-center gap-2 text-xs font-medium text-gray-500 dark:text-slate-400 sm:flex">
+                  <span>{activeSectionTitle}</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                  <span className="text-gray-700 dark:text-slate-300">{activePageTitle}</span>
+                </div>
+                <h1 className="truncate text-lg font-semibold text-gray-900 dark:text-slate-100">{activePageTitle}</h1>
+                <p className="hidden text-xs text-gray-500 dark:text-slate-400 sm:block">
+                  Welcome back, {getUserFullName()} • {currentDate}
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="icon" className="hidden sm:flex">
+              <button
+                type="button"
+                onClick={openCommandPalette}
+                className="hidden items-center rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-left shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600 dark:hover:bg-slate-700/60 lg:flex"
+              >
+                <Search className="mr-2 h-4 w-4 text-gray-400 dark:text-slate-400" />
+                <span className="text-xs text-gray-500 dark:text-slate-400">Search dashboard</span>
+                <span className="ml-3 rounded-md border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[10px] font-semibold text-gray-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                  Ctrl K
+                </span>
+              </button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={openCommandPalette}
+                className="lg:hidden"
+              >
                 <Search className="h-5 w-5" />
+              </Button>
+
+              <Button variant="ghost" size="sm" className="hidden md:inline-flex" onClick={() => navigate('/')}>
+                <Compass className="mr-1.5 h-4 w-4" />
+                Visit Site
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                className="hidden sm:inline-flex"
+              >
+                {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
 
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-blue-600" />
               </Button>
 
               {/* Dropdown */}
               <div className="relative" ref={dropdownRef}>
                 <Button
                   variant="ghost"
-                  className="h-9 w-9 rounded-full p-0 overflow-hidden"
+                  className="h-9 w-9 overflow-hidden rounded-full p-0 ring-2 ring-slate-200 transition-colors hover:ring-slate-300 dark:ring-slate-700 dark:hover:ring-slate-600"
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                 >
                   <Avatar className="h-9 w-9">
@@ -320,7 +436,7 @@ const DashboardLayout: React.FC = () => {
                       <button
                         type="button"
                         onClick={handleProfileNavigate}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-slate-200"
+                        className="flex w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
                       >
                         <User className="w-4 h-4" /> Profile
                       </button>
@@ -328,7 +444,7 @@ const DashboardLayout: React.FC = () => {
                     <div className="border-t border-gray-200 dark:border-slate-700 pt-2">
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600"
+                        className="flex w-full items-center gap-3 px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10"
                       >
                         <LogOut className="w-4 h-4" /> Log out
                       </button>
@@ -340,8 +456,62 @@ const DashboardLayout: React.FC = () => {
           </div>
         </header>
 
+        {commandOpen && (
+          <div
+            className="fixed inset-0 z-40 flex items-start justify-center bg-slate-950/55 px-4 pt-24 backdrop-blur-sm"
+            onClick={closeCommandPalette}
+          >
+            <div
+              className="w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+                <Search className="h-4 w-4 text-slate-400" />
+                <input
+                  ref={searchInputRef}
+                  value={commandQuery}
+                  onChange={(event) => setCommandQuery(event.target.value)}
+                  placeholder="Search dashboard pages..."
+                  className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100"
+                />
+                <span className="rounded-md border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:border-slate-600 dark:text-slate-300">
+                  ESC
+                </span>
+              </div>
+
+              <div className="max-h-[55vh] overflow-y-auto p-2">
+                {filteredCommandItems.length > 0 ? (
+                  filteredCommandItems.map((item) => {
+                    const ItemIcon = item.icon || Home;
+                    return (
+                      <button
+                        key={item.url}
+                        type="button"
+                        onClick={() => handleCommandNavigate(item.url)}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+                      >
+                        <span className="rounded-lg border border-slate-200 p-1.5 dark:border-slate-700">
+                          <ItemIcon className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{item.title}</p>
+                          <p className="truncate text-xs text-slate-500 dark:text-slate-400">{item.section} • {item.url}</p>
+                        </div>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="px-3 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                    No pages found for "{commandQuery}".
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="min-w-0 flex-1 overflow-y-auto">
           <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
             <Outlet />
           </div>

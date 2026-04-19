@@ -1,3 +1,4 @@
+// এই ফাইলটি global context state শেয়ার ও নিয়ন্ত্রণ করে।
 // import { Theme, ResolvedTheme } from "../providers/theme.provider";
 import { createContext } from "react";
 import { ResolvedTheme, Theme } from "../components/providers/theme.provider";

@@ -1,3 +1,4 @@
+// এই ফাইলটি reusable UI primitive/component সরবরাহ করে।
 import { cn } from "@/lib/utils"
 
 function Skeleton({

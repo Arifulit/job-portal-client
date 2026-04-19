@@ -1,3 +1,4 @@
+// এই ফাইলটি app level provider wrapper হিসেবে shared configuration দেয়।
 // import { ThemeProviderContext } from "@/context/theme.context";
 import { useEffect, useState, useCallback } from "react";
 import { ThemeProviderContext } from "../../context/theme.context";
@@ -32,10 +33,10 @@ export function ThemeProvider({
 
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
     if (typeof window === "undefined") return "light";
-    
+
     if (theme === "system") {
-      return window.matchMedia("(prefers-color-scheme: dark)").matches 
-        ? "dark" 
+      return window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
         : "light";
     }
     return theme as ResolvedTheme;
@@ -43,8 +44,8 @@ export function ThemeProvider({
 
   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(() => {
     if (typeof window === "undefined") return "light";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches 
-      ? "dark" 
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
       : "light";
   });
 
@@ -53,18 +54,18 @@ export function ThemeProvider({
     if (!enableSystem) return;
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    
+
     const handleChange = (e: MediaQueryListEvent) => {
       const newSystemTheme = e.matches ? "dark" : "light";
       setSystemTheme(newSystemTheme);
-      
+
       if (theme === "system") {
         setResolvedTheme(newSystemTheme);
       }
     };
 
     mediaQuery.addEventListener("change", handleChange);
-    
+
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme, enableSystem]);
 
@@ -80,10 +81,10 @@ export function ThemeProvider({
 
     // Remove existing theme classes
     root.classList.remove("light", "dark");
-    
+
     // Apply new theme
     root.classList.add(resolvedTheme);
-    
+
     // Set color-scheme for better browser integration
     root.style.colorScheme = resolvedTheme;
 
@@ -108,13 +109,13 @@ export function ThemeProvider({
 
   const handleSetTheme = useCallback((newTheme: Theme) => {
     setTheme(newTheme);
-    
+
     try {
       localStorage.setItem(storageKey, newTheme);
     } catch {
       console.warn("Failed to save theme preference");
     }
-    
+
     if (newTheme === "system") {
       setResolvedTheme(systemTheme);
     } else {

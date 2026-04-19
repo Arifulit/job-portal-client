@@ -1,3 +1,4 @@
+// এই ফাইলটি theme switching ও theme preview behavior নিয়ন্ত্রণ করে।
 // import { Moon, Sun, Monitor, Check } from "lucide-react";
 // import { Button } from "@/components/ui/button";
 // import {

@@ -1,3 +1,4 @@
+// এই ফাইলটি reusable UI primitive/component সরবরাহ করে।
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 

@@ -1,3 +1,4 @@
+// এই ফাইলটি নির্দিষ্ট role er dashboard sidebar menu ও route-component mapping সংজ্ঞায়িত করে।
 
 // ========== adminSidebarItems.tsx ==========
 /* eslint-disable @typescript-eslint/no-explicit-any */

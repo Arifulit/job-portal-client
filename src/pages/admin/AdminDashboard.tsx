@@ -1,3 +1,4 @@
+// এই ফাইলটি admin panel এর একটি page UI ও business flow পরিচালনা করে।
 import { Link } from 'react-router-dom';
 import {
   ArrowUpRight,
@@ -36,7 +37,6 @@ export const AdminDashboard = () => {
   const pendingReviews = stats?.pendingApplications ?? 0;
   const hired = stats?.hiredCount ?? 0;
   const shortlisted = stats?.shortlistedCount ?? 0;
-  const withdrawn = stats?.withdrawnCount ?? 0;
   const totalNotifications = stats?.totalNotifications ?? 0;
   const unreadNotifications = stats?.unreadNotifications ?? 0;
 
@@ -298,10 +298,6 @@ export const AdminDashboard = () => {
               <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
                 <span>Applications: Shortlisted</span>
                 <span className="font-semibold">{shortlisted}</span>
-              </p>
-              <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
-                <span>Applications: Withdrawn</span>
-                <span className="font-semibold">{withdrawn}</span>
               </p>
               <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
                 <span>Suspended Users</span>

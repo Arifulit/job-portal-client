@@ -1,3 +1,4 @@
+// এই ফাইলটি নির্দিষ্ট feature/component UI ও interaction logic বাস্তবায়ন করে।
 import { ReactNode, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 

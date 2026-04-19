@@ -1,3 +1,4 @@
+// এই ফাইলটি shared utility/helper বা low level integration function রাখে।
 export const getApiUrl = (): string => {
   // In development, use the VITE_API_BASE_URL from .env
   if (import.meta.env.DEV) {

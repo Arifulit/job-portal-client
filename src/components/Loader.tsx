@@ -1,3 +1,4 @@
+// এই ফাইলটি নির্দিষ্ট feature/component UI ও interaction logic বাস্তবায়ন করে।
 export const Loader = () => {
   return (
     <div className="flex justify-center items-center min-h-[400px]">

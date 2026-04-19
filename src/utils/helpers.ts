@@ -1,3 +1,4 @@
+// এই ফাইলটি project wide helper, route utility অথবা shared function প্রদান করে।
 export const formatDate = (date: string): string => {
   const d = new Date(date);
   return d.toLocaleDateString('en-US', {
@@ -37,9 +38,9 @@ export const truncateText = (text: string, maxLength: number): string => {
 export const getStatusColor = (status: string): string => {
   const colors: Record<string, string> = {
     applied: 'bg-blue-100 text-blue-700',
+    reviewed: 'bg-cyan-100 text-cyan-700',
     shortlisted: 'bg-emerald-100 text-emerald-700',
     interview: 'bg-amber-100 text-amber-700',
-    offered: 'bg-indigo-100 text-indigo-700',
     hired: 'bg-green-100 text-green-700',
     rejected: 'bg-rose-100 text-rose-700',
     active: 'bg-emerald-100 text-emerald-700',

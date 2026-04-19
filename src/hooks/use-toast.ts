@@ -1,3 +1,4 @@
+// এই ফাইলটি custom React hook হিসেবে reusable stateful logic দেয়।
 import * as React from 'react';
 
 import type { ToastActionElement, ToastProps } from '@/components/ui/toast';

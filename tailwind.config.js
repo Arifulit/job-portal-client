@@ -1,3 +1,4 @@
+// এই ফাইলটি Tailwind theme, content path ও plugin configuration সেট করে।
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: 'class',

@@ -1,15 +1,18 @@
+// এই ফাইলটি recruiter dashboard এর একটি page UI ও কাজের flow পরিচালনা করে।
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRecruiterJobs, useDeleteJob } from '../../services/jobService';
 import { format } from 'date-fns';
 import { Button } from '../../components/ui/button';
 import Badge from '../../components/ui/badge';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { Loader2, Plus, Eye, Edit2, Users, Calendar, Briefcase, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const MyJob: React.FC = () => {
   const { data: jobsResponse, isLoading, error, refetch } = useRecruiterJobs();
   const { mutate: deleteJob, isPending: isDeleting } = useDeleteJob();
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const jobs = jobsResponse?.data ?? [];
 
   const getStatusLabel = (status?: string) =>
@@ -31,10 +34,15 @@ const MyJob: React.FC = () => {
   };
 
   const handleDelete = (jobId: string, title: string) => {
-    const confirmed = window.confirm(`Are you sure you want to delete "${title}"?`);
-    if (!confirmed) return;
+    setDeleteTarget({ id: jobId, title });
+  };
 
-    deleteJob(jobId);
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return;
+    deleteJob(deleteTarget.id, {
+      onSuccess: () => setDeleteTarget(null),
+      onError: () => setDeleteTarget(null),
+    });
   };
 
   if (isLoading) {
@@ -62,8 +70,9 @@ const MyJob: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <>
+      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
 
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8">
@@ -226,8 +235,20 @@ const MyJob: React.FC = () => {
             </Link>
           </div>
         )}
+        </div>
       </div>
-    </div>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Delete Job"
+        description={`Are you sure you want to delete "${deleteTarget?.title || 'this job'}"? This action cannot be undone.`}
+        confirmLabel="Yes, Delete"
+        cancelLabel="Cancel"
+        loading={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+    </>
   );
 };
 

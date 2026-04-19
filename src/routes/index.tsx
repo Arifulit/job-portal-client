@@ -1,3 +1,4 @@
+// এই ফাইলটি সব route, layout এবং protected navigation configuration নির্ধারণ করে।
 /* eslint-disable react-refresh/only-export-components */
 import * as React from 'react';
 import { createBrowserRouter, Navigate } from "react-router-dom";
