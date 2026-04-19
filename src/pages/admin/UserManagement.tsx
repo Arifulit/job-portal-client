@@ -43,13 +43,16 @@ const UserManagement = () => {
 		const query = search.trim().toLowerCase();
 
 		return users.filter((user) => {
+			const roleMatched = roleFilter === 'all' || normalizeRole(user.role) === roleFilter;
+			if (!roleMatched) return false;
+
 			if (!query) return true;
 			return (
 				String(user.name || '').toLowerCase().includes(query) ||
 				String(user.email || '').toLowerCase().includes(query)
 			);
 		});
-	}, [users, search]);
+	}, [users, search, roleFilter]);
 
 	const summary = useMemo(() => {
 		const total = users.length;
@@ -76,17 +79,34 @@ const UserManagement = () => {
 	const handleRoleChange = (user: User, role: string) => {
 		const currentRole = normalizeRole(user.role);
 		const nextRole = normalizeRole(role);
-		const isCurrentUpdatableRole = currentRole === 'candidate' || currentRole === 'recruiter';
-		const isNextUpdatableRole = nextRole === 'candidate' || nextRole === 'recruiter';
+		const isCurrentUpdatableRole =
+			currentRole === 'candidate' ||
+			currentRole === 'recruiter' ||
+			currentRole === 'admin';
+		const isNextUpdatableRole =
+			nextRole === 'candidate' ||
+			nextRole === 'recruiter' ||
+			nextRole === 'admin';
 
 		if (currentRole === nextRole) return;
 
 		if (!isCurrentUpdatableRole || !isNextUpdatableRole) {
-			toast.error('Only candidate and recruiter roles can be changed');
+			toast.error('Only candidate, recruiter, or admin roles are supported for change');
 			return;
 		}
 
-		updateUserRole({ userId: user._id, role: nextRole });
+		updateUserRole(
+			{ userId: user._id, role: nextRole },
+			{
+				onSuccess: () => {
+					// Keep changed user visible in table after role transition.
+					if (roleFilter !== 'all' && roleFilter !== nextRole) {
+						setRoleFilter(nextRole as 'admin' | 'candidate' | 'recruiter');
+						toast.success(`Role updated. Switched filter to ${nextRole}.`);
+					}
+				},
+			}
+		);
 	};
 
 	const handleStatusToggle = (user: User) => {
@@ -246,15 +266,13 @@ const UserManagement = () => {
 										<select
 											value={normalizeRole(user.role)}
 											onChange={(event) => handleRoleChange(user, event.target.value)}
-											disabled={updatingRole || normalizeRole(user.role) === 'admin'}
+											disabled={updatingRole}
 											className="block w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
 										>
 											<option value="candidate">Candidate</option>
 											<option value="recruiter">Recruiter</option>
+											<option value="admin">Admin</option>
 										</select>
-										{normalizeRole(user.role) === 'admin' && (
-											<p className="text-xs text-slate-500">Admin role is locked.</p>
-										)}
 										{normalizeRole(user.role) === 'recruiter' && isRecruiterApproved(user) && (
 											<span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
 												Approved

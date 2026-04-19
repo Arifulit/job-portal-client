@@ -1,14 +1,14 @@
 // এই ফাইলটি candidate dashboard এর একটি page UI ও interaction flow পরিচালনা করে।
-import React, { useState } from 'react';
+import React from 'react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { Loader2, ExternalLink } from 'lucide-react';
-import { useDeleteApplication, useMyApplications } from '../../services/applicationService';
-import { ConfirmDialog } from '../../components/ui/confirm-dialog';
+import { useMyApplications } from '../../services/applicationService';
 import { ApplicationStatus } from '../../types';
 
 const statusBadgeClassMap: Record<ApplicationStatus, string> = {
   applied: 'bg-blue-100 text-blue-700 border border-blue-200',
+  reviewed: 'bg-indigo-100 text-indigo-700 border border-indigo-200',
   shortlisted: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
   interview: 'bg-amber-100 text-amber-700 border border-amber-200',
   hired: 'bg-green-100 text-green-700 border border-green-200',
@@ -19,21 +19,7 @@ const toTitleCase = (value: string) => value.charAt(0).toUpperCase() + value.sli
 
 const MyApplications: React.FC = () => {
   const { data, isLoading, isError, refetch } = useMyApplications();
-  const { mutate: withdrawApplication, isPending: isWithdrawing } = useDeleteApplication();
-  const [confirmWithdrawId, setConfirmWithdrawId] = useState<string | null>(null);
   const applications = data?.data || [];
-
-  const handleWithdraw = (applicationId: string) => {
-    setConfirmWithdrawId(applicationId);
-  };
-
-  const handleConfirmWithdraw = () => {
-    if (!confirmWithdrawId) return;
-    withdrawApplication(confirmWithdrawId, {
-      onSuccess: () => setConfirmWithdrawId(null),
-      onError: () => setConfirmWithdrawId(null),
-    });
-  };
 
   if (isLoading) {
     return (
@@ -141,21 +127,11 @@ const MyApplications: React.FC = () => {
                           {appliedDate ? format(new Date(appliedDate), 'MMM d, yyyy h:mm a') : 'N/A'}
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusBadgeClassMap[application.status] || statusBadgeClassMap.applied}`}
-                            >
-                              {toTitleCase(application.status)}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleWithdraw(application._id)}
-                              disabled={isWithdrawing}
-                              className="inline-flex items-center rounded-md border border-red-300 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
-                            >
-                              Withdraw
-                            </button>
-                          </div>
+                          <span
+                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusBadgeClassMap[application.status] || statusBadgeClassMap.applied}`}
+                          >
+                            {toTitleCase(application.status)}
+                          </span>
                         </td>
                       </tr>
                     );
@@ -167,17 +143,6 @@ const MyApplications: React.FC = () => {
         )}
         </div>
       </div>
-
-      <ConfirmDialog
-        open={Boolean(confirmWithdrawId)}
-        title="Withdraw Application"
-        description="Are you sure you want to withdraw this application? This action cannot be undone."
-        confirmLabel="Yes, Withdraw"
-        cancelLabel="Cancel"
-        loading={isWithdrawing}
-        onConfirm={handleConfirmWithdraw}
-        onCancel={() => setConfirmWithdrawId(null)}
-      />
     </>
   );
 };

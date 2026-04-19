@@ -215,27 +215,6 @@ export const useUpdateApplicationStatus = () => {
   });
 };
 
-export const useDeleteApplication = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const response = await api.put<ApiResponse<Application>>(`/applications/${id}/withdraw`);
-      return response.data.data ? normalizeApplication(response.data.data as Application) : null;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-      queryClient.invalidateQueries({ queryKey: ['my-applications'] });
-      queryClient.invalidateQueries({ queryKey: ['job-applications'] });
-      queryClient.invalidateQueries({ queryKey: ['recruiter-all-applications'] });
-      toast.success('Application removed successfully');
-    },
-    onError: (error) => {
-      toast.error(handleApiError(error));
-    },
-  });
-};
-
 export const useMyApplications = (enabled = true) => {
   return useQuery({
     queryKey: ['my-applications'],
