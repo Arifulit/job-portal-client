@@ -177,7 +177,7 @@ const DashboardLayout: React.FC = () => {
     })
     .slice(0, 8);
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
+  const API_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL;
 
   const ControlledAvatarImage: React.FC<{ src?: string; alt?: string }> = ({ src, alt }) => {
     const [show, setShow] = useState(!!src);

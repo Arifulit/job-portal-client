@@ -142,11 +142,9 @@ Default local URL: `http://localhost:5173`
 
 ## Environment Variables
 
-The client currently uses `VITE_API_BASE_URL` in runtime code.
+The client currently uses `VITE_API_URL` in runtime code.
 
-```env
-VITE_API_BASE_URL=http://localhost:5000/api/v1
-```
+
 
 Optional variables can be added if your deployment/build setup requires them, but only include variables that are actively used in the client code.
 
@@ -227,7 +225,7 @@ Good practices followed by this client:
 
 ### App cannot connect to API
 
-- Verify `VITE_API_BASE_URL` value
+- Verify `VITE_API_URL` value
 - Confirm backend server is running
 - Check CORS settings on backend
 

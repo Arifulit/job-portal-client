@@ -22,7 +22,7 @@ interface AppConfig {
 
 export const config: AppConfig = {
   api: {
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1',
+    baseURL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL,
     timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 10000,
   },
   app: {
