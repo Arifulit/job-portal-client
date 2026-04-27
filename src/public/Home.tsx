@@ -19,7 +19,8 @@ import {
 } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { useJobRecommendations } from "@/services/jobService";
+import { useCandidateProfile, useCandidateRecommendations } from "@/services/candidateService";
+import { useAuth } from "@/context/AuthContext";
 
 type FeaturedJobItem = {
   title: string;
@@ -44,6 +45,7 @@ type HomeApiJob = {
   deadline?: string;
   company?: { name?: string } | string | null;
   relevanceScore?: number;
+  skills?: string[];
 };
 
 const getHomeJobId = (job: HomeApiJob) => job._id || job.id || "";
@@ -67,6 +69,18 @@ const formatHomeSalary = (job: HomeApiJob) => {
 const getHomeCompanyName = (company: HomeApiJob["company"]) => {
   if (typeof company === "string") return company;
   return company?.name || "Confidential Company";
+};
+
+const formatSkillsLabel = (skills: string[]) => {
+  if (skills.length === 0) {
+    return "Update your profile skills to improve matches.";
+  }
+
+  if (skills.length === 1) {
+    return `Matched with your ${skills[0]} skill`;
+  }
+
+  return `Matched with your ${skills.slice(0, 3).join(", ")} skills`;
 };
 
 const sectionReveal: Variants = {
@@ -105,13 +119,42 @@ const HomePage: React.FC = () => {
   const [searchText, setSearchText] = useState("");
   const [jobTypeFilter, setJobTypeFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
+  const { user, isAuthenticated } = useAuth();
+  const isCandidate = isAuthenticated && user?.role === "candidate";
 
-  const { data: recommendedJobs, isLoading: isLoadingRecommendations } = useJobRecommendations(10);
+  const { data: candidateProfile } = useCandidateProfile(isCandidate);
+  const {
+    data: candidateRecommendations,
+    isLoading: isLoadingCandidateRecommendations,
+    isError: isCandidateRecommendationsError,
+  } = useCandidateRecommendations(10, isCandidate);
 
-  const backendJobs = useMemo(
-    () => (recommendedJobs || []) as unknown as HomeApiJob[],
-    [recommendedJobs]
+  const profileSkills = useMemo(
+    () => candidateProfile?.data?.skills || user?.skills || [],
+    [candidateProfile?.data?.skills, user?.skills]
   );
+
+  const backendJobs = useMemo(() => {
+    const recommended = (candidateRecommendations || []) as unknown as HomeApiJob[];
+
+    if (!isCandidate || recommended.length === 0) {
+      return [] as HomeApiJob[];
+    }
+
+    const mergedJobs = [...recommended];
+    const seenIds = new Set<string>();
+
+    return mergedJobs.filter((job) => {
+      const jobId = getHomeJobId(job);
+
+      if (!jobId || seenIds.has(jobId)) {
+        return false;
+      }
+
+      seenIds.add(jobId);
+      return true;
+    });
+  }, [candidateRecommendations, isCandidate]);
 
   const dashboardStats = useMemo(() => {
     const total = backendJobs.length;
@@ -165,12 +208,15 @@ const HomePage: React.FC = () => {
 
   const handleSearch = () => {
     const params = new URLSearchParams();
+
     if (searchText.trim()) {
       params.append("search", searchText.trim());
     }
+
     if (jobTypeFilter) {
       params.append("jobType", jobTypeFilter);
     }
+
     if (locationFilter.trim()) {
       params.append("location", locationFilter.trim());
     }
@@ -205,7 +251,7 @@ const HomePage: React.FC = () => {
   const featuredJobs: FeaturedJobItem[] = useMemo(
     () =>
       backendJobs.length > 0
-        ? backendJobs.slice(0, 4).map((job): FeaturedJobItem => ({
+        ? backendJobs.map((job): FeaturedJobItem => ({
           title: job.title,
           company: getHomeCompanyName(job.company),
           location: job.location || "Bangladesh",
@@ -223,6 +269,14 @@ const HomePage: React.FC = () => {
         : [],
     [backendJobs]
   );
+
+  const isLoadingRecommendations = isCandidate ? isLoadingCandidateRecommendations : false;
+  const recommendationHeadline = isCandidate
+    ? "Recommended Jobs For You"
+    : "Recommended Jobs";
+  const recommendationDescription = isCandidate
+    ? formatSkillsLabel(profileSkills)
+    : "Login or register as candidate to see skill-based job recommendations.";
 
   return (
     <div className="bg-[linear-gradient(180deg,_#f4f8ff_0%,_#edf4ff_42%,_#f8fbff_100%)] dark:bg-slate-950 text-slate-900 dark:text-slate-100">
@@ -283,10 +337,11 @@ const HomePage: React.FC = () => {
                   >
                     <option value="">Job Type</option>
                     <option value="full-time">Full-time</option>
-                    <option value="part-time">Part-time</option>
                     <option value="remote">Remote</option>
+                    <option value="part-time">Part-time</option>
                     <option value="contract">Contract</option>
                     <option value="internship">Internship</option>
+                    <option value="freelance">Freelance</option>
                   </select>
                   <ChevronRight className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 rotate-90 text-slate-500" />
                 </label>
@@ -454,13 +509,13 @@ const HomePage: React.FC = () => {
         <div className="mb-7 flex items-end justify-between gap-3">
           <div>
             <p className="mb-2 inline-flex rounded-full bg-[#edf4ff] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#1f4f93] dark:bg-blue-500/20 dark:text-blue-200">Top Matches</p>
-            <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100" style={{ fontFamily: "Montserrat, sans-serif" }}>Featured Jobs</h3>
+            <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100" style={{ fontFamily: "Montserrat, sans-serif" }}>{recommendationHeadline}</h3>
             <p className="text-slate-600 dark:text-slate-400">
               {isLoadingRecommendations
                 ? "Loading personalized recommendations..."
-                : backendJobs.length > 0
-                  ? "Live opportunities from backend"
-                  : "No jobs available at the moment"
+                : isCandidate && isCandidateRecommendationsError
+                  ? "Personalized recommendations are unavailable right now. Please try again shortly."
+                  : recommendationDescription
               }
             </p>
           </div>
@@ -493,7 +548,7 @@ const HomePage: React.FC = () => {
                 </div>
               </motion.div>
             ))
-          ) : (
+          ) : featuredJobs.length > 0 ? (
             featuredJobs.map((job) => (
               <motion.div
                 key={job.routeId}
@@ -508,7 +563,9 @@ const HomePage: React.FC = () => {
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-[#e9f2ff] px-3 py-1 text-xs font-bold uppercase text-[#1f4f93]">{job.type}</span>
-                    <span className="rounded-full bg-[#ffeaf7] px-3 py-1 text-xs font-bold uppercase text-[#b42880]">Featured</span>
+                    <span className="rounded-full bg-[#ffeaf7] px-3 py-1 text-xs font-bold uppercase text-[#b42880]">
+                      {isCandidate ? "Recommended" : "Featured"}
+                    </span>
                   </div>
 
                   <h4 className="mt-3 text-xl font-bold text-slate-900 dark:text-slate-100">{job.title}</h4>
@@ -527,6 +584,19 @@ const HomePage: React.FC = () => {
                 </Link>
               </motion.div>
             ))
+          ) : (
+            <div className="md:col-span-2 rounded-xl border border-dashed border-blue-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/70 p-7 text-center">
+              <p className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+                {isCandidate
+                  ? "No recommendations found yet. Add more skills in your profile to improve matching."
+                  : "No jobs are shown for guests."}
+              </p>
+              {!isCandidate && (
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                  Please login or register as a candidate to view recommended jobs on the home page.
+                </p>
+              )}
+            </div>
           )}
         </div>
       </motion.section>

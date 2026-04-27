@@ -14,7 +14,10 @@ export interface UpdateCandidateProfileData {
   experienceLevel?: string;
   summary?: string;
   skills?: string[];
+  avatar?: string;
 }
+
+type UpdateCandidateProfilePayload = UpdateCandidateProfileData | FormData;
 
 export interface RecommendedJob {
   _id: string;
@@ -38,9 +41,10 @@ interface CandidateRecommendationsResponse {
   data: RecommendedJob[];
 }
 
-export const useCandidateProfile = () => {
+export const useCandidateProfile = (enabled = true) => {
   return useQuery<CandidateProfileResponse, Error>({
     queryKey: ['candidate-profile'],
+    enabled,
     queryFn: async () => {
       try {
         const response = await api.get<CandidateProfileResponse>('/candidate/profile');
@@ -54,7 +58,7 @@ export const useCandidateProfile = () => {
 
 export const useUpdateCandidateProfile = () => {
   const queryClient = useQueryClient();
-  return useMutation<CandidateProfileResponse, Error, UpdateCandidateProfileData>({
+  return useMutation<CandidateProfileResponse, Error, UpdateCandidateProfilePayload>({
     mutationFn: async (data) => {
       try {
         const response = await api.put<CandidateProfileResponse>('/candidate/profile', data);

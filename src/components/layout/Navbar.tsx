@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Bell,
   Briefcase,
   ChevronDown,
   FileText,
@@ -18,6 +17,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../hooks/useTheme';
 import { prefetchRoute } from '../../routes/prefetch';
+import { NotificationBell } from './NotificationBell';
 
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
@@ -214,18 +214,7 @@ export const Navbar = () => {
             {isAuthenticated ? (
               <>
                 {/* Notifications */}
-                <button
-                  type="button"
-                  aria-label="Notifications"
-                  className={`relative inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
-                    isDark
-                      ? 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
-                >
-                  <Bell className="h-4.5 w-4.5" />
-                  <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
-                </button>
+                <NotificationBell isDark={isDark} />
 
                 {/* Profile Dropdown */}
                 <div ref={profileRef} className="relative">

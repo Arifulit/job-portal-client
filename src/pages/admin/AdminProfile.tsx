@@ -1,6 +1,6 @@
 // এই ফাইলটি admin panel এর একটি page UI ও business flow পরিচালনা করে।
 
-import { useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Loader } from '../../components/Loader';
@@ -20,6 +20,8 @@ const AdminProfile = (): JSX.Element => {
   const [phone, setPhone] = useState('');
   const [location, setLocation] = useState('');
   const [biodata, setBiodata] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
 
   useEffect(() => {
     if (!profile) return;
@@ -34,19 +36,40 @@ const AdminProfile = (): JSX.Element => {
     return base.charAt(0).toUpperCase();
   }, [profile?.name]);
 
+  const profileAvatar =
+    avatarPreview ||
+    profile?.avatar ||
+    profile?.profileImage ||
+    '';
+
+  const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const nextFile = event.target.files?.[0];
+    if (!nextFile) return;
+
+    setAvatarFile(nextFile);
+    setAvatarPreview(URL.createObjectURL(nextFile));
+  };
+
   const handleSave = () => {
     if (!profile) return;
 
+    const payload = new FormData();
+    payload.append('name', name.trim());
+    payload.append('phone', phone.trim());
+    payload.append('location', location.trim());
+    payload.append('biodata', biodata.trim());
+    payload.append('bio', biodata.trim());
+
+    if (avatarFile) {
+      payload.append('avatar', avatarFile);
+    }
+
     updateProfile(
-      {
-        name: name.trim(),
-        phone: phone.trim() || undefined,
-        location: location.trim() || undefined,
-        biodata: biodata.trim() || undefined,
-        bio: biodata.trim() || undefined,
-      },
+      payload,
       {
         onSuccess: () => {
+          setAvatarFile(null);
+          setAvatarPreview('');
           setIsEditing(false);
         },
       }
@@ -59,6 +82,8 @@ const AdminProfile = (): JSX.Element => {
     setPhone(profile.phone || '');
     setLocation(profile.location || '');
     setBiodata(profile.biodata || profile.bio || '');
+    setAvatarFile(null);
+    setAvatarPreview('');
     setIsEditing(false);
   };
 
@@ -107,7 +132,11 @@ const AdminProfile = (): JSX.Element => {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-2xl font-black text-white shadow-sm">
-                {initials}
+                {profileAvatar ? (
+                  <img src={profileAvatar} alt={profile.name || 'Admin'} className="h-full w-full rounded-2xl object-cover" />
+                ) : (
+                  initials
+                )}
               </div>
               <div>
                 <CardTitle className="text-2xl font-black text-slate-900">{profile.name || 'Admin'}</CardTitle>
@@ -125,6 +154,28 @@ const AdminProfile = (): JSX.Element => {
           <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
             <h2 className="text-sm font-black uppercase tracking-wide text-slate-700">Profile Details</h2>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Profile Picture</label>
+                <div className="flex items-center gap-3">
+                  <div className="h-14 w-14 overflow-hidden rounded-full border border-slate-300">
+                    {profileAvatar ? (
+                      <img src={profileAvatar} alt={profile.name || 'Admin'} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-slate-100 text-sm font-semibold text-slate-600">
+                        {initials}
+                      </div>
+                    )}
+                  </div>
+                  {isEditing ? (
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800"
+                    />
+                  ) : null}
+                </div>
+              </div>
               <div>
                 <label className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-slate-700">
                   <UserCircle2 className="h-4 w-4" /> Full Name

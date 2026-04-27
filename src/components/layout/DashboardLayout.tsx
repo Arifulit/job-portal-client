@@ -7,7 +7,7 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router-dom';
-import { Menu, Search, Bell, User, LogOut, Home, ChevronRight, Sun, Moon, Compass } from 'lucide-react';
+import { Menu, Search, User, LogOut, Home, ChevronRight, Sun, Moon, Compass } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../hooks/useTheme';
 import {
@@ -24,6 +24,7 @@ import { adminSidebarItems } from '@/routes/adminSidebarItems';
 import { recruiterSidebarItems } from '@/routes/recruiterSidebarItems';
 import { userSidebarItems } from '@/routes/userSidebarItems';
 import { prefetchRoute } from '@/routes/prefetch';
+import { NotificationBell } from './NotificationBell';
 
 interface ISidebarItem {
   title: string;
@@ -406,10 +407,15 @@ const DashboardLayout: React.FC = () => {
                 {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
 
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-blue-600" />
-              </Button>
+              <NotificationBell
+                isDark={resolvedTheme === 'dark'}
+                buttonClassName={`relative inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors ${
+                  resolvedTheme === 'dark'
+                    ? 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    : 'text-gray-700 hover:bg-slate-100'
+                }`}
+                iconClassName="h-5 w-5"
+              />
 
               {/* Dropdown */}
               <div className="relative" ref={dropdownRef}>

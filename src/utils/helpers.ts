@@ -8,7 +8,8 @@ export const formatDate = (date: string): string => {
   });
 };
 
-export const formatRelativeTime = (date: string): string => {
+export const formatRelativeTime = (date?: string): string => {
+  if (!date) return 'Unknown';
   const now = new Date();
   const past = new Date(date);
   const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
@@ -35,7 +36,7 @@ export const truncateText = (text: string, maxLength: number): string => {
   return text.slice(0, maxLength) + '...';
 };
 
-export const getStatusColor = (status: string): string => {
+export const getStatusColor = (status?: string): string => {
   const colors: Record<string, string> = {
     applied: 'bg-blue-100 text-blue-700',
     reviewed: 'bg-cyan-100 text-cyan-700',
@@ -69,7 +70,7 @@ export const debounce = <TArgs extends unknown[]>(
   func: (...args: TArgs) => void,
   wait: number
 ): ((...args: TArgs) => void) => {
-  let timeout: NodeJS.Timeout;
+  let timeout: ReturnType<typeof setTimeout>;
   return (...args: TArgs) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);

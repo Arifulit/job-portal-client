@@ -1,13 +1,41 @@
 // এই ফাইলটি recruiter dashboard এর একটি page UI ও কাজের flow পরিচালনা করে।
 
 import { useForm, SubmitHandler } from "react-hook-form";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
 import { useCreateJob, useJob, useUpdateJob } from "../../services/jobService";
-import { api } from "@/utils/api";
+import { api, uploadToCloudinary } from "@/utils/api";
+  logoUrl?: string;
+  // State for logo upload
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string>("");
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState("");
+  // Set logoUrl if editing
+  useEffect(() => {
+    if (isEditMode && existingJob && typeof existingJob.company === "object" && existingJob.company.logo) {
+      setLogoUrl(existingJob.company.logo);
+    }
+  }, [isEditMode, existingJob]);
+  // Handle logo file selection and upload
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoError("");
+    setLogoUploading(true);
+    try {
+      const url = await uploadToCloudinary(file);
+      setLogoUrl(url);
+      setLogoFile(file);
+    } catch (err) {
+      setLogoError("Logo upload failed. Try again.");
+    } finally {
+      setLogoUploading(false);
+    }
+  };
 import { Job, JobStatus } from "../../types";
 import recruiterService from "@/services/recruiterService";
 
@@ -343,7 +371,7 @@ export default function JobPost() {
       return toast.error("Minimum salary cannot be greater than maximum salary");
     }
 
-    const allowedJobTypes: Job["jobType"][] = ["full-time", "part-time", "remote", "contract", "internship"];
+    const allowedJobTypes: Job["jobType"][] = ["full-time", "remote", "part-time", "contract", "internship", "freelance"];
     const requestedJobType = data.jobType.trim().toLowerCase();
     const normalizedJobType: Job["jobType"] = allowedJobTypes.includes(requestedJobType as Job["jobType"])
       ? (requestedJobType as Job["jobType"])
@@ -383,13 +411,20 @@ export default function JobPost() {
       businessAreas: cleanedBusinessAreas,
       responsibilities: finalResponsibilities,
       status: "active" as JobStatus,
+      company: existingJob && typeof existingJob.company === "object"
+        ? { ...existingJob.company, logo: logoUrl }
+        : logoUrl
     };
 
     (payload as { requirement?: string[] }).requirement = finalRequirements;
     (payload as { responsibility?: string[] }).responsibility = finalResponsibilities;
 
     if (companyId) {
-      (payload as { company?: string }).company = companyId;
+      if (typeof payload.company === "object") {
+        payload.company._id = companyId;
+      } else {
+        (payload as { company?: string }).company = companyId;
+      }
     }
 
     if (isEditMode && jobId) {
@@ -441,6 +476,24 @@ export default function JobPost() {
   }
 
   return (
+          {/* Company Logo Upload */}
+          <div className="mb-3">
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">Company Logo</label>
+            {logoUrl && (
+              <div className="mb-2">
+                <img src={logoUrl} alt="Company Logo" className="h-16 rounded border mb-2" />
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoChange}
+              className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+              disabled={logoUploading}
+            />
+            {logoUploading && <p className="text-xs text-emerald-600 mt-1">Uploading...</p>}
+            {logoError && <p className="text-xs text-red-600 mt-1">{logoError}</p>}
+          </div>
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 px-4 py-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-600 px-6 py-7 text-white shadow-lg">
@@ -508,10 +561,11 @@ export default function JobPost() {
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <select {...register("jobType")} className="rounded-xl border border-gray-300 bg-white px-4 py-3">
                   <option value="full-time">Full-time</option>
-                  <option value="part-time">Part-time</option>
                   <option value="remote">Remote</option>
+                  <option value="part-time">Part-time</option>
                   <option value="contract">Contract</option>
                   <option value="internship">Internship</option>
+                  <option value="freelance">Freelance</option>
                 </select>
                 <select {...register("experience")} className="rounded-xl border border-gray-300 bg-white px-4 py-3">
                   <option value="0-1 years">0-1 years</option>

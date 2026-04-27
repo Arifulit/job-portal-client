@@ -1,0 +1,457 @@
+{
+  "info": {
+    "_postman_id": "b4f593f8-3f82-4f2a-9ff3-3f8d1ea57911",
+    "name": "Job Portal - Application + Notification Flow",
+    "description": "Feature test flow for applications, status updates, notifications, and mark-as-read.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Candidate Apply (POST /applications)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{candidateToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jobId\": \"{{jobId}}\",\n  \"coverLetter\": \"I am excited to apply for this role.\",\n  \"resumeUrl\": \"{{resumeUrl}}\",\n  \"expectedSalary\": 50000\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/applications",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "applications"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 201', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Response success is true', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.success).to.eql(true);",
+              "});",
+              "",
+              "pm.test('Application status is Applied', function () {",
+              "  const body = pm.response.json();",
+              "  const status = String(body?.data?.status || '').toLowerCase();",
+              "  pm.expect(status).to.eql('applied');",
+              "});",
+              "",
+              "pm.test('Store applicationId from response', function () {",
+              "  const body = pm.response.json();",
+              "  const id = body?.data?._id || body?.data?.id;",
+              "  pm.expect(id, 'application id missing in response').to.be.ok;",
+              "  pm.collectionVariables.set('applicationId', String(id));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Recruiter Update Status Reviewed (PUT /applications/:id)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{recruiterToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"Reviewed\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/applications/{{applicationId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "applications",
+            "{{applicationId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status update Reviewed returns success', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.success).to.eql(true);",
+              "  const status = String(body?.data?.status || '').toLowerCase();",
+              "  pm.expect(status).to.eql('reviewed');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Recruiter Update Status Rejected (PUT /applications/:id)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{recruiterToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"Rejected\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/applications/{{applicationId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "applications",
+            "{{applicationId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status update Rejected returns success', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.success).to.eql(true);",
+              "  const status = String(body?.data?.status || '').toLowerCase();",
+              "  pm.expect(status).to.eql('rejected');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Recruiter Update Status Accepted (PUT /applications/:id)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{recruiterToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"Accepted\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/applications/{{applicationId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "applications",
+            "{{applicationId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status update Accepted returns success', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.success).to.eql(true);",
+              "  const status = String(body?.data?.status || '').toLowerCase();",
+              "  pm.expect(status).to.eql('accepted');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Invalid Status Should Return 400",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{recruiterToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"InvalidStatus\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/applications/{{applicationId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "applications",
+            "{{applicationId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Invalid status returns 400', function () {",
+              "  pm.response.to.have.status(400);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Recruiter Notifications (GET /notifications)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{recruiterToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/notifications",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "notifications"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Recruiter notifications fetched successfully', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "",
+              "pm.test('Contains application submission notification', function () {",
+              "  const body = pm.response.json();",
+              "  const list = body?.data?.notifications || body?.data || body?.notifications || [];",
+              "  pm.expect(Array.isArray(list)).to.eql(true);",
+              "  const found = list.some(function (n) {",
+              "    const text = `${n?.title || ''} ${n?.message || ''}`.toLowerCase();",
+              "    return text.includes('apply') || text.includes('application') || text.includes('submitted');",
+              "  });",
+              "  pm.expect(found).to.eql(true);",
+              "});",
+              "",
+              "pm.test('Store recruiterNotificationId for read check', function () {",
+              "  const body = pm.response.json();",
+              "  const list = body?.data?.notifications || body?.data || body?.notifications || [];",
+              "  const first = Array.isArray(list) ? list[0] : null;",
+              "  if (first && (first._id || first.id)) {",
+              "    pm.collectionVariables.set('notificationId', String(first._id || first.id));",
+              "  }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Candidate Notifications (GET /notifications)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{candidateToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/notifications",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "notifications"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Candidate notifications fetched successfully', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "",
+              "pm.test('Contains status update notification', function () {",
+              "  const body = pm.response.json();",
+              "  const list = body?.data?.notifications || body?.data || body?.notifications || [];",
+              "  pm.expect(Array.isArray(list)).to.eql(true);",
+              "  const found = list.some(function (n) {",
+              "    const text = `${n?.title || ''} ${n?.message || ''}`.toLowerCase();",
+              "    return text.includes('reviewed') || text.includes('rejected') || text.includes('accepted') || text.includes('status');",
+              "  });",
+              "  pm.expect(found).to.eql(true);",
+              "});",
+              "",
+              "pm.test('Store candidate unread notificationId for read check', function () {",
+              "  const body = pm.response.json();",
+              "  const list = body?.data?.notifications || body?.data || body?.notifications || [];",
+              "  const unread = Array.isArray(list) ? list.find(function (n) { return !n?.isRead; }) : null;",
+              "  const target = unread || (Array.isArray(list) ? list[0] : null);",
+              "  const id = target?._id || target?.id;",
+              "  pm.expect(id, 'no candidate notification id found').to.be.ok;",
+              "  pm.collectionVariables.set('notificationId', String(id));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Mark Notification As Read (PUT /notifications/:id/read)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{candidateToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/notifications/{{notificationId}}/read",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "notifications",
+            "{{notificationId}}",
+            "read"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Mark as read request succeeded', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "",
+              "pm.test('isRead is true in response when present', function () {",
+              "  const body = pm.response.json();",
+              "  const data = body?.data || body;",
+              "  if (typeof data === 'object' && data !== null && 'isRead' in data) {",
+              "    pm.expect(data.isRead).to.eql(true);",
+              "  } else {",
+              "    pm.expect(true).to.eql(true);",
+              "  }",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1"
+    },
+    {
+      "key": "candidateToken",
+      "value": ""
+    },
+    {
+      "key": "recruiterToken",
+      "value": ""
+    },
+    {
+      "key": "jobId",
+      "value": ""
+    },
+    {
+      "key": "resumeUrl",
+      "value": "https://example.com/resume.pdf"
+    },
+    {
+      "key": "applicationId",
+      "value": ""
+    },
+    {
+      "key": "notificationId",
+      "value": ""
+    }
+  ]
+}

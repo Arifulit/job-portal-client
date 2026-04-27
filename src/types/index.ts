@@ -10,6 +10,41 @@ export interface JobCompany {
   logo?: string;
 }
 
+export interface CompanyReview {
+  _id: string;
+  user?: {
+    _id?: string;
+    name?: string;
+    email?: string;
+    avatar?: string;
+    profileImage?: string;
+  };
+  rating: number;
+  review: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CompanyOpenPositions {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  jobs: Job[];
+}
+
+export interface CompanyProfileData {
+  _id: string;
+  name?: string;
+  logo?: string;
+  industry?: string;
+  website?: string;
+  location?: string;
+  description?: string;
+  openPositions: CompanyOpenPositions;
+  reviews: CompanyReview[];
+}
+
 export interface JobStatusHistoryEntry {
   status?: string;
   date?: string;
@@ -22,6 +57,7 @@ export type ApplicationStatus =
   | 'reviewed'
   | 'shortlisted'
   | 'interview'
+  | 'accepted'
   | 'hired'
   | 'rejected';
 
@@ -62,7 +98,7 @@ export interface Job {
   businessAreas?: string[];
   jobContext?: string;
   location: string;
-  jobType: 'full-time' | 'part-time' | 'contract' | 'internship' | 'remote';
+  jobType: 'full-time' | 'remote' | 'part-time' | 'contract' | 'internship' | 'freelance';
   salary?: number;
   salaryMin?: number;
   salaryMax?: number;
@@ -97,7 +133,7 @@ export interface RecommendedJob {
   _id: string;
   title: string;
   location: string;
-  jobType: 'full-time' | 'part-time' | 'contract' | 'internship' | 'remote';
+  jobType: 'full-time' | 'remote' | 'part-time' | 'contract' | 'internship' | 'freelance';
   experienceLevel?: 'internship' | 'entry' | 'mid' | 'senior' | 'lead' | 'mid-level';
   skills?: string[];
   salaryMin?: number;

@@ -2,12 +2,11 @@
 import { AlertTriangle, Mail, Phone } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useAppSelector } from '@/redux/hook';
-import { selectUser } from '@/redux/store';
+import { useAuth } from '@/context/AuthContext';
 
 const AccountStatus = () => {
   
-  const user = useAppSelector(selectUser);
+  const { user } = useAuth();
   const getStatusDetails = (status: string) => {
     switch (status) {
       case 'blocked':

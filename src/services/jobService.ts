@@ -1,7 +1,7 @@
 // এই ফাইলটি API call এবং server data operation এর service layer হিসেবে কাজ করে।
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, handleApiError } from '../utils/api';
-import { Job, JobFilters, PaginatedResponse, ApiResponse, RecommendedJob } from '../types';
+import { Job, JobFilters, PaginatedResponse, ApiResponse, RecommendedJob, SavedJob } from '../types';
 import { toast } from 'sonner';
 import axios from 'axios';
 
@@ -72,8 +72,12 @@ const normalizePaginatedJobs = (payload: unknown): PaginatedResponse<Job> => {
     };
   }
 
-  if (response.data && typeof response.data === 'object') {
-    const nestedData = response.data;
+  if (response.data && typeof response.data === 'object' && !Array.isArray(response.data)) {
+    const nestedData = response.data as {
+      jobs?: Job[];
+      data?: Job[];
+      pagination?: PaginatedResponse<Job>['pagination'];
+    };
     const nestedJobs = Array.isArray(nestedData.jobs)
       ? nestedData.jobs
       : Array.isArray(nestedData.data)
@@ -407,27 +411,43 @@ export const useRecruiterJobs = () => {
   return useQuery({
     queryKey: ['recruiter-jobs'],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Job> | ApiResponse<Job[]>>('/jobs');
-      const payload = response.data;
+      const endpoints = ['/recruiter/jobs', '/jobs'];
+      let lastError: unknown;
 
-      if ('pagination' in payload) {
-        return payload;
+      for (const endpoint of endpoints) {
+        try {
+          const response = await api.get<PaginatedResponse<Job> | ApiResponse<Job[]>>(endpoint);
+          const payload = response.data;
+
+          if ('pagination' in payload) {
+            return payload;
+          }
+
+          if (!payload.success) {
+            throw new Error(payload.message || 'Failed to fetch recruiter jobs');
+          }
+
+          return {
+            success: true,
+            data: payload.data || [],
+            pagination: {
+              total: payload.data?.length || 0,
+              page: 1,
+              limit: payload.data?.length || 0,
+              pages: 1,
+            },
+          } as PaginatedResponse<Job>;
+        } catch (error) {
+          if (axios.isAxiosError(error) && [404, 405].includes(error.response?.status || 0)) {
+            lastError = error;
+            continue;
+          }
+
+          throw error;
+        }
       }
 
-      if (!payload.success) {
-        throw new Error(payload.message || 'Failed to fetch recruiter jobs');
-      }
-
-      return {
-        success: true,
-        data: payload.data || [],
-        pagination: {
-          total: payload.data?.length || 0,
-          page: 1,
-          limit: payload.data?.length || 0,
-          pages: 1,
-        },
-      } as PaginatedResponse<Job>;
+      throw lastError || new Error('Failed to fetch recruiter jobs');
     },
   });
 };
@@ -436,8 +456,52 @@ export const useSavedJobs = () => {
   return useQuery({
     queryKey: ['saved-jobs'],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Job[]>>('/v1/jobs/saved');
-      return response.data.data;
+      const response = await api.get('/jobs/saved/me');
+      const payload = response.data as
+        | ApiResponse<Job[] | SavedJob[]>
+        | {
+            success?: boolean;
+            data?: Job[] | SavedJob[] | { savedJobs?: Job[] | SavedJob[]; jobs?: Job[] | SavedJob[] };
+            savedJobs?: Job[] | SavedJob[];
+            jobs?: Job[] | SavedJob[];
+            message?: string;
+          };
+
+      if ('success' in payload && payload.success === false) {
+        throw new Error(payload.message || 'Failed to fetch saved jobs');
+      }
+
+      const data =
+        (payload && typeof payload === 'object' && 'data' in payload ? payload.data : undefined) ||
+        (payload && typeof payload === 'object' && 'savedJobs' in payload ? payload.savedJobs : undefined) ||
+        (payload && typeof payload === 'object' && 'jobs' in payload ? payload.jobs : undefined);
+
+      const list = Array.isArray(data)
+        ? data
+        : data && typeof data === 'object' && 'savedJobs' in data && Array.isArray(data.savedJobs)
+        ? data.savedJobs
+        : data && typeof data === 'object' && 'jobs' in data && Array.isArray(data.jobs)
+        ? data.jobs
+        : [];
+
+      return list
+        .map((item) => {
+          if (!item || typeof item !== 'object') {
+            return undefined;
+          }
+
+          const candidate = item as SavedJob & Job;
+          if (candidate.job && typeof candidate.job === 'object') {
+            return candidate.job;
+          }
+
+          if ('title' in candidate) {
+            return candidate as Job;
+          }
+
+          return undefined;
+        })
+        .filter((job): job is Job => !!job && !!job._id);
     },
   });
 };
@@ -447,11 +511,12 @@ export const useSaveJob = () => {
 
   return useMutation({
     mutationFn: async (jobId: string) => {
-      const response = await api.post<ApiResponse<void>>(`/v1/jobs/${jobId}/save`);
+      const response = await api.post<ApiResponse<void>>(`/jobs/${jobId}/save`);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['saved-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
       toast.success('Job saved successfully!');
     },
     onError: (error) => {
@@ -478,11 +543,12 @@ export const useUnsaveJob = () => {
 
   return useMutation({
     mutationFn: async (jobId: string) => {
-      const response = await api.delete<ApiResponse<void>>(`/v1/jobs/${jobId}/save`);
+      const response = await api.delete<ApiResponse<void>>(`/jobs/${jobId}/save`);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['saved-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
       toast.success('Job removed from saved list');
     },
     onError: (error) => {

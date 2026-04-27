@@ -4,6 +4,8 @@ export interface User {
   name: string;
   email: string;
   role: string;
+  avatar?: string;
+  profileImage?: string;
   isEmailVerified?: boolean;
   isSuspended?: boolean;
   resume?: string;
@@ -25,6 +27,8 @@ export interface CandidateProfile {
   experienceLevel?: string;
   summary?: string;
   email?: string;
+  avatar?: string;
+  profileImage?: string;
   resume?: string;
   applications?: Array<Record<string, unknown>>;
   createdAt: string;

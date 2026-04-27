@@ -1,5 +1,5 @@
 // এই ফাইলটি recruiter dashboard এর একটি page UI ও কাজের flow পরিচালনা করে।
-import { useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import Badge from '@/components/ui/badge';
@@ -19,11 +19,15 @@ interface Agency {
 
 interface RecruiterProfile {
   _id: string;
+  avatar?: string;
+  profileImage?: string;
   user?: {
     _id?: string;
     name?: string;
     email?: string;
     role?: string;
+    avatar?: string;
+    profileImage?: string;
   };
   bio?: string;
   biodata?: string;
@@ -57,6 +61,8 @@ const RecruiterProfile = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isAgencyEditing, setIsAgencyEditing] = useState(false);
   const [isAgencySaving, setIsAgencySaving] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
   const [formValues, setFormValues] = useState<ProfileFormValues>({
     name: '',
     phone: '',
@@ -72,6 +78,13 @@ const RecruiterProfile = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const profileAvatar =
+    avatarPreview ||
+    profile?.avatar ||
+    profile?.profileImage ||
+    profile?.user?.avatar ||
+    profile?.user?.profileImage ||
+    '';
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -143,7 +156,17 @@ const RecruiterProfile = () => {
       biodata: profile.biodata || profile.bio || '',
       bio: profile.biodata || profile.bio || '',
     });
+    setAvatarFile(null);
+    setAvatarPreview('');
     setIsEditing(false);
+  };
+
+  const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const nextFile = event.target.files?.[0];
+    if (!nextFile) return;
+
+    setAvatarFile(nextFile);
+    setAvatarPreview(URL.createObjectURL(nextFile));
   };
 
   const handleSave = async () => {
@@ -163,34 +186,63 @@ const RecruiterProfile = () => {
         return;
       }
 
-      const response = await recruiterService.updateRecruiterProfile(payload);
+      const submitPayload = new FormData();
+      submitPayload.append('name', payload.name);
+      submitPayload.append('phone', payload.phone);
+      submitPayload.append('designation', payload.designation);
+      submitPayload.append('location', payload.location);
+      submitPayload.append('biodata', payload.biodata);
+      submitPayload.append('bio', payload.bio);
+      if (avatarFile) {
+        submitPayload.append('avatar', avatarFile);
+      }
+
+      const response = await recruiterService.updateRecruiterProfile(submitPayload);
       if (!response?.success) {
         const responseMessage = (response as Record<string, unknown> | undefined)?.message;
         throw new Error(typeof responseMessage === 'string' && responseMessage ? responseMessage : 'Failed to update profile');
       }
 
+      const updated = response.data as RecruiterProfile | undefined;
+      const nextAvatar =
+        updated?.avatar ||
+        updated?.profileImage ||
+        updated?.user?.avatar ||
+        updated?.user?.profileImage ||
+        profileAvatar;
+
       setProfile((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
-          phone: payload.phone,
-          designation: payload.designation,
-          location: payload.location,
-          biodata: payload.biodata,
-          bio: payload.biodata,
+          ...updated,
+          phone: updated?.phone || payload.phone,
+          designation: updated?.designation || payload.designation,
+          location: updated?.location || payload.location,
+          biodata: updated?.biodata || updated?.bio || payload.biodata,
+          bio: updated?.biodata || updated?.bio || payload.biodata,
+          avatar: nextAvatar,
+          profileImage: nextAvatar,
           user: {
             ...prev.user,
-            name: payload.name,
+            ...updated?.user,
+            name: updated?.user?.name || payload.name,
+            avatar: nextAvatar,
+            profileImage: nextAvatar,
           },
         };
       });
 
       updateUser({
-        name: payload.name,
-        phone: payload.phone,
-        designation: payload.designation,
+        name: updated?.user?.name || payload.name,
+        phone: updated?.phone || payload.phone,
+        designation: updated?.designation || payload.designation,
+        avatar: nextAvatar || undefined,
+        profileImage: nextAvatar || undefined,
       });
 
+      setAvatarFile(null);
+      setAvatarPreview('');
       setIsEditing(false);
       toast.success('Recruiter profile updated successfully');
     } catch (err) {
@@ -341,6 +393,28 @@ const RecruiterProfile = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Profile Picture</p>
+              <div className="mt-1 flex items-center gap-4">
+                <div className="h-14 w-14 overflow-hidden rounded-full border border-slate-300 dark:border-slate-700">
+                  {profileAvatar ? (
+                    <img src={profileAvatar} alt={profile.user?.name || 'Recruiter'} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-slate-100 text-sm font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      {(profile.user?.name || 'R').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                {isEditing ? (
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:file:bg-slate-100 dark:file:text-slate-900"
+                  />
+                ) : null}
+              </div>
+            </div>
             <div>
               <p className="text-sm text-slate-500 dark:text-slate-400">Name</p>
               {isEditing ? (

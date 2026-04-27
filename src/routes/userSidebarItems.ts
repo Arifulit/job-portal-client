@@ -2,7 +2,7 @@
 // ========== userSidebarItems.tsx ==========
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import { LayoutDashboard, User, Briefcase, FileText } from "lucide-react";
+import { LayoutDashboard, User, Briefcase, FileText, Bookmark } from "lucide-react";
 // import Jobs from "@/pages/Jobs/Jobs";
 
 const CandidateDashboard = React.lazy(() =>
@@ -10,6 +10,7 @@ const CandidateDashboard = React.lazy(() =>
 );
 const CandidateProfile = React.lazy(() => import("../pages/Candidate/CandidateProfile"));
 const MyApplications = React.lazy(() => import("@/pages/Candidate/MyApplications"));
+const SavedJobs = React.lazy(() => import("@/pages/Candidate/SavedJobs"));
 const Jobs = React.lazy(() => import("@/pages/Job/Jobs"));
 
 interface ISidebarItem {
@@ -43,6 +44,12 @@ export const userSidebarItems: ISidebarItem[] = [
         url: "/candidate/applications",
         icon: FileText,
         component: MyApplications,
+      },
+      {
+        title: "Saved Jobs",
+        url: "/candidate/saved-jobs",
+        icon: Bookmark,
+        component: SavedJobs,
       },
     ],
   },

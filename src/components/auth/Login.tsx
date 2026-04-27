@@ -10,11 +10,14 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Eye, EyeOff, Briefcase, Mail, Lock, ArrowRight } from "lucide-react";
 
+const API_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
+
 export function Login() {
   const navigate = useNavigate();
   const { login, loading } = useAuth();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const googleLoginUrl = `${API_BASE}/auth/google?redirect=${encodeURIComponent("/dashboard")}`;
 
   const getRedirectPath = (role?: string) => {
     const normalizedRole = String(role || '').toLowerCase();
@@ -42,6 +45,10 @@ export function Login() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((s) => ({ ...s, [e.target.name]: e.target.value }));
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = googleLoginUrl;
   };
 
   return (
@@ -153,6 +160,30 @@ export function Login() {
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
+            </Button>
+
+            <div className="relative py-1">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-slate-200 dark:border-slate-700" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white dark:bg-slate-900 px-3 text-slate-500 dark:text-slate-400">or continue with</span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              disabled={loading}
+              onClick={handleGoogleLogin}
+              className="w-full h-11 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded-lg shadow-sm transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed dark:bg-slate-950 dark:hover:bg-slate-900 dark:text-slate-100 dark:border-slate-700"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
+                <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.26-.96 2.33-2.04 3.05l3.3 2.56c1.92-1.77 3.03-4.38 3.03-7.49 0-.72-.07-1.41-.2-2.08H12z" />
+                <path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.63-2.44l-3.3-2.56c-.91.61-2.08.97-3.33.97-2.56 0-4.73-1.73-5.5-4.05l-3.41 2.64C4.75 19.85 8.08 22 12 22z" />
+                <path fill="#4A90E2" d="M6.5 13.92A6.02 6.02 0 016.18 12c0-.67.12-1.32.32-1.92l-3.41-2.64A9.99 9.99 0 002 12c0 1.6.38 3.1 1.09 4.44l3.41-2.52z" />
+                <path fill="#FBBC05" d="M12 6.03c1.47 0 2.78.5 3.81 1.49l2.86-2.86C16.96 3.07 14.7 2 12 2 8.08 2 4.75 4.15 3.09 7.44l3.41 2.64c.77-2.32 2.94-4.05 5.5-4.05z" />
+              </svg>
+              Continue with Google
             </Button>
 
             {/* Register Link */}

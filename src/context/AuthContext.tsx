@@ -13,6 +13,8 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  avatar?: string;
+  profileImage?: string;
   phone?: string;
   biodata?: string;
   location?: string;
@@ -84,6 +86,8 @@ const normalizeUser = (input: Partial<User> | undefined): User => ({
   name: input?.name || 'User',
   email: input?.email || '',
   role: normalizeRole(input?.role),
+  avatar: input?.avatar,
+  profileImage: input?.profileImage,
   phone: input?.phone,
   biodata: input?.biodata,
   location: input?.location,
@@ -249,7 +253,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .catch(() => undefined)
       .finally(() => {
         clearAuth();
-        toast.success('You have been logged out successfully');
+        toast.success('You have been logged out successfully', {
+          position: 'top-right',
+          style: {
+            marginTop: '56px',
+          },
+        });
       });
   }, [clearAuth, token]);
 

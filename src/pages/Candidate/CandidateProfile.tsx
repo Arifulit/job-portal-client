@@ -136,8 +136,8 @@ import { Mail, Phone, Calendar, Briefcase, MapPin, Award, User, Pencil, X } from
 import { toast } from 'sonner';
 
 const CandidateProfile = () => {
-  const { user } = useAuth();
-  const { data, isLoading, error } = useCandidateProfile();
+  const { user, updateUser } = useAuth();
+  const { data, isLoading } = useCandidateProfile();
   const profileData = data?.data;
   const profile = profileData || {
     _id: user?._id || '',
@@ -158,10 +158,12 @@ const CandidateProfile = () => {
     headline: '',
     experienceLevel: '',
     summary: user?.biodata || '',
+    avatar: user?.avatar || user?.profileImage || '',
     createdAt: '',
     updatedAt: '',
     __v: 0,
   };
+  const profileAvatar = profile.avatar || profile.profileImage || profile.user?.avatar || profile.user?.profileImage || user?.avatar || user?.profileImage || '';
   const displayEmail = profile.user?.email || profile.email || user?.email || '';
   const displayLocation = profile.location || profile.address || user?.location || '';
   const displayBiodata = profile.biodata || profile.bio || profile.summary || user?.biodata || '';
@@ -171,6 +173,8 @@ const CandidateProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', headline: '', location: '', experienceLevel: '', biodata: '', summary: '', skills: [] as string[] });
   const [skillInput, setSkillInput] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateCandidateProfile();
 
   const openEdit = () => {
@@ -185,6 +189,8 @@ const CandidateProfile = () => {
       summary: profile.biodata || profile.bio || profile.summary || '',
       skills: [...(profile.skills || [])],
     });
+    setAvatarPreview(profileAvatar);
+    setAvatarFile(null);
     setIsEditing(true);
   };
 
@@ -196,10 +202,56 @@ const CandidateProfile = () => {
 
   const removeSkill = (skill: string) => setForm(f => ({ ...f, skills: f.skills.filter(s => s !== skill) }));
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nextFile = e.target.files?.[0];
+    if (!nextFile) return;
+    setAvatarFile(nextFile);
+    setAvatarPreview(URL.createObjectURL(nextFile));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfile(form, {
-      onSuccess: () => { setIsEditing(false); toast.success('Profile updated successfully!'); },
+    const payload = new FormData();
+    payload.append('name', form.name.trim());
+    payload.append('phone', form.phone.trim());
+    payload.append('headline', form.headline.trim());
+    payload.append('location', form.location.trim());
+    payload.append('address', form.location.trim());
+    payload.append('experienceLevel', form.experienceLevel.trim());
+    payload.append('biodata', form.biodata.trim());
+    payload.append('bio', form.biodata.trim());
+    payload.append('summary', form.biodata.trim());
+    payload.append('skills', JSON.stringify(form.skills));
+
+    if (avatarFile) {
+      payload.append('avatar', avatarFile);
+    }
+
+    updateProfile(payload, {
+      onSuccess: (response) => {
+        const updatedProfile = response?.data;
+        const nextAvatar =
+          updatedProfile?.avatar ||
+          updatedProfile?.profileImage ||
+          updatedProfile?.user?.avatar ||
+          updatedProfile?.user?.profileImage ||
+          '';
+
+        updateUser({
+          name: updatedProfile?.name || form.name.trim(),
+          phone: updatedProfile?.phone || form.phone.trim(),
+          location: updatedProfile?.location || updatedProfile?.address || form.location.trim(),
+          biodata: updatedProfile?.biodata || updatedProfile?.bio || form.biodata.trim(),
+          skills: updatedProfile?.skills || form.skills,
+          avatar: nextAvatar || undefined,
+          profileImage: nextAvatar || undefined,
+        });
+
+        setAvatarFile(null);
+        setAvatarPreview('');
+        setIsEditing(false);
+        toast.success('Profile updated successfully!');
+      },
       onError: (err) => { toast.error(err.message); },
     });
   };
@@ -267,7 +319,11 @@ const CandidateProfile = () => {
               {/* Avatar */}
               <div className="relative">
                 <div className="h-28 w-28 md:h-32 md:w-32 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-4xl md:text-5xl font-bold shadow-2xl shadow-black/20">
-                  {(profile.name || profile.user?.name || 'C').charAt(0).toUpperCase()}
+                  {profileAvatar ? (
+                    <img src={profileAvatar} alt={profile.name || profile.user?.name || 'Candidate'} className="h-full w-full rounded-full object-cover" />
+                  ) : (
+                    (profile.name || profile.user?.name || 'C').charAt(0).toUpperCase()
+                  )}
                 </div>
                 <div className="absolute -bottom-2 -right-2 bg-emerald-500 h-9 w-9 rounded-full border-4 border-slate-900 flex items-center justify-center">
                   <div className="h-3.5 w-3.5 bg-white rounded-full"></div>
@@ -432,6 +488,26 @@ const CandidateProfile = () => {
             </div>
             <form onSubmit={handleSubmit} className="space-y-5 p-6">
               <div>
+                <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Profile Picture</label>
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 overflow-hidden rounded-full border border-slate-300 dark:border-slate-700">
+                    {avatarPreview || profileAvatar ? (
+                      <img src={avatarPreview || profileAvatar} alt="Profile preview" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-slate-100 text-sm font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        {(form.name || 'C').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:file:bg-slate-100 dark:file:text-slate-900"
+                  />
+                </div>
+              </div>
+              <div>
                 <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Name</label>
                 <input
                   value={form.name}
@@ -518,7 +594,11 @@ const CandidateProfile = () => {
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setIsEditing(false)}
+                  onClick={() => {
+                    setAvatarFile(null);
+                    setAvatarPreview('');
+                    setIsEditing(false);
+                  }}
                   className="flex-1 rounded-xl border border-slate-300 py-3 font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   Cancel

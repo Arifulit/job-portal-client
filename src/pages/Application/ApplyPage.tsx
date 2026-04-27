@@ -111,6 +111,7 @@ const ApplyPage = () => {
         coverLetter: coverLetter.trim() || undefined,
         resumeFile: resumeFile || undefined,
         resumeUrl: resumeFile ? undefined : profile?.resume || undefined,
+        expectedSalary: expectedSalary.trim() ? Number(expectedSalary) : undefined,
       },
       {
         onSuccess: () => {

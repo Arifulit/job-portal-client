@@ -4,6 +4,7 @@ import * as React from 'react';
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import MainLayout from "../components/layout/MainLayout";
+import { useAuth } from "../context/AuthContext";
 import { withAuth } from "../utils/withAuth";
 import { generateRoutes } from "../utils/generateRoutes";
 import { adminSidebarItems } from "./adminSidebarItems";
@@ -17,6 +18,7 @@ const ContactPage = React.lazy(() => import("../public/Contact"));
 const FAQ = React.lazy(() => import("../public/FAQ"));
 const Jobs = React.lazy(() => import("../pages/Job/Jobs"));
 const JobDetails = React.lazy(() => import("../pages/Job/JobDetails"));
+const CompanyProfile = React.lazy(() => import("../pages/Company/CompanyProfile"));
 const ApplyPage = React.lazy(() => import("../pages/Application/ApplyPage"));
 const Register = React.lazy(() => import("../components/auth/Register"));
 const RecruiterRegister = React.lazy(() => import("../components/auth/RecruiterRegister"));
@@ -47,6 +49,30 @@ const RouteLoader = () => (
   </div>
 );
 
+function DashboardResolver() {
+  const { isAuthenticated, user, loading } = useAuth();
+
+  if (loading) {
+    return <RouteLoader />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const role = String(user?.role || '').toLowerCase();
+
+  if (role === 'admin') {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  if (role === 'recruiter') {
+    return <Navigate to="/recruiter/dashboard" replace />;
+  }
+
+  return <Navigate to="/candidate/dashboard" replace />;
+}
+
 const withSuspense = (element: React.ReactElement) => (
   <React.Suspense fallback={<RouteLoader />}>{element}</React.Suspense>
 );
@@ -70,6 +96,10 @@ export const router = createBrowserRouter([
       {
         path: "login",
         element: withSuspense(<Login />),
+      },
+      {
+        path: "dashboard",
+        element: withSuspense(<DashboardResolver />),
       },
       {
         path: "register",
@@ -104,7 +134,19 @@ export const router = createBrowserRouter([
         element: withSuspense(<Jobs />),
       },
       {
+        path: "candidate/jobs",
+        element: <Navigate to="/jobs" replace />,
+      },
+      {
         path: "jobs/:id",
+        element: withSuspense(<JobDetails />),
+      },
+      {
+        path: "company/:id/profile",
+        element: withSuspense(<CompanyProfile />),
+      },
+      {
+        path: "candidate/jobs/:id",
         element: withSuspense(<JobDetails />),
       },
       {

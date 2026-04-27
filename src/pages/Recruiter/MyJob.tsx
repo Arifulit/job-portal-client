@@ -33,6 +33,16 @@ const MyJob: React.FC = () => {
     return 0;
   };
 
+  const getCompanyName = (company: unknown) => {
+    if (company && typeof company === 'object' && 'name' in company) {
+      const name = (company as { name?: unknown }).name;
+      if (typeof name === 'string' && name.trim()) {
+        return name;
+      }
+    }
+    return 'Company';
+  };
+
   const handleDelete = (jobId: string, title: string) => {
     setDeleteTarget({ id: jobId, title });
   };
@@ -109,7 +119,7 @@ const MyJob: React.FC = () => {
                 <tr key={job._id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-8 py-6">
                     <div className="text-lg font-semibold text-gray-900">{job.title}</div>
-                    <div className="text-sm text-gray-500 mt-1">{job.company?.name || 'Company'}</div>
+                    <div className="text-sm text-gray-500 mt-1">{getCompanyName(job.company)}</div>
                   </td>
                   <td className="px-8 py-6">
                     <Badge 
@@ -172,7 +182,7 @@ const MyJob: React.FC = () => {
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">{job.title}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{job.company?.name || 'Company'}</p>
+                  <p className="text-sm text-gray-600 mt-1">{getCompanyName(job.company)}</p>
                 </div>
                 <Badge 
                   className={

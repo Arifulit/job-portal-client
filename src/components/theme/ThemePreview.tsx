@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/hooks/useTheme";
-import { Theme } from "@/providers/theme.provider";
+import { Theme } from "@/components/providers/theme.provider";
 import { Monitor, Moon, Sun, Check, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 

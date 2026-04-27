@@ -9,7 +9,10 @@ export interface RecruiterProfileUpdatePayload {
   location?: string;
   biodata?: string;
   bio?: string;
+  avatar?: string;
 }
+
+type RecruiterProfileUpdateBody = RecruiterProfileUpdatePayload | FormData;
 
 export interface RecruiterAgencyPayload {
   name: string;
@@ -95,7 +98,7 @@ const recruiterService = {
     throw lastError;
   },
 
-  updateRecruiterProfile: async (payload: RecruiterProfileUpdatePayload) => {
+  updateRecruiterProfile: async (payload: RecruiterProfileUpdateBody) => {
     let lastError: unknown;
 
     for (const endpoint of profileUpdateEndpoints) {

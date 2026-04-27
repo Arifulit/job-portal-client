@@ -9,13 +9,20 @@ const allowedStatuses: ApplicationStatus[] = [
   'reviewed',
   'shortlisted',
   'interview',
+  'accepted',
   'hired',
   'rejected',
 ];
 
 const normalizeApplicationStatus = (status: unknown): ApplicationStatus => {
-  const value = String(status || '').toLowerCase() as ApplicationStatus;
+  const parsed = String(status || '').toLowerCase();
+  const value = parsed === 'accepted' ? 'accepted' : (parsed as ApplicationStatus);
   return allowedStatuses.includes(value) ? value : 'applied';
+};
+
+const toStatusPayload = (status: ApplicationStatus): string => {
+  const normalized = String(status || '').toLowerCase();
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 };
 
 const normalizeApplication = (application: Partial<Application> & Record<string, any>): Application => {
@@ -148,23 +155,44 @@ export const useApplyJob = () => {
       coverLetter?: string;
       resumeUrl?: string;
       resumeFile?: File;
+      expectedSalary?: number;
     }) => {
-      const formData = new FormData();
-      formData.append('jobId', data.jobId);
-
-      if (data.coverLetter) {
-        formData.append('coverLetter', data.coverLetter);
-      }
+      let response;
 
       if (data.resumeFile) {
+        const formData = new FormData();
+        formData.append('jobId', data.jobId);
         formData.append('resume', data.resumeFile);
-      } else if (data.resumeUrl) {
-        formData.append('resumeUrl', data.resumeUrl);
-      } else {
-        throw new Error('Resume is required');
-      }
 
-      const response = await api.post<ApiResponse<Application>>('/applications', formData);
+        if (data.coverLetter) {
+          formData.append('coverLetter', data.coverLetter);
+        }
+
+        if (typeof data.expectedSalary === 'number' && Number.isFinite(data.expectedSalary)) {
+          formData.append('expectedSalary', String(data.expectedSalary));
+        }
+
+        response = await api.post<ApiResponse<Application>>('/applications', formData);
+      } else {
+        if (!data.resumeUrl) {
+          throw new Error('Resume is required');
+        }
+
+        const payload: Record<string, unknown> = {
+          jobId: data.jobId,
+          resumeUrl: data.resumeUrl,
+        };
+
+        if (data.coverLetter) {
+          payload.coverLetter = data.coverLetter;
+        }
+
+        if (typeof data.expectedSalary === 'number' && Number.isFinite(data.expectedSalary)) {
+          payload.expectedSalary = data.expectedSalary;
+        }
+
+        response = await api.post<ApiResponse<Application>>('/applications', payload);
+      }
 
       if (!response.data.data) {
         throw new Error(response.data.message || 'Application submission failed');
@@ -175,6 +203,7 @@ export const useApplyJob = () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
       queryClient.invalidateQueries({ queryKey: ['my-applications'] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Application submitted successfully!');
     },
     onError: (error) => {
@@ -196,7 +225,7 @@ export const useUpdateApplicationStatus = () => {
     }) => {
       const response = await api.put<ApiResponse<Application>>(
         `/applications/${id}`,
-        { status }
+        { status: toStatusPayload(status) }
       );
       if (!response.data.data) {
         throw new Error(response.data.message || 'Failed to update application status');
@@ -207,6 +236,7 @@ export const useUpdateApplicationStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
       queryClient.invalidateQueries({ queryKey: ['job-applications'] });
       queryClient.invalidateQueries({ queryKey: ['recruiter-all-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Application status updated!');
     },
     onError: (error) => {

@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { useSaveJob, useUnsaveJob } from '../services/jobService';
 import { useAuth } from '../context/AuthContext';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface JobCardProps {
   job: Job;
@@ -22,13 +22,19 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
   const saveJobMutation = useSaveJob();
   const unsaveJobMutation = useUnsaveJob();
   const [saved, setSaved] = useState(isSaved);
+  const normalizedRole = String(user?.role || '').toLowerCase();
+  const canSave = ['candidate', 'seeker', 'job_seeker'].includes(normalizedRole);
   const jobId = job._id || (job as Job & { id?: string }).id;
+
+  useEffect(() => {
+    setSaved(isSaved);
+  }, [isSaved]);
 
   const handleSaveToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!user || user.role !== 'candidate') return;
+    if (!user || !canSave) return;
 
     if (!jobId) return;
 
@@ -101,9 +107,11 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
               {job.status}
             </span>
           )}
-          {user?.role === 'candidate' && (
+          {canSave && (
             <button
               onClick={handleSaveToggle}
+              type="button"
+              aria-label={saved ? 'Unsave job' : 'Save job'}
               className="rounded-full border border-slate-300 bg-white p-1.5 text-slate-500 transition hover:border-slate-400 hover:bg-slate-100 hover:text-slate-700"
               disabled={saveJobMutation.isPending || unsaveJobMutation.isPending}
             >

@@ -3,6 +3,7 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useJob } from '../../services/jobService';
 import { useMyApplications } from '../../services/applicationService';
+import { useSaveJob, useSavedJobs, useUnsaveJob } from '../../services/jobService';
 import { useAuth } from '../../context/AuthContext';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Button } from '../../components/ui/button';
@@ -20,6 +21,8 @@ import {
   Layers3,
   BadgeCheck,
   ArrowRight,
+  Bookmark,
+  BookmarkCheck,
 } from 'lucide-react';
 
 const formatSalary = (
@@ -92,6 +95,8 @@ const toList = (value?: string[] | string) => {
   return [];
 };
 
+const isLikelyObjectId = (value: string) => /^[a-f\d]{24}$/i.test(value);
+
 const formatDate = (value?: string) => {
   const date = toSafeDate(value);
   if (!date) return 'Not specified';
@@ -142,6 +147,10 @@ const JobDetails = () => {
 
   const roleValue = String(user?.role || '').toLowerCase();
   const canApply = roleValue === 'candidate' || roleValue === 'seeker' || roleValue === 'job_seeker';
+  const canSave = canApply;
+  const { data: savedJobs = [] } = useSavedJobs();
+  const saveJobMutation = useSaveJob();
+  const unsaveJobMutation = useUnsaveJob();
   const { data: myApplicationsData, isLoading: myApplicationsLoading } = useMyApplications(canApply);
   const currentUserId = String(user?._id || '');
   const hasApplied =
@@ -158,6 +167,26 @@ const JobDetails = () => {
     typeof job?.company === 'string'
       ? job.company
       : job?.company?.name || 'Company not specified';
+  const companyId =
+    typeof job?.company === 'string'
+      ? job.company
+      : job?.company?._id || '';
+  const canOpenCompanyProfile = isLikelyObjectId(String(companyId || ''));
+  const jobId = String(job?._id || id || '');
+  const isSaved = savedJobs.some((item) => String(item._id || '') === jobId);
+
+  const handleSaveToggle = () => {
+    if (!canSave || !jobId) {
+      return;
+    }
+
+    if (isSaved) {
+      unsaveJobMutation.mutate(jobId);
+      return;
+    }
+
+    saveJobMutation.mutate(jobId);
+  };
   const salaryText = formatSalary(job?.salary as number | { min?: number; max?: number; currency?: string }, job?.salaryMin, job?.salaryMax, job?.currency);
   const requirementsList = toList(job?.requirements);
   const responsibilitiesList = toList((job as { responsibilities?: string[] | string })?.responsibilities);
@@ -250,7 +279,13 @@ const JobDetails = () => {
                 <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
                   <span className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-100 px-4 py-2 dark:border-white/20 dark:bg-white/5">
                     <Building className="h-4 w-4" />
-                    {companyName}
+                    {canOpenCompanyProfile ? (
+                      <Link to={`/company/${companyId}/profile`} className="hover:underline">
+                        {companyName}
+                      </Link>
+                    ) : (
+                      companyName
+                    )}
                   </span>
                   <span className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-100 px-4 py-2 dark:border-white/20 dark:bg-white/5">
                     <MapPin className="h-4 w-4" />
@@ -431,6 +466,27 @@ const JobDetails = () => {
               </div>
 
               <div className="mt-6 space-y-3">
+                {canSave && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSaveToggle}
+                    disabled={saveJobMutation.isPending || unsaveJobMutation.isPending}
+                    className="w-full"
+                  >
+                    {isSaved ? (
+                      <>
+                        <BookmarkCheck className="mr-2 h-4 w-4" />
+                        Saved
+                      </>
+                    ) : (
+                      <>
+                        <Bookmark className="mr-2 h-4 w-4" />
+                        Save Job
+                      </>
+                    )}
+                  </Button>
+                )}
                 {canApply && !hasApplied && !myApplicationsLoading && (
                   <Button onClick={() => navigate(`/jobs/${id}/apply`)} className="w-full bg-slate-900 text-white hover:bg-slate-800">
                     Apply Now
@@ -458,7 +514,18 @@ const JobDetails = () => {
               <div className="grid gap-3">
                 <InfoRow label="Job Type" value={<span className="capitalize">{job.jobType?.replace('-', ' ') || 'Not specified'}</span>} />
                 <InfoRow label="Experience Level" value={<span className="capitalize">{job.experienceLevel || 'Not specified'}</span>} />
-                <InfoRow label="Company" value={companyName} />
+                <InfoRow
+                  label="Company"
+                  value={
+                    canOpenCompanyProfile ? (
+                      <Link to={`/company/${companyId}/profile`} className="font-semibold text-blue-700 hover:underline dark:text-blue-300">
+                        {companyName}
+                      </Link>
+                    ) : (
+                      companyName
+                    )
+                  }
+                />
                 <InfoRow label="Location" value={job.location || 'Not specified'} />
               </div>
             </section>

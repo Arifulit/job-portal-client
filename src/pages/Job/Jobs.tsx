@@ -1,9 +1,10 @@
 // এই ফাইলটি job listing/details related page rendering ও data flow পরিচালনা করে।
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useJobs } from '../../services/jobService';
+import { useJobs, useSavedJobs } from '../../services/jobService';
 import { JobCard } from '../../components/JobCard';
 import { Loader } from '../../components/Loader';
+import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { Search, Briefcase, Star, SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -21,6 +22,9 @@ const sectionReveal: Variants = {
 
 const Jobs = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
+  const normalizedRole = String(user?.role || '').toLowerCase();
+  const canUseSavedJobs = ['candidate', 'seeker', 'job_seeker'].includes(normalizedRole);
   
   const [filters, setFilters] = useState<JobFilters>({
     keyword: '',
@@ -47,6 +51,10 @@ const Jobs = () => {
   }, [searchParams]);
 
   const { data, isLoading, isError } = useJobs(filters);
+  const { data: savedJobs = [] } = useSavedJobs();
+  const savedJobIds = new Set(
+    canUseSavedJobs ? savedJobs.map((job) => String(job._id || (job as { id?: string }).id || '')) : []
+  );
   const jobs = data?.data || [];
   const totalPages = data?.pagination?.pages || 1;
   const totalJobs = data?.pagination?.total || 0;
@@ -268,10 +276,11 @@ const Jobs = () => {
                 >
                   <option value="">All Types</option>
                   <option value="full-time">Full Time</option>
+                  <option value="remote">Remote</option>
                   <option value="part-time">Part Time</option>
                   <option value="contract">Contract</option>
                   <option value="internship">Internship</option>
-                  <option value="remote">Remote</option>
+                  <option value="freelance">Freelance</option>
                 </select>
               </div>
 
@@ -420,7 +429,10 @@ const Jobs = () => {
                         viewport={{ once: true, amount: 0.16 }}
                         transition={{ duration: 0.28, delay: Math.min(idx * 0.03, 0.2) }}
                       >
-                        <JobCard job={job} />
+                        <JobCard
+                          job={job}
+                          isSaved={savedJobIds.has(String(job._id || (job as { id?: string }).id || ''))}
+                        />
                       </motion.div>
                     ))}
                   </div>

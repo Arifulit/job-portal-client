@@ -204,10 +204,11 @@ const Analytics = () => {
 					>
 						<option value="all">All Types</option>
 						<option value="full-time">Full-time</option>
+						<option value="remote">Remote</option>
 						<option value="part-time">Part-time</option>
 						<option value="contract">Contract</option>
 						<option value="internship">Internship</option>
-						<option value="remote">Remote</option>
+						<option value="freelance">Freelance</option>
 					</select>
 					<select
 						value={jobStatusFilter}

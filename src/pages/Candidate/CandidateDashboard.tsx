@@ -28,6 +28,7 @@ const statusClassMap: Record<string, string> = {
   reviewed: 'bg-cyan-100 text-cyan-700 border border-cyan-200',
   shortlisted: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
   interview: 'bg-amber-100 text-amber-700 border border-amber-200',
+  accepted: 'bg-green-100 text-green-700 border border-green-200',
   hired: 'bg-green-100 text-green-700 border border-green-200',
   rejected: 'bg-rose-100 text-rose-700 border border-rose-200',
 };

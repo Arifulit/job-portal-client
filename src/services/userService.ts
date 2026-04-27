@@ -177,7 +177,7 @@ export const useUpdateProfile = () => {
   const { updateUser } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: Partial<User>) => {
+    mutationFn: async (data: Partial<User> | FormData) => {
       const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
       const isAdminContext = currentPath.startsWith('/admin') || getStoredRole() === 'admin';
 

@@ -19,6 +19,7 @@ import {
   FileClock,
 } from 'lucide-react';
 import { formatRelativeTime, getStatusColor } from '../../utils/helpers';
+import { Job } from '../../types';
 
 const getDateValue = (dateLike?: string) => {
   if (!dateLike) return 0;
@@ -32,6 +33,13 @@ const getApplicantCount = (job: {
 }) => {
   if (typeof job.applicantsCount === 'number') return job.applicantsCount;
   if (Array.isArray(job.applications)) return job.applications.length;
+  return 0;
+};
+
+const getJobViews = (job: Job) => {
+  if ('views' in job && typeof (job as { views?: unknown }).views === 'number') {
+    return (job as { views: number }).views;
+  }
   return 0;
 };
 
@@ -54,20 +62,15 @@ export const RecruiterDashboard = () => {
   const rejectedJobs = stats?.rejectedJobs ?? 0;
   const closedJobs = stats?.closedJobs ?? 0;
   const totalApplications = stats?.totalApplications ?? 0;
-  const draftJobs = jobs.filter((job) => String(job.status || '').toLowerCase() === 'draft').length;
   const expiredJobs = jobs.filter((job) => String(job.status || '').toLowerCase() === 'expired').length;
   const applicantsCount =
-    stats?.applicantsCount ?? jobs.reduce((sum, job) => sum + getApplicantCount(job), 0);
-  const totalViews =
-    stats?.views ?? jobs.reduce((sum, job) => sum + (typeof job.views === 'number' ? job.views : 0), 0);
-  const hiredCount = stats?.hiredCount ?? 0;
+    stats?.applicantsCount ?? jobs.reduce((sum, job) => sum + getApplicantCount(job as { applicantsCount?: number; applications?: unknown }), 0);
   const averageApplicants = activeJobs > 0 ? Math.round(applicantsCount / activeJobs) : 0;
   const weeklyPosts = jobs.filter((job) => {
     const createdAt = getDateValue(job.createdAt);
     if (!createdAt) return false;
     return createdAt >= Date.now() - 7 * 24 * 60 * 60 * 1000;
   }).length;
-  const viewPerJob = jobs.length > 0 ? Math.round(totalViews / jobs.length) : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-emerald-50/50 py-8">
@@ -223,11 +226,11 @@ export const RecruiterDashboard = () => {
                     <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500">
                       <span className="flex items-center">
                         <Users className="mr-1 h-4 w-4" />
-                        {getApplicantCount(job)} applicants
+                        {getApplicantCount(job as { applicantsCount?: number; applications?: unknown })} applicants
                       </span>
                       <span className="flex items-center">
                         <Eye className="mr-1 h-4 w-4" />
-                        {typeof job.views === 'number' ? job.views : 0} views
+                        {getJobViews(job)} views
                       </span>
                       <span className="flex items-center">
                         <CalendarDays className="mr-1 h-4 w-4" />
