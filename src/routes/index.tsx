@@ -25,6 +25,7 @@ const RecruiterRegister = React.lazy(() => import("../components/auth/RecruiterR
 const Login = React.lazy(() =>
   import("../components/auth/Login").then((module) => ({ default: module.Login }))
 );
+const GoogleSuccess = React.lazy(() => import("../components/auth/GoogleSuccess").then((m) => ({ default: m.default })));
 const Unauthorized = React.lazy(() => import("../pages/status/Unauthorized"));
 const NotFound = React.lazy(() => import("../pages/status/NotFound"));
 const JobPost = React.lazy(() => import("../pages/Recruiter/JobPost"));
@@ -96,6 +97,10 @@ export const router = createBrowserRouter([
       {
         path: "login",
         element: withSuspense(<Login />),
+      },
+      {
+        path: "auth/google/success",
+        element: withSuspense(<GoogleSuccess />),
       },
       {
         path: "dashboard",

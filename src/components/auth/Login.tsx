@@ -17,14 +17,14 @@ export function Login() {
   const { login, loading } = useAuth();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
-  const googleLoginUrl = `${API_BASE}/auth/google?redirect=${encodeURIComponent("/dashboard")}`;
+  const googleLoginUrl = `${API_BASE}/auth/google?redirect=${encodeURIComponent(window.location.origin + "/auth/google/success")}`;
 
   const getRedirectPath = (role?: string) => {
     const normalizedRole = String(role || '').toLowerCase();
 
     if (normalizedRole === 'admin') return '/admin/dashboard';
     if (normalizedRole === 'recruiter') return '/recruiter/dashboard';
-    return '/';
+    return '/candidate/dashboard';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

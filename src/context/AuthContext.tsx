@@ -53,7 +53,12 @@ interface AuthContextType {
   updateUser: (userData: Partial<User>) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Add setUserFromToken to context type
+interface AuthContextTypeWithToken extends AuthContextType {
+  setUserFromToken: (token: string) => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextTypeWithToken | undefined>(undefined);
 
 const getErrorMessage = (error: unknown, fallback: string): string => {
   if (axios.isAxiosError(error)) {
@@ -127,6 +132,24 @@ const extractAuthData = (raw: unknown): { token: string; refreshToken?: string; 
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    // Set user and token from a JWT (for Google login)
+    const setUserFromToken = async (token: string) => {
+      setToken(token);
+      localStorage.setItem('token', token);
+      axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+      try {
+        const response = await axios.get(`${API_BASE}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const payload = response.data as { data?: { user?: Partial<User> }; user?: Partial<User> };
+        const userData = normalizeUser(payload.data?.user || payload.user);
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+      } catch (err) {
+        clearAuth();
+        throw err;
+      }
+    };
   const [user, setUser] = useState<User | null>(() => {
     const storedUser = localStorage.getItem('user');
 
@@ -285,6 +308,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       register,
       logout,
       updateUser,
+      setUserFromToken,
     }),
     [login, loading, logout, register, token, updateUser, user]
   );
@@ -292,12 +316,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = (): AuthContextTypeWithToken => {
   const context = useContext(AuthContext);
-
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-
   return context;
 };

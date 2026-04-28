@@ -8,18 +8,25 @@ import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
 import { useCreateJob, useJob, useUpdateJob } from "../../services/jobService";
 import { api, uploadToCloudinary } from "@/utils/api";
-  logoUrl?: string;
+
+export default function JobPost() {
+  const navigate = useNavigate();
+  const { jobId } = useParams<{ jobId: string }>();
+  const isEditMode = Boolean(jobId);
+
   // State for logo upload
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoUrl, setLogoUrl] = useState<string>("");
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoError, setLogoError] = useState("");
+
   // Set logoUrl if editing
   useEffect(() => {
     if (isEditMode && existingJob && typeof existingJob.company === "object" && existingJob.company.logo) {
       setLogoUrl(existingJob.company.logo);
     }
   }, [isEditMode, existingJob]);
+
   // Handle logo file selection and upload
   const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -476,28 +483,29 @@ export default function JobPost() {
   }
 
   return (
-          {/* Company Logo Upload */}
-          <div className="mb-3">
-            <label className="mb-1.5 block text-sm font-semibold text-gray-700">Company Logo</label>
-            {logoUrl && (
-              <div className="mb-2">
-                <img src={logoUrl} alt="Company Logo" className="h-16 rounded border mb-2" />
-              </div>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleLogoChange}
-              className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
-              disabled={logoUploading}
-            />
-            {logoUploading && <p className="text-xs text-emerald-600 mt-1">Uploading...</p>}
-            {logoError && <p className="text-xs text-red-600 mt-1">{logoError}</p>}
+    <div>
+      {/* Company Logo Upload */}
+      <div className="mb-3">
+        <label className="mb-1.5 block text-sm font-semibold text-gray-700">Company Logo</label>
+        {logoUrl && (
+          <div className="mb-2">
+            <img src={logoUrl} alt="Company Logo" className="h-16 rounded border mb-2" />
           </div>
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 px-4 py-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-600 px-6 py-7 text-white shadow-lg">
-          <h1 className="text-3xl font-black sm:text-4xl">
+        )}
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleLogoChange}
+          className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+          disabled={logoUploading}
+        />
+        {logoUploading && <p className="text-xs text-emerald-600 mt-1">Uploading...</p>}
+        {logoError && <p className="text-xs text-red-600 mt-1">{logoError}</p>}
+      </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-8 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-600 px-6 py-7 text-white shadow-lg">
+            <h1 className="text-3xl font-black sm:text-4xl">
             {isEditMode ? "Edit Job Posting" : "Create a New Job Posting"}
           </h1>
           <p className="mt-2 text-sm text-emerald-50 sm:text-base">
