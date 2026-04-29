@@ -7,44 +7,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
 import { useCreateJob, useJob, useUpdateJob } from "../../services/jobService";
-import { api, uploadToCloudinary } from "@/utils/api";
-
-export default function JobPost() {
-  const navigate = useNavigate();
-  const { jobId } = useParams<{ jobId: string }>();
-  const isEditMode = Boolean(jobId);
-
-  // State for logo upload
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoUrl, setLogoUrl] = useState<string>("");
-  const [logoUploading, setLogoUploading] = useState(false);
-  const [logoError, setLogoError] = useState("");
-
-  // Set logoUrl if editing
-  useEffect(() => {
-    if (isEditMode && existingJob && typeof existingJob.company === "object" && existingJob.company.logo) {
-      setLogoUrl(existingJob.company.logo);
-    }
-  }, [isEditMode, existingJob]);
-
-  // Handle logo file selection and upload
-  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setLogoError("");
-    setLogoUploading(true);
-    try {
-      const url = await uploadToCloudinary(file);
-      setLogoUrl(url);
-      setLogoFile(file);
-    } catch (err) {
-      setLogoError("Logo upload failed. Try again.");
-    } finally {
-      setLogoUploading(false);
-    }
-  };
+import { api } from "@/utils/api";
 import { Job, JobStatus } from "../../types";
 import recruiterService from "@/services/recruiterService";
+
+// (Logo state and handler moved into main component further below)
 
 interface JobFormData {
   title: string;
@@ -105,6 +72,30 @@ export default function JobPost() {
   const { mutate: createJob, isPending } = useCreateJob();
   const { mutate: updateJob, isPending: isUpdating } = useUpdateJob();
   const { data: existingJob, isLoading: isLoadingJob, error: existingJobError } = useJob(jobId);
+
+  // State for logo upload
+  // Removed unused logoFile state
+  const [logoUrl, setLogoUrl] = useState<string>("");
+  // Handle logo file selection and upload
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoUrl(URL.createObjectURL(file));
+  };
+
+  // Set logoUrl if editing
+  useEffect(() => {
+    if (
+      isEditMode &&
+      existingJob &&
+      existingJob.company !== null &&
+      typeof existingJob.company === "object" &&
+      'logo' in existingJob.company &&
+      (existingJob.company as { logo?: string }).logo
+    ) {
+      setLogoUrl((existingJob.company as { logo?: string }).logo ?? "");
+    }
+  }, [isEditMode, existingJob]);
 
   const {
     register,
@@ -483,7 +474,7 @@ export default function JobPost() {
   }
 
   return (
-    <div>
+    <>
       {/* Company Logo Upload */}
       <div className="mb-3">
         <label className="mb-1.5 block text-sm font-semibold text-gray-700">Company Logo</label>
@@ -497,10 +488,7 @@ export default function JobPost() {
           accept="image/*"
           onChange={handleLogoChange}
           className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
-          disabled={logoUploading}
         />
-        {logoUploading && <p className="text-xs text-emerald-600 mt-1">Uploading...</p>}
-        {logoError && <p className="text-xs text-red-600 mt-1">{logoError}</p>}
       </div>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 px-4 py-8">
         <div className="max-w-6xl mx-auto">
@@ -839,5 +827,6 @@ export default function JobPost() {
         </form>
       </div>
     </div>
+    </>
   );
 }
