@@ -17,7 +17,7 @@ export function Login() {
   const { login, loading } = useAuth();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
-  const googleLoginUrl = `${API_BASE}/auth/google?redirect=${encodeURIComponent(window.location.origin + "/auth/google/success")}`;
+  const googleLoginUrl = `${API_BASE}/auth/google?redirect=${encodeURIComponent(window.location.origin + "/auth/google/success?redirect=/candidate/dashboard")}`;
 
   const getRedirectPath = (role?: string) => {
     const normalizedRole = String(role || '').toLowerCase();

@@ -86,20 +86,31 @@ const normalizeRole = (role: string | undefined): Role => {
   return 'candidate';
 };
 
-const normalizeUser = (input: Partial<User> | undefined): User => ({
-  _id: input?._id || '',
-  name: input?.name || 'User',
-  email: input?.email || '',
-  role: normalizeRole(input?.role),
-  avatar: input?.avatar,
-  profileImage: input?.profileImage,
-  phone: input?.phone,
-  biodata: input?.biodata,
-  location: input?.location,
-  skills: input?.skills,
-  designation: input?.designation,
-  agency: input?.agency,
-});
+type ProviderUser = Partial<User> & {
+  id?: string;
+  fullName?: string;
+  emailAddress?: string;
+  picture?: string;
+  photo?: string;
+};
+
+const normalizeUser = (input: ProviderUser | undefined): User => {
+  const picture = input?.picture || input?.photo || input?.profileImage || input?.avatar;
+  return {
+    _id: input?._id || input?.id || '',
+    name: input?.name || input?.fullName || 'User',
+    email: input?.email || input?.emailAddress || '',
+    role: normalizeRole(input?.role),
+    avatar: input?.avatar || picture || undefined,
+    profileImage: input?.profileImage || picture || undefined,
+    phone: input?.phone,
+    biodata: input?.biodata,
+    location: input?.location,
+    skills: input?.skills,
+    designation: input?.designation,
+    agency: input?.agency,
+  };
+};
 
 const extractAuthData = (raw: unknown): { token: string; refreshToken?: string; user: User } => {
   const data = (raw || {}) as {
@@ -310,7 +321,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateUser,
       setUserFromToken,
     }),
-    [login, loading, logout, register, token, updateUser, user]
+    [login, loading, logout, register, token, updateUser, user, setUserFromToken]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // src/pages/auth/GoogleSuccess.tsx
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
