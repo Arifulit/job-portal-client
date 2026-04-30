@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // src/pages/auth/GoogleSuccess.tsx
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { toast } from "sonner";
 
 const GoogleSuccess = () => {
   const { setUserFromToken } = useAuth();
@@ -24,6 +26,7 @@ const GoogleSuccess = () => {
     const redirectParam = params.get("redirect") || hashParams.get("redirect");
 
     if (!token) {
+      toast.error("Google login failed. No token found.");
       navigate("/login?error=google_failed");
       return;
     }
@@ -31,6 +34,7 @@ const GoogleSuccess = () => {
     (async () => {
       try {
         await setUserFromToken(token);
+        toast.success("Google login successful! Welcome.");
 
         // determine redirect: prefer redirect param, else route by role stored in localStorage
         let destination = "/";
@@ -62,7 +66,8 @@ const GoogleSuccess = () => {
         }
 
         navigate(destination, { replace: true });
-      } catch (err) {
+      } catch (err: any) {
+        toast.error("Google login failed: " + (err?.message || "Invalid token"));
         navigate("/login?error=token_invalid");
       }
     })();
