@@ -127,43 +127,57 @@
 
 // export default CandidateProfile;
 
-import React, { useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useCandidateProfile, useUpdateCandidateProfile } from '../../services/candidateService';
 import { Badge } from '../../components/ui/badge';
 import { Skeleton } from '../../components/ui/skeleton';
-import { Mail, Phone, Calendar, Briefcase, MapPin, Award, User, Pencil, X } from 'lucide-react';
+import { Mail, Phone, Calendar, Briefcase, MapPin, Award, User, Pencil, X, CheckCircle2, UploadCloud } from 'lucide-react';
 import { toast } from 'sonner';
+import { uploadResumeToBackend, uploadToCloudinary } from '../../utils/api';
+
+const MAX_RESUME_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_RESUME_MIME_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+const ALLOWED_RESUME_EXTENSIONS = ['pdf', 'doc', 'docx'];
 
 const CandidateProfile = () => {
   const { user, updateUser } = useAuth();
   const { data, isLoading } = useCandidateProfile();
   const profileData = data?.data;
-  const profile = profileData || {
-    _id: user?._id || '',
-    user: {
-      _id: user?._id || '',
-      name: user?.name || 'Candidate',
-      email: user?.email || '',
-      role: user?.role || 'candidate',
-      createdAt: '',
-      updatedAt: '',
-    },
-    name: user?.name || 'Candidate',
-    phone: user?.phone || '',
-    skills: user?.skills || [],
-    location: user?.location || '',
-    address: user?.location || '',
-    biodata: user?.biodata || '',
-    headline: '',
-    experienceLevel: '',
-    summary: user?.biodata || '',
-    avatar: user?.avatar || user?.profileImage || '',
-    createdAt: '',
-    updatedAt: '',
-    __v: 0,
-  };
+  const profile = useMemo(
+    () =>
+      profileData || {
+        _id: user?._id || '',
+        user: {
+          _id: user?._id || '',
+          name: user?.name || 'Candidate',
+          email: user?.email || '',
+          role: user?.role || 'candidate',
+          createdAt: '',
+          updatedAt: '',
+        },
+        name: user?.name || 'Candidate',
+        phone: user?.phone || '',
+        skills: user?.skills || [],
+        location: user?.location || '',
+        address: user?.location || '',
+        biodata: user?.biodata || '',
+        headline: '',
+        experienceLevel: '',
+        summary: user?.biodata || '',
+        avatar: user?.avatar || user?.profileImage || '',
+        createdAt: '',
+        updatedAt: '',
+        __v: 0,
+      },
+    [profileData, user]
+  );
   const profileAvatar = profile.avatar || profile.profileImage || profile.user?.avatar || profile.user?.profileImage || user?.avatar || user?.profileImage || '';
+  const profileResume = profile.resume || user?.resume || '';
   const displayEmail = profile.user?.email || profile.email || user?.email || '';
   const displayLocation = profile.location || profile.address || user?.location || '';
   const displayBiodata = profile.biodata || profile.bio || profile.summary || user?.biodata || '';
@@ -175,7 +189,32 @@ const CandidateProfile = () => {
   const [skillInput, setSkillInput] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState('');
-  const { mutate: updateProfile, isPending: isUpdating } = useUpdateCandidateProfile();
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumePreview, setResumePreview] = useState('');
+  const [resumeUploading, setResumeUploading] = useState(false);
+  const [resumeUploadProgress, setResumeUploadProgress] = useState(0);
+  const [isResumeDragActive, setIsResumeDragActive] = useState(false);
+  const resumeInputRef = useRef<HTMLInputElement | null>(null);
+  const updateProfileMutation = useUpdateCandidateProfile();
+  const updateProfile = updateProfileMutation.mutate;
+  const isUpdating = updateProfileMutation.status === 'pending';
+
+  const profileCompletion = useMemo(() => {
+    const checks = [
+      Boolean(profile.name?.trim()),
+      Boolean(displayEmail.trim()),
+      Boolean(profile.phone?.trim()),
+      Boolean(displayLocation.trim()),
+      Boolean(displayBiodata.trim()),
+      Boolean(profileAvatar),
+      Boolean(profileResume),
+      Boolean(profile.experienceLevel?.trim()),
+      Boolean((profile.skills || []).length),
+    ];
+
+    const passed = checks.filter(Boolean).length;
+    return Math.round((passed / checks.length) * 100);
+  }, [displayBiodata, displayEmail, displayLocation, profile, profileAvatar, profileResume]);
 
   const openEdit = () => {
     if (!profile) return;
@@ -191,6 +230,8 @@ const CandidateProfile = () => {
     });
     setAvatarPreview(profileAvatar);
     setAvatarFile(null);
+    setResumePreview(profileResume);
+    setResumeFile(null);
     setIsEditing(true);
   };
 
@@ -209,6 +250,83 @@ const CandidateProfile = () => {
     setAvatarPreview(URL.createObjectURL(nextFile));
   };
 
+  const processResumeFile = async (nextFile: File) => {
+    if (!nextFile) return;
+
+    if (nextFile.size > MAX_RESUME_SIZE_BYTES) {
+      toast.error('Resume file is too large. Please upload a file up to 5MB.');
+      return;
+    }
+
+    const isAllowedType = ALLOWED_RESUME_MIME_TYPES.includes(nextFile.type);
+    const extension = nextFile.name.split('.').pop()?.toLowerCase() || '';
+    const isAllowedExtension = ALLOWED_RESUME_EXTENSIONS.includes(extension);
+
+    if (!isAllowedType && !isAllowedExtension) {
+      toast.error('Please upload resume as PDF, DOC, or DOCX format.');
+      return;
+    }
+
+    setResumeFile(nextFile);
+    setResumeUploading(true);
+    setResumeUploadProgress(0);
+
+    try {
+      let uploadedUrl = '';
+
+      try {
+        uploadedUrl = await uploadResumeToBackend(nextFile, (progress) => {
+          setResumeUploadProgress(progress);
+        });
+      } catch {
+        // Fallback upload path when resume service endpoint is unavailable.
+        uploadedUrl = await uploadToCloudinary(nextFile, (progress) => {
+          setResumeUploadProgress(progress);
+        });
+      }
+
+      setResumeUploadProgress(100);
+      setResumePreview(uploadedUrl);
+      toast.success('Resume uploaded successfully');
+    } catch (error) {
+      setResumeFile(null);
+      setResumePreview(profileResume);
+      toast.error(error instanceof Error ? error.message : 'Failed to upload resume');
+    } finally {
+      setResumeUploading(false);
+    }
+  };
+
+  const handleRemoveResume = () => {
+    setResumeFile(null);
+    setResumePreview('');
+    setResumeUploadProgress(0);
+  };
+
+  const handleResumeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nextFile = e.target.files?.[0];
+    if (!nextFile) return;
+    await processResumeFile(nextFile);
+  };
+
+  const handleResumeDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsResumeDragActive(true);
+  };
+
+  const handleResumeDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsResumeDragActive(false);
+  };
+
+  const handleResumeDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsResumeDragActive(false);
+    const nextFile = e.dataTransfer.files?.[0];
+    if (!nextFile) return;
+    await processResumeFile(nextFile);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload = new FormData();
@@ -222,6 +340,9 @@ const CandidateProfile = () => {
     payload.append('bio', form.biodata.trim());
     payload.append('summary', form.biodata.trim());
     payload.append('skills', JSON.stringify(form.skills));
+    if (resumePreview) {
+      payload.append('resume', resumePreview);
+    }
 
     if (avatarFile) {
       payload.append('avatar', avatarFile);
@@ -243,12 +364,15 @@ const CandidateProfile = () => {
           location: updatedProfile?.location || updatedProfile?.address || form.location.trim(),
           biodata: updatedProfile?.biodata || updatedProfile?.bio || form.biodata.trim(),
           skills: updatedProfile?.skills || form.skills,
+          resume: updatedProfile?.resume || resumePreview || profileResume || undefined,
           avatar: nextAvatar || undefined,
           profileImage: nextAvatar || undefined,
         });
 
         setAvatarFile(null);
         setAvatarPreview('');
+        setResumeFile(null);
+        setResumePreview(updatedProfile?.resume || resumePreview || profileResume || '');
         setIsEditing(false);
         toast.success('Profile updated successfully!');
       },
@@ -418,6 +542,18 @@ const CandidateProfile = () => {
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                   <h3 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">Profile Snapshot</h3>
                   <div className="space-y-3 text-sm">
+                    <div className="rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/70">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-600 dark:text-slate-300">Profile Completion</span>
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">{profileCompletion}%</span>
+                      </div>
+                      <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                        <div
+                          className="h-full rounded-full bg-blue-600 transition-all dark:bg-slate-100"
+                          style={{ width: `${profileCompletion}%` }}
+                        />
+                      </div>
+                    </div>
                     <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/70">
                       <span className="text-slate-600 dark:text-slate-300">Skills Added</span>
                       <span className="font-semibold text-slate-900 dark:text-slate-100">{profile.skills?.length || 0}</span>
@@ -425,6 +561,22 @@ const CandidateProfile = () => {
                     <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/70">
                       <span className="text-slate-600 dark:text-slate-300">Applications</span>
                       <span className="font-semibold text-slate-900 dark:text-slate-100">{profile.applications?.length || 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/70">
+                      <span className="text-slate-600 dark:text-slate-300">Resume</span>
+                      <span className="inline-flex items-center gap-1.5 font-semibold text-slate-900 dark:text-slate-100">
+                        {profileResume ? (
+                          <>
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                            Uploaded
+                          </>
+                        ) : (
+                          <>
+                            <UploadCloud className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                            Missing
+                          </>
+                        )}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -505,6 +657,77 @@ const CandidateProfile = () => {
                     onChange={handleAvatarChange}
                     className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:file:bg-slate-100 dark:file:text-slate-900"
                   />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Resume</label>
+                <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
+                  <div
+                    onDragOver={handleResumeDragOver}
+                    onDragLeave={handleResumeDragLeave}
+                    onDrop={handleResumeDrop}
+                    onClick={() => resumeInputRef.current?.click()}
+                    className={`cursor-pointer rounded-xl border border-dashed px-4 py-5 text-center transition ${
+                      isResumeDragActive
+                        ? 'border-blue-500 bg-blue-50 dark:border-slate-300 dark:bg-slate-700/70'
+                        : 'border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900/40'
+                    }`}
+                  >
+                    <UploadCloud className="mx-auto mb-2 h-5 w-5 text-slate-500 dark:text-slate-300" />
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                      Drag & drop your resume here, or click to browse
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">PDF, DOC, DOCX up to 5MB</p>
+                  </div>
+                  <input
+                    ref={resumeInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={handleResumeChange}
+                    className="hidden"
+                  />
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-500 dark:text-slate-400">
+                      {resumeUploading ? 'Uploading resume...' : resumePreview ? 'Resume uploaded' : 'No resume uploaded yet'}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => resumeInputRef.current?.click()}
+                        className="font-semibold text-slate-600 hover:underline dark:text-slate-300"
+                      >
+                        Replace
+                      </button>
+                      {resumePreview ? (
+                        <>
+                          <a href={resumePreview} target="_blank" rel="noreferrer" className="font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                            View Resume
+                          </a>
+                          <button
+                            type="button"
+                            onClick={handleRemoveResume}
+                            className="font-semibold text-rose-600 hover:underline dark:text-rose-400"
+                          >
+                            Remove
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+                  {(resumeUploading || resumeUploadProgress > 0) && (
+                    <div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                        <div
+                          className="h-full rounded-full bg-blue-600 transition-all duration-200 dark:bg-slate-100"
+                          style={{ width: `${resumeUploadProgress}%` }}
+                        />
+                      </div>
+                      <p className="mt-1 text-right text-xs text-slate-500 dark:text-slate-400">{resumeUploadProgress}%</p>
+                    </div>
+                  )}
+                  {resumeFile ? (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Selected file: {resumeFile.name}</p>
+                  ) : null}
                 </div>
               </div>
               <div>
@@ -597,6 +820,8 @@ const CandidateProfile = () => {
                   onClick={() => {
                     setAvatarFile(null);
                     setAvatarPreview('');
+                    setResumeFile(null);
+                    setResumePreview(profileResume);
                     setIsEditing(false);
                   }}
                   className="flex-1 rounded-xl border border-slate-300 py-3 font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
@@ -605,10 +830,10 @@ const CandidateProfile = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={isUpdating}
+                  disabled={isUpdating || resumeUploading}
                   className="flex-1 rounded-xl bg-blue-600 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
                 >
-                  {isUpdating ? 'Saving...' : 'Save Changes'}
+                  {isUpdating ? 'Saving...' : resumeUploading ? 'Uploading Resume...' : 'Save Changes'}
                 </button>
               </div>
             </form>

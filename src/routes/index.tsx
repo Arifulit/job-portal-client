@@ -20,7 +20,6 @@ const Jobs = React.lazy(() => import("../pages/Job/Jobs"));
 const JobDetails = React.lazy(() => import("../pages/Job/JobDetails"));
 const CompanyProfile = React.lazy(() => import("../pages/Company/CompanyProfile"));
 const ApplyPage = React.lazy(() => import("../pages/Application/ApplyPage"));
-const ResourceDetails = React.lazy(() => import("../pages/resources/ResourceDetails"));
 const Register = React.lazy(() => import("../components/auth/Register"));
 const RecruiterRegister = React.lazy(() => import("../components/auth/RecruiterRegister"));
 const Login = React.lazy(() =>
@@ -158,10 +157,6 @@ export const router = createBrowserRouter([
       {
         path: "jobs/:jobId/apply",
         element: withSuspense(<ApplyPage />),
-      },
-      {
-        path: "resources/:id",
-        element: withSuspense(<ResourceDetails />),
       },
       {
         path: "unauthorized",

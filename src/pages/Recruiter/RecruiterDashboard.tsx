@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { formatRelativeTime, getStatusColor } from '../../utils/helpers';
 import { Job } from '../../types';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../../components/ui/chart';
+import { Cell, Pie, PieChart } from 'recharts';
 
 const getDateValue = (dateLike?: string) => {
   if (!dateLike) return 0;
@@ -41,6 +43,14 @@ const getJobViews = (job: Job) => {
     return (job as { views: number }).views;
   }
   return 0;
+};
+
+const BAR_CHART_COLORS: Record<string, string> = {
+  active: '#10b981',
+  approved: '#3b82f6',
+  pending: '#f59e0b',
+  rejected: '#f43f5e',
+  closed: '#8b5cf6',
 };
 
 export const RecruiterDashboard = () => {
@@ -71,6 +81,21 @@ export const RecruiterDashboard = () => {
     if (!createdAt) return false;
     return createdAt >= Date.now() - 7 * 24 * 60 * 60 * 1000;
   }).length;
+
+  const jobStatusChartData = [
+    { status: 'active', label: 'Active', value: activeJobs, fill: BAR_CHART_COLORS.active },
+    { status: 'approved', label: 'Approved', value: approvedJobs, fill: BAR_CHART_COLORS.approved },
+    { status: 'pending', label: 'Pending', value: pendingJobs, fill: BAR_CHART_COLORS.pending },
+    { status: 'rejected', label: 'Rejected', value: rejectedJobs, fill: BAR_CHART_COLORS.rejected },
+    { status: 'closed', label: 'Closed', value: closedJobs, fill: BAR_CHART_COLORS.closed },
+  ].filter((item) => item.value > 0);
+
+  const barChartConfig = jobStatusChartData.reduce<Record<string, { label: string; color: string }>>((acc, item) => {
+    acc[item.status] = { label: item.label, color: item.fill };
+    return acc;
+  }, {});
+
+  const pieChartData = jobStatusChartData;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-emerald-50/50 py-8">
@@ -163,39 +188,74 @@ export const RecruiterDashboard = () => {
           </div>
         </div>
 
-        <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-slate-500">Rejected Jobs</p>
-                <p className="mt-2 text-2xl font-black text-slate-900">{rejectedJobs}</p>
-                <p className="mt-1 text-xs text-slate-500">Jobs rejected by moderators</p>
-              </div>
-              <FileClock className="h-6 w-6 text-amber-600" />
+        <div className="mb-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="flex items-center text-2xl font-bold text-slate-900">
+                <BarChart3 className="mr-2 h-6 w-6 text-violet-600" />
+                Job Status Mix
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Donut view of how your current jobs are distributed by status.
+              </p>
+            </div>
+            <div className="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
+              Pie Chart
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-slate-500">Closed Jobs</p>
-                <p className="mt-2 text-2xl font-black text-slate-900">{closedJobs}</p>
-                <p className="mt-1 text-xs text-slate-500">Closed or archived jobs</p>
-              </div>
-              <ClipboardCheck className="h-6 w-6 text-emerald-600" />
-            </div>
-          </div>
+          {pieChartData.length ? (
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,320px)_1fr] lg:items-center">
+              <div className="relative mx-auto h-[300px] w-full max-w-[320px]">
+                <ChartContainer config={barChartConfig} className="h-full w-full">
+                  <PieChart>
+                    <ChartTooltip content={<ChartTooltipContent labelKey="label" />} />
+                    <Pie
+                      data={pieChartData}
+                      dataKey="value"
+                      nameKey="label"
+                      innerRadius={72}
+                      outerRadius={108}
+                      paddingAngle={3}
+                      strokeWidth={2}
+                      stroke="#ffffff"
+                    >
+                      {pieChartData.map((item) => (
+                        <Cell key={item.status} fill={item.fill} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ChartContainer>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-slate-500">Weekly New Posts</p>
-                <p className="mt-2 text-2xl font-black text-slate-900">{weeklyPosts}</p>
-                <p className="mt-1 text-xs text-slate-500">Jobs posted in last 7 days</p>
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Total</p>
+                  <p className="mt-1 text-3xl font-black text-slate-900">{totalJobs}</p>
+                  <p className="mt-1 text-sm text-slate-500">jobs tracked</p>
+                </div>
               </div>
-              <LineChart className="h-6 w-6 text-violet-600" />
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {pieChartData.map((item) => (
+                  <div key={item.status} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="h-3.5 w-3.5 rounded-full" style={{ backgroundColor: item.fill }} />
+                        <div>
+                          <p className="font-semibold text-slate-900">{item.label}</p>
+                          <p className="text-xs text-slate-500">Job status category</p>
+                        </div>
+                      </div>
+                      <p className="text-2xl font-black text-slate-900">{item.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center text-sm text-slate-500">
+              No job data available for the pie chart yet.
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">

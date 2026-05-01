@@ -71,7 +71,10 @@ export const handleApiError = (error: unknown): string => {
   return 'An unexpected error occurred';
 };
 
-export const uploadToCloudinary = async (file: File): Promise<string> => {
+export const uploadToCloudinary = async (
+  file: File,
+  onProgress?: (progress: number) => void
+): Promise<string> => {
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'career-code';
 
@@ -86,7 +89,14 @@ export const uploadToCloudinary = async (file: File): Promise<string> => {
   try {
     const response = await axios.post(
       `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
-      formData
+      formData,
+      {
+        onUploadProgress: (event) => {
+          if (!event.total) return;
+          const progress = Math.round((event.loaded / event.total) * 100);
+          onProgress?.(Math.min(100, Math.max(0, progress)));
+        },
+      }
     );
     return response.data.secure_url;
   } catch {
@@ -106,13 +116,22 @@ type ResumeUploadResponse = {
   };
 };
 
-export const uploadResumeToBackend = async (file: File): Promise<string> => {
+export const uploadResumeToBackend = async (
+  file: File,
+  onProgress?: (progress: number) => void
+): Promise<string> => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('resume', file);
 
   try {
-    const response = await api.post<ResumeUploadResponse>('/candidate/resume', formData);
+    const response = await api.post<ResumeUploadResponse>('/candidate/resume', formData, {
+      onUploadProgress: (event) => {
+        if (!event.total) return;
+        const progress = Math.round((event.loaded / event.total) * 100);
+        onProgress?.(Math.min(100, Math.max(0, progress)));
+      },
+    });
     const payload = response.data;
 
     if (payload.success === false) {

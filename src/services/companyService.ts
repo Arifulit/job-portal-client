@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ApiResponse, CompanyProfileData, CompanyReview, Job } from '../types';
+import { useAuth } from '../context/AuthContext';
 import { api, handleApiError } from '../utils/api';
 
 type AnyRecord = Record<string, unknown>;
@@ -58,9 +59,11 @@ const normalizeReview = (raw: unknown): CompanyReview | undefined => {
   return {
     _id: id,
     user:
-      item.user && typeof item.user === 'object'
+      typeof item.user === 'string'
+        ? { _id: item.user }
+        : item.user && typeof item.user === 'object'
         ? {
-            _id: String((item.user as AnyRecord)._id || ''),
+            _id: String((item.user as AnyRecord)._id || (item.user as AnyRecord).id || ''),
             name: String((item.user as AnyRecord).name || ''),
             email: String((item.user as AnyRecord).email || ''),
             avatar: String((item.user as AnyRecord).avatar || ''),
@@ -150,6 +153,7 @@ export const useCompanyProfile = (
 
 export const useCreateCompanyReview = (companyId: string | undefined) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (payload: { rating: number; review: string }) => {
@@ -157,9 +161,13 @@ export const useCreateCompanyReview = (companyId: string | undefined) => {
         throw new Error('Company ID is required');
       }
 
+      if (!user?._id) {
+        throw new Error('Login required to submit a review');
+      }
+
       const response = await api.post<ApiResponse<CompanyReview>>(
         `/company/${companyId}/reviews`,
-        payload
+        { ...payload, userId: user._id }
       );
 
       if (response.data.success === false) {
@@ -180,6 +188,7 @@ export const useCreateCompanyReview = (companyId: string | undefined) => {
 
 export const useUpdateCompanyReview = (companyId: string | undefined) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (payload: { rating: number; review: string }) => {
@@ -187,9 +196,13 @@ export const useUpdateCompanyReview = (companyId: string | undefined) => {
         throw new Error('Company ID is required');
       }
 
+      if (!user?._id) {
+        throw new Error('Login required to update a review');
+      }
+
       const response = await api.put<ApiResponse<CompanyReview>>(
         `/company/${companyId}/reviews`,
-        payload
+        { ...payload, userId: user._id }
       );
 
       if (response.data.success === false) {
@@ -201,6 +214,40 @@ export const useUpdateCompanyReview = (companyId: string | undefined) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company-profile', companyId] });
       toast.success('Review updated successfully');
+    },
+    onError: (error) => {
+      toast.error(handleApiError(error));
+    },
+  });
+};
+
+export const useDeleteCompanyReview = (companyId: string | undefined) => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!companyId) {
+        throw new Error('Company ID is required');
+      }
+
+      if (!user?._id) {
+        throw new Error('Login required to delete a review');
+      }
+
+      const response = await api.delete<ApiResponse<CompanyReview>>(`/company/${companyId}/reviews`, {
+        data: { userId: user._id },
+      });
+
+      if (response.data.success === false) {
+        throw new Error(response.data.message || 'Failed to delete review');
+      }
+
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company-profile', companyId] });
+      toast.success('Review deleted successfully');
     },
     onError: (error) => {
       toast.error(handleApiError(error));

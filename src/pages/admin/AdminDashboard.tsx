@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { useDashboardStats } from '../../services/userService';
 import { Loader } from '../../components/Loader';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../../components/ui/chart';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from 'recharts';
 
 export const AdminDashboard = () => {
   const { data: stats, isLoading } = useDashboardStats();
@@ -41,6 +43,22 @@ export const AdminDashboard = () => {
   const unreadNotifications = stats?.unreadNotifications ?? 0;
 
   const approvalRate = totalApplications > 0 ? Math.round((hired / totalApplications) * 100) : 0;
+
+  const platformMetricsChartData = [
+    { key: 'users', label: 'Users', value: totalUsers, fill: '#6366f1' },
+    { key: 'candidates', label: 'Candidates', value: totalCandidates, fill: '#3b82f6' },
+    { key: 'recruiters', label: 'Recruiters', value: totalRecruiters, fill: '#06b6d4' },
+    { key: 'jobs', label: 'Jobs', value: totalJobs, fill: '#10b981' },
+    { key: 'applications', label: 'Applications', value: totalApplications, fill: '#f59e0b' },
+  ].filter((item) => item.value > 0);
+
+  const chartConfig = platformMetricsChartData.reduce<Record<string, { label: string; color: string }>>(
+    (acc, item) => {
+      acc[item.key] = { label: item.label, color: item.fill };
+      return acc;
+    },
+    {}
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-violet-50/40 py-8">
@@ -196,6 +214,43 @@ export const AdminDashboard = () => {
               </span>
             </div>
           </div>
+        </div>
+
+        <div className="mb-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="flex items-center text-2xl font-bold text-slate-900">
+                <BarChart3 className="mr-2 h-6 w-6 text-violet-600" />
+                Platform Metrics Overview
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">
+                A quick bar chart view of users, jobs, and applications across the platform.
+              </p>
+            </div>
+            <div className="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
+              Admin Analytics
+            </div>
+          </div>
+
+          {platformMetricsChartData.length ? (
+            <ChartContainer config={chartConfig} className="h-[320px] w-full">
+              <BarChart data={platformMetricsChartData} margin={{ left: 8, right: 8, top: 12, bottom: 12 }}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={12} />
+                <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
+                <ChartTooltip content={<ChartTooltipContent labelKey="label" />} />
+                <Bar dataKey="value" radius={[10, 10, 0, 0]}>
+                  {platformMetricsChartData.map((item) => (
+                    <Cell key={item.key} fill={item.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ChartContainer>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center text-sm text-slate-500">
+              No platform metric data available for charting yet.
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">

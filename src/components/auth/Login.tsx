@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // এই ফাইলটি authentication related form, input validation ও submit behavior সামলায়।
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -5,6 +6,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
+import Cookies from "js-cookie";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -17,26 +19,23 @@ export function Login() {
   const { login, loading } = useAuth();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
-  const googleLoginUrl = `${API_BASE}/auth/google?redirect=${encodeURIComponent(window.location.origin + "/auth/google/success?redirect=/candidate/dashboard")}`;
+  const googleLoginUrl = `${API_BASE}/auth/google?redirect=${encodeURIComponent(window.location.origin + "/auth/google/success?redirect=/")}`;
 
   const getRedirectPath = (role?: string) => {
     const normalizedRole = String(role || '').toLowerCase();
 
     if (normalizedRole === 'admin') return '/admin/dashboard';
     if (normalizedRole === 'recruiter') return '/recruiter/dashboard';
-    return '/candidate/dashboard';
+    return '/';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     try {
       const loggedInUser = await login(formData.email, formData.password);
-      
-      // Show success message
-      toast.success("Welcome back! Login successful");
 
-      // Redirect by role: candidate -> home, admin/recruiter -> dashboard
+      // After login, tokens are already set in cookies by AuthContext (if you update persistAuth)
+      toast.success("Welcome back! Login successful");
       navigate(getRedirectPath(loggedInUser.role));
     } catch (error: any) {
       toast.error(error.message);

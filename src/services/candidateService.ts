@@ -15,6 +15,7 @@ export interface UpdateCandidateProfileData {
   summary?: string;
   skills?: string[];
   avatar?: string;
+  resume?: string;
 }
 
 type UpdateCandidateProfilePayload = UpdateCandidateProfileData | FormData;

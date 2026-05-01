@@ -25,20 +25,9 @@ import shopupLogo from "../images/shopup.jpg";
 import robiLogo from "../images/robi.png";
 import darazLogo from "../images/daraz.png";
 import nagadLogo from "../images/nagod.png";
-const companies = [
-  { name: "Grameenphone", logo: grameenphoneLogo },
-  { name: "bKash", logo: bkashLogo },
-  { name: "Pathao", logo: pathaoLogo },
-  { name: "Brain Station 23", logo: brainstationLogo },
-  { name: "ShopUp", logo: shopupLogo },
-  { name: "Robi", logo: robiLogo },
-  { name: "Daraz", logo: darazLogo },
-  { name: "Nagad", logo: nagadLogo },
-];
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useJobRecommendations } from "@/services/jobService";
-import { useCareerResources, CareerResource } from '@/services/resourceService';
 
 type FeaturedJobItem = {
   title: string;
@@ -169,25 +158,37 @@ const HomePage: React.FC = () => {
 
 
 
-  const { data: careerResources = [], isLoading: isLoadingResources } = useCareerResources(6);
+  const resourceCards = [
+    {
+      id: "cv",
+      title: "How To Build A Winning CV In 2026",
+      desc: "Format, keywords, and real recruiter tips that increase shortlist rate.",
+      tag: "Career Tips",
+    },
+    {
+      id: "interview",
+      title: "Interview Questions For Freshers",
+      desc: "Prepare with practical technical and HR questions by industry.",
+      tag: "Interview",
+    },
+    {
+      id: "salary",
+      title: "Salary Negotiation In Bangladesh",
+      desc: "A simple framework to negotiate confidently and professionally.",
+      tag: "Growth",
+    },
+  ];
 
-  const fallbackResource: CareerResource = {
-    _id: 'local-remote-jobs-2026',
-    title: 'Remote Job Opportunities in 2026',
-    description:
-      'Remote work is becoming increasingly popular, especially in the tech industry. This guide explores how to find remote job opportunities, build a strong online presence, and prepare for remote interviews.',
-    tag: 'Career',
-  };
-
-  const displayResources: CareerResource[] = (careerResources && careerResources.length > 0 ? careerResources : [fallbackResource]).slice(0, 3);
-
-  const truncate = (text: string | undefined, max = 120) => {
-    if (!text) return '';
-    const normalized = text.replace(/\s+/g, ' ').trim();
-    return normalized.length > max ? `${normalized.slice(0, max).trim()}...` : normalized;
-  };
-
-  // Removed duplicate companies array
+  const companies = [
+    { name: "Grameenphone", logo: grameenphoneLogo },
+    { name: "bKash", logo: bkashLogo },
+    { name: "Pathao", logo: pathaoLogo },
+    { name: "Brain Station 23", logo: brainstationLogo },
+    { name: "ShopUp", logo: shopupLogo },
+    { name: "Robi", logo: robiLogo },
+    { name: "Daraz", logo: darazLogo },
+    { name: "Nagad", logo: nagadLogo },
+  ];
 
   const featuredJobs: FeaturedJobItem[] = useMemo(
     () =>
@@ -224,12 +225,9 @@ const HomePage: React.FC = () => {
             transition={{ duration: 0.35 }}
             className="pr-0 lg:pr-8"
           >
-
             <h1 className="text-3xl font-extrabold tracking-tight text-[#1f4f93] dark:text-white md:text-5xl" style={{ fontFamily: "Montserrat, sans-serif" }}>
               <span className="bg-gradient-to-r from-[#1f4f93] via-[#cf2f92] to-[#1f4f93] bg-clip-text text-transparent">Find The Right Job</span>
             </h1>
-            <p className="mt-2 text-lg text-slate-700 dark:text-slate-300 font-medium">Bangladesh's most trusted job portal for candidates and recruiters.</p>
-   
 
             <div className="mt-7 grid grid-cols-2 gap-4 md:grid-cols-4">
               <div className="flex items-center gap-3">
@@ -493,35 +491,20 @@ const HomePage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {isLoadingResources ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-3"></div>
-                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
-                </div>
-              </div>
-            ))
-          ) : (
-            displayResources.map((item: CareerResource) => {
-              const href = item._id ? `/resources/${item._id}` : '/resources';
-              return (
-                <article key={item._id || item.title} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-                  <span className="rounded bg-[#edf4ff] px-2 py-1 text-xs font-bold uppercase text-[#1f4f93]">{item.tag || 'Guide'}</span>
-                  <h4 className="mt-4 text-xl font-bold text-slate-900 dark:text-slate-100">{item.title}</h4>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{item.description ? truncate(item.description, 110) : 'Read to learn more.'}</p>
-                  <Link
-                    to={href}
-                    className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#1f4f93] hover:text-[#153a6f]"
-                  >
-                    Read Article
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Link>
-                </article>
-              );
-            })
-          )}
+          {resourceCards.map((item) => (
+            <article key={item.title} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+              <span className="rounded bg-[#edf4ff] px-2 py-1 text-xs font-bold uppercase text-[#1f4f93]">{item.tag}</span>
+              <h4 className="mt-4 text-xl font-bold text-slate-900 dark:text-slate-100">{item.title}</h4>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{item.desc}</p>
+              <Link
+                to={`/resources/${item.id}`}
+                className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#1f4f93] hover:text-[#153a6f]"
+              >
+                Read Article
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </article>
+          ))}
         </div>
       </section>
 

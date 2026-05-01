@@ -12,6 +12,7 @@ const CandidateProfile = React.lazy(() => import("../pages/Candidate/CandidatePr
 const MyApplications = React.lazy(() => import("@/pages/Candidate/MyApplications"));
 const SavedJobs = React.lazy(() => import("@/pages/Candidate/SavedJobs"));
 const Jobs = React.lazy(() => import("@/pages/Job/Jobs"));
+const CandidateSkillGap = React.lazy(() => import("../pages/Candidate/CandidateSkillGap"));
 
 interface ISidebarItem {
   title: string;
@@ -50,6 +51,12 @@ export const userSidebarItems: ISidebarItem[] = [
         url: "/candidate/saved-jobs",
         icon: Bookmark,
         component: SavedJobs,
+      },
+      {
+        title: "Skill Gap",
+        url: "/candidate/skill-gap",
+        icon: FileText,
+        component: CandidateSkillGap,
       },
     ],
   },

@@ -4,6 +4,12 @@ import { useMyApplications } from '../../services/applicationService';
 import { Loader } from '../../components/Loader';
 import { Link } from 'react-router-dom';
 import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '../../components/ui/chart';
+import { Pie, PieChart, Cell } from 'recharts';
+import {
   ArrowUpRight,
   CalendarDays,
   Briefcase,
@@ -63,6 +69,16 @@ const getCompanyDisplayName = (company: unknown) => {
   return 'Company not available';
 };
 
+const STATUS_COLORS: Record<string, string> = {
+  applied: '#3b82f6',
+  reviewed: '#06b6d4',
+  shortlisted: '#10b981',
+  interview: '#f59e0b',
+  hired: '#16a34a',
+  accepted: '#22c55e',
+  rejected: '#f43f5e',
+};
+
 export const CandidateDashboard = () => {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: applicationsData, isLoading: appsLoading } = useMyApplications();
@@ -106,6 +122,28 @@ export const CandidateDashboard = () => {
   const responseRate = totalApplications > 0 ? Math.round((interviewPipelineCount / totalApplications) * 100) : 0;
   const weeklyTarget = 5;
   const weeklyProgress = Math.min(100, Math.round((weeklyApplications / weeklyTarget) * 100));
+
+  const statusCountMap = applications.reduce<Record<string, number>>((acc, application) => {
+    const key = String(application.status || 'applied').toLowerCase();
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  const chartData = Object.entries(statusCountMap)
+    .map(([status, count]) => ({
+      status,
+      count,
+      fill: STATUS_COLORS[status] || '#94a3b8',
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  const chartConfig = chartData.reduce<Record<string, { label: string; color: string }>>((acc, item) => {
+    acc[item.status] = {
+      label: toTitleCase(item.status),
+      color: item.fill,
+    };
+    return acc;
+  }, {});
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100/70 py-8">
@@ -298,6 +336,54 @@ export const CandidateDashboard = () => {
           </div>
 
           <div className="space-y-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="flex items-center text-base font-bold text-slate-900">
+                  <TrendingUp className="mr-2 h-5 w-5 text-blue-600" />
+                  Application Status Overview
+                </h3>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Pie Chart</span>
+              </div>
+
+              {chartData.length ? (
+                <>
+                  <ChartContainer config={chartConfig} className="mx-auto h-[220px] w-full max-w-[320px]">
+                    <PieChart>
+                      <ChartTooltip content={<ChartTooltipContent labelKey="status" nameKey="status" />} />
+                      <Pie
+                        data={chartData}
+                        dataKey="count"
+                        nameKey="status"
+                        innerRadius={55}
+                        outerRadius={88}
+                        paddingAngle={2}
+                        strokeWidth={2}
+                        stroke="#ffffff"
+                      >
+                        {chartData.map((entry) => (
+                          <Cell key={entry.status} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ChartContainer>
+
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    {chartData.map((item) => (
+                      <div key={item.status} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-xs">
+                        <span className="inline-flex items-center gap-2 text-slate-600">
+                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.fill }} />
+                          {toTitleCase(item.status)}
+                        </span>
+                        <span className="font-semibold text-slate-900">{item.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-slate-500">Apply to jobs to visualize your status distribution.</p>
+              )}
+            </div>
+
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="flex items-center text-xl font-bold text-slate-900">

@@ -5,6 +5,7 @@ import { Loader } from '../../components/Loader';
 import {
   useCompanyProfile,
   useCreateCompanyReview,
+  useDeleteCompanyReview,
   useUpdateCompanyReview,
 } from '../../services/companyService';
 import { useAuth } from '../../context/AuthContext';
@@ -47,8 +48,14 @@ const CompanyProfile: React.FC = () => {
 
   const createReviewMutation = useCreateCompanyReview(id);
   const updateReviewMutation = useUpdateCompanyReview(id);
+  const deleteReviewMutation = useDeleteCompanyReview(id);
 
   const isSubmitting = createReviewMutation.isPending || updateReviewMutation.isPending;
+  const currentUserId = user?._id;
+  const myReview = useMemo(
+    () => data?.reviews.find((item) => item.user?._id && item.user._id === currentUserId),
+    [data?.reviews, currentUserId]
+  );
 
   const averageRating = useMemo(() => {
     if (!data?.reviews.length) {
@@ -90,6 +97,24 @@ const CompanyProfile: React.FC = () => {
     createReviewMutation.mutate(payload, {
       onSuccess: () => {
         setReviewText('');
+      },
+    });
+  };
+
+  const deleteReview = () => {
+    if (!myReview) {
+      return;
+    }
+
+    const confirmed = window.confirm('Delete your review for this company?');
+    if (!confirmed) {
+      return;
+    }
+
+    deleteReviewMutation.mutate(undefined, {
+      onSuccess: () => {
+        setReviewText('');
+        setMode('create');
       },
     });
   };
@@ -234,6 +259,29 @@ const CompanyProfile: React.FC = () => {
                       </div>
                       <p className="mt-1 text-sm text-slate-700">{item.review}</p>
                       <p className="mt-1 text-xs text-slate-500">{formatReviewDate(item.updatedAt || item.createdAt)}</p>
+                      {item.user?._id && currentUserId === item.user._id ? (
+                        <div className="mt-3 flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMode('update');
+                              setRating(item.rating);
+                              setReviewText(item.review);
+                            }}
+                            className="rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={deleteReview}
+                            disabled={deleteReviewMutation.isPending}
+                            className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      ) : null}
                     </article>
                   ))
                 )}
@@ -288,6 +336,11 @@ const CompanyProfile: React.FC = () => {
                   >
                     {isSubmitting ? 'Submitting...' : mode === 'create' ? 'Create Review' : 'Update Review'}
                   </button>
+                  {myReview ? (
+                    <p className="text-xs text-slate-500">
+                      You already have a review on this company. Edit or delete it from the review card above.
+                    </p>
+                  ) : null}
                 </form>
               )}
             </section>
