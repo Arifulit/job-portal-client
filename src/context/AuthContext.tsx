@@ -93,6 +93,46 @@ type ProviderUser = Partial<User> & {
   photo?: string;
 };
 
+const decodeJwtPayload = (token: string): Record<string, unknown> | null => {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) {
+      return null;
+    }
+
+    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = payload + '='.repeat((4 - (payload.length % 4)) % 4);
+    const parsed = atob(padded);
+    return JSON.parse(parsed) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+};
+
+const fallbackUserFromToken = (token: string): User | null => {
+  const payload = decodeJwtPayload(token);
+
+  if (!payload) {
+    return null;
+  }
+
+  const email = String(payload.email || payload.emailAddress || payload.sub || '');
+  const name = String(payload.name || payload.fullName || payload.username || 'User');
+
+  if (!email) {
+    return null;
+  }
+
+  return normalizeUser({
+    _id: String(payload._id || payload.id || payload.userId || payload.sub || email),
+    name,
+    email,
+    role: normalizeRole(String(payload.role || payload.userRole || 'candidate')),
+    avatar: String(payload.picture || payload.photo || ''),
+    profileImage: String(payload.picture || payload.photo || ''),
+  });
+};
+
 const normalizeUser = (input: ProviderUser | undefined): User => {
   const picture = input?.picture || input?.photo || input?.profileImage || input?.avatar;
   return {
@@ -201,6 +241,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));
       } catch (err) {
+        const fallbackUser = fallbackUserFromToken(newToken);
+
+        if (fallbackUser) {
+          setUser(fallbackUser);
+          localStorage.setItem('user', JSON.stringify(fallbackUser));
+          return;
+        }
+
         clearAuth();
         throw err;
       }
@@ -241,7 +289,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setToken(currentToken);
         localStorage.setItem('user', JSON.stringify(serverUser));
       } catch {
-        clearAuth();
+        const fallbackUser = fallbackUserFromToken(currentToken);
+
+        if (fallbackUser) {
+          setUser(fallbackUser);
+          setToken(currentToken);
+          localStorage.setItem('user', JSON.stringify(fallbackUser));
+        } else {
+          clearAuth();
+        }
       } finally {
         setLoading(false);
       }

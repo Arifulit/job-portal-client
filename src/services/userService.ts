@@ -16,14 +16,14 @@ const getStoredRole = (): string => {
   }
 };
 
-const getPrimaryProfileEndpoint = (): '/admin/profile' | '/users/profile' => {
+const getPrimaryProfileEndpoint = (): '/admin/profile' | '/candidate/profile' => {
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
 
   if (currentPath.startsWith('/admin')) {
     return '/admin/profile';
   }
 
-  return getStoredRole() === 'admin' ? '/admin/profile' : '/users/profile';
+  return getStoredRole() === 'admin' ? '/admin/profile' : '/candidate/profile';
 };
 
 const extractProfile = (payload: unknown): User | undefined => {
@@ -151,7 +151,7 @@ export const useProfile = () => {
     queryKey: ['profile'],
     queryFn: async () => {
       const primaryEndpoint = getPrimaryProfileEndpoint();
-      const secondaryEndpoint = primaryEndpoint === '/admin/profile' ? '/users/profile' : '/admin/profile';
+      const secondaryEndpoint = primaryEndpoint === '/admin/profile' ? '/candidate/profile' : '/admin/profile';
 
       try {
         const response = await api.get(primaryEndpoint);
@@ -191,7 +191,7 @@ export const useUpdateProfile = () => {
       }
 
       const primaryEndpoint = getPrimaryProfileEndpoint();
-      const secondaryEndpoint = primaryEndpoint === '/admin/profile' ? '/users/profile' : '/admin/profile';
+      const secondaryEndpoint = primaryEndpoint === '/admin/profile' ? '/candidate/profile' : '/admin/profile';
 
       try {
         const response = await api.put(primaryEndpoint, data);

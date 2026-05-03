@@ -277,6 +277,28 @@ export const useJob = (id: string | undefined) => {
 
           return job;
         } catch (error) {
+          // If the request was forbidden for the currently authenticated user
+          // try fetching the same endpoint without Authorization header. Some
+          // jobs are publicly viewable but the presence of an auth token can
+          // cause the backend to apply stricter permission checks and return
+          // 403. In that case retry as a guest using a plain axios instance.
+          if (axios.isAxiosError(error) && error.response?.status === 403) {
+            try {
+              const API_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL;
+              const guest = axios.create({ baseURL: API_URL });
+              const guestResp = await guest.get(endpoint);
+              const guestJob = extractJob(guestResp.data);
+              if (!guestJob) {
+                lastError = error;
+                continue;
+              }
+              return guestJob;
+            } catch (guestErr) {
+              lastError = guestErr;
+              continue;
+            }
+          }
+
           if (axios.isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 405)) {
             lastError = error;
             continue;

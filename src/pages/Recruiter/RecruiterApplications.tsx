@@ -1,15 +1,19 @@
 // এই ফাইলটি recruiter dashboard এর একটি page UI ও কাজের flow পরিচালনা করে।
 import React, { useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, Edit2 } from 'lucide-react';
 import { useRecruiterAllApplications, useUpdateApplicationStatus } from '../../services/applicationService';
+import { StatusChangeModal } from '../../components/StatusChangeModal';
 import { ApplicationStatus } from '../../types';
+import { Button } from '../../components/ui/button';
 
 const statusOptions: ApplicationStatus[] = [
   'applied',
   'reviewed',
-  'rejected',
+  'shortlisted',
+  'interview',
   'accepted',
+  'rejected',
 ];
 
 const statusBadgeClassMap: Record<ApplicationStatus, string> = {
@@ -36,6 +40,8 @@ const RecruiterApplications: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<'all' | ApplicationStatus>('all');
   const [selectedJob, setSelectedJob] = useState<'all' | string>('all');
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [selectedApplicationForModal, setSelectedApplicationForModal] = useState<any>(null);
 
   const jobOptions = useMemo(() => {
     const titleSet = new Set<string>();
@@ -212,23 +218,19 @@ const RecruiterApplications: React.FC = () => {
                             >
                               {toTitleCase(application.status)}
                             </span>
-                            <select
-                              value={application.status}
-                              onChange={(e) =>
-                                updateStatus({
-                                  id: application._id,
-                                  status: e.target.value as ApplicationStatus,
-                                })
-                              }
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedApplicationForModal(application);
+                                setStatusModalOpen(true);
+                              }}
                               disabled={isPending}
-                              className="border border-gray-300 rounded-lg px-3 py-2 text-sm capitalize"
+                              className="gap-1 h-8"
                             >
-                              {statusOptions.map((status) => (
-                                <option key={status} value={status} className="capitalize">
-                                  {toTitleCase(status)}
-                                </option>
-                              ))}
-                            </select>
+                              <Edit2 className="h-3.5 w-3.5" />
+                              <span className="hidden sm:inline">Change</span>
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -240,6 +242,26 @@ const RecruiterApplications: React.FC = () => {
           </div>
         )}
       </div>
+
+      <StatusChangeModal
+        open={statusModalOpen}
+        candidateName={selectedApplicationForModal?.candidate?.name || 'Candidate'}
+        currentStatus={selectedApplicationForModal?.status || 'applied'}
+        statusOptions={statusOptions}
+        loading={isPending}
+        onConfirm={(newStatus) => {
+          updateStatus({
+            id: selectedApplicationForModal._id,
+            status: newStatus,
+          });
+          setStatusModalOpen(false);
+          setSelectedApplicationForModal(null);
+        }}
+        onCancel={() => {
+          setStatusModalOpen(false);
+          setSelectedApplicationForModal(null);
+        }}
+      />
     </div>
   );
 };

@@ -15,8 +15,6 @@ import {
   Settings,
   TrendingUp,
   Users,
-  ClipboardCheck,
-  FileClock,
 } from 'lucide-react';
 import { formatRelativeTime, getStatusColor } from '../../utils/helpers';
 import { Job } from '../../types';
@@ -76,11 +74,6 @@ export const RecruiterDashboard = () => {
   const applicantsCount =
     stats?.applicantsCount ?? jobs.reduce((sum, job) => sum + getApplicantCount(job as { applicantsCount?: number; applications?: unknown }), 0);
   const averageApplicants = activeJobs > 0 ? Math.round(applicantsCount / activeJobs) : 0;
-  const weeklyPosts = jobs.filter((job) => {
-    const createdAt = getDateValue(job.createdAt);
-    if (!createdAt) return false;
-    return createdAt >= Date.now() - 7 * 24 * 60 * 60 * 1000;
-  }).length;
 
   const jobStatusChartData = [
     { status: 'active', label: 'Active', value: activeJobs, fill: BAR_CHART_COLORS.active },

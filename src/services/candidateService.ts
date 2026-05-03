@@ -20,6 +20,16 @@ export interface UpdateCandidateProfileData {
 
 type UpdateCandidateProfilePayload = UpdateCandidateProfileData | FormData;
 
+const getPrimaryCandidateProfileEndpoint = (): '/candidate/profile' | '/candidate/profile' => {
+  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+
+  if (currentPath.startsWith('/candidate')) {
+    return '/candidate/profile';
+  }
+
+  return '/candidate/profile';
+};
+
 export interface RecommendedJob {
   _id: string;
   title: string;
@@ -48,8 +58,16 @@ export const useCandidateProfile = (enabled = true) => {
     enabled,
     queryFn: async () => {
       try {
-        const response = await api.get<CandidateProfileResponse>('/candidate/profile');
-        return response.data;
+        const primaryEndpoint = getPrimaryCandidateProfileEndpoint();
+        const secondaryEndpoint = primaryEndpoint === '/candidate/profile' ? '/candidate/profile' : '/candidate/profile';
+
+        try {
+          const response = await api.get<CandidateProfileResponse>(primaryEndpoint);
+          return response.data;
+        } catch {
+          const fallbackResponse = await api.get<CandidateProfileResponse>(secondaryEndpoint);
+          return fallbackResponse.data;
+        }
       } catch (error) {
         throw new Error(handleApiError(error));
       }
@@ -62,8 +80,16 @@ export const useUpdateCandidateProfile = () => {
   return useMutation<CandidateProfileResponse, Error, UpdateCandidateProfilePayload>({
     mutationFn: async (data) => {
       try {
-        const response = await api.put<CandidateProfileResponse>('/candidate/profile', data);
-        return response.data;
+        const primaryEndpoint = getPrimaryCandidateProfileEndpoint();
+        const secondaryEndpoint = primaryEndpoint === '/candidate/profile' ? '/candidate/profile' : '/candidate/profile';
+
+        try {
+          const response = await api.put<CandidateProfileResponse>(primaryEndpoint, data);
+          return response.data;
+        } catch {
+          const fallbackResponse = await api.put<CandidateProfileResponse>(secondaryEndpoint, data);
+          return fallbackResponse.data;
+        }
       } catch (error) {
         throw new Error(handleApiError(error));
       }

@@ -140,8 +140,12 @@ const InfoRow = ({
 );
 
 const JobDetails = () => {
-  const { id } = useParams<{ id: string }>();
-  const { data: job, isLoading, error } = useJob(id);
+  const { id } = useParams<{ id?: string }>();
+  
+  // Ensure id is a valid string
+  const jobId = id && String(id).trim() !== '' ? id : undefined;
+  
+  const { data: job, isLoading, error } = useJob(jobId);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -155,13 +159,13 @@ const JobDetails = () => {
   const currentUserId = String(user?._id || '');
   const hasApplied =
     canApply &&
-    !!id &&
+    !!jobId &&
     (myApplicationsData?.data || []).some((application) => {
       const applicationCandidateId = String(application.candidateId || application.candidate?._id || '');
       if (!applicationCandidateId || applicationCandidateId !== currentUserId) return false;
 
       const appliedJobId = application.jobId || application.job?._id;
-      return String(appliedJobId || '') === String(id);
+      return String(appliedJobId || '') === String(jobId);
     });
   const companyName =
     typeof job?.company === 'string'
@@ -172,20 +176,20 @@ const JobDetails = () => {
       ? job.company
       : job?.company?._id || '';
   const canOpenCompanyProfile = isLikelyObjectId(String(companyId || ''));
-  const jobId = String(job?._id || id || '');
-  const isSaved = savedJobs.some((item) => String(item._id || '') === jobId);
+  const urlJobId = String(job?._id || jobId || '');
+  const isSaved = savedJobs.some((item) => String(item._id || '') === urlJobId);
 
   const handleSaveToggle = () => {
-    if (!canSave || !jobId) {
+    if (!canSave || !urlJobId) {
       return;
     }
 
     if (isSaved) {
-      unsaveJobMutation.mutate(jobId);
+      unsaveJobMutation.mutate(urlJobId);
       return;
     }
 
-    saveJobMutation.mutate(jobId);
+    saveJobMutation.mutate(urlJobId);
   };
   const salaryText = formatSalary(job?.salary as number | { min?: number; max?: number; currency?: string }, job?.salaryMin, job?.salaryMax, job?.currency);
   const requirementsList = toList(job?.requirements);
@@ -208,6 +212,23 @@ const JobDetails = () => {
     { label: 'Location', value: job?.location || 'Not specified' },
     { label: 'Experience', value: job?.experience || 'Not specified' },
   ];
+
+  if (!jobId) {
+    return (
+      <div className="min-h-screen bg-slate-100 px-4 py-8 dark:bg-slate-950">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="mb-3 text-xl font-semibold text-slate-900 dark:text-white">Invalid Job ID</h2>
+          <p className="mb-6 text-slate-600 dark:text-slate-300">The job ID in the URL is missing or invalid. Please select a job from the listings.</p>
+          <Link
+            to="/jobs"
+            className="inline-flex items-center rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900"
+          >
+            Browse Jobs
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -238,10 +259,19 @@ const JobDetails = () => {
       <div className="min-h-screen bg-slate-100 px-4 py-8 dark:bg-slate-950">
         <div className="mx-auto max-w-3xl rounded-2xl border border-slate-300 bg-white p-6 dark:border-slate-700 dark:bg-slate-900">
           <h2 className="mb-2 text-xl font-semibold text-slate-900 dark:text-slate-100">Error loading job details</h2>
-          <p className="text-slate-600 dark:text-slate-300">{error.message}</p>
-          <Link to="/jobs" className="mt-4 inline-block text-sm font-semibold text-slate-700 hover:underline dark:text-slate-300">
-            ← Back to jobs
-          </Link>
+          <p className="mb-4 text-slate-600 dark:text-slate-300">{error instanceof Error ? error.message : 'An unexpected error occurred while loading the job details.'}</p>
+          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">Job ID: <code className="bg-slate-100 px-2 py-1 dark:bg-slate-800">{jobId}</code></p>
+          <div className="flex gap-3">
+            <Link to="/jobs" className="inline-flex items-center rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+              ← Back to jobs
+            </Link>
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              Retry
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -488,7 +518,7 @@ const JobDetails = () => {
                   </Button>
                 )}
                 {canApply && !hasApplied && !myApplicationsLoading && (
-                  <Button onClick={() => navigate(`/jobs/${id}/apply`)} className="w-full bg-slate-900 text-white hover:bg-slate-800">
+                  <Button onClick={() => navigate(`/jobs/${jobId}/apply`)} className="w-full bg-slate-900 text-white hover:bg-slate-800">
                     Apply Now
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -499,13 +529,13 @@ const JobDetails = () => {
                   </p>
                 )}
                 {!user && (
-                  <Button asChild className="w-full bg-slate-900 text-white hover:bg-slate-800">
-                    <Link to="/login">Login to Apply</Link>
-                  </Button>
+                  <Link to="/login" className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-6 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+                    Login to Apply
+                  </Link>
                 )}
-                <Button variant="outline" className="w-full" asChild>
-                  <Link to="/jobs">Back to Jobs</Link>
-                </Button>
+                <Link to="/jobs" className="inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-slate-300 px-6 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                  Back to Jobs
+                </Link>
               </div>
             </section>
 

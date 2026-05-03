@@ -76,3 +76,16 @@ export const debounce = <TArgs extends unknown[]>(
     timeout = setTimeout(() => func(...args), wait);
   };
 };
+
+export const getJobDetailsPath = (
+  job?: { _id?: string; id?: string; routeId?: string } | string | null
+): string => {
+  if (!job) return '/jobs';
+
+  if (typeof job === 'string') {
+    return job ? `/jobs/${job}` : '/jobs';
+  }
+
+  const jobId = job._id || job.id || job.routeId;
+  return jobId ? `/jobs/${jobId}` : '/jobs';
+};

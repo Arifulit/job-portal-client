@@ -7,6 +7,7 @@ const path = require('path');
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 const reviewStore = new Map();
+const candidateProfileStore = new Map();
 
 app.use(cors());
 app.use(express.json());
@@ -98,13 +99,30 @@ function analyzeText(text) {
   const educationKeywords = ['bachelor', 'master', 'b.sc', 'm.sc', 'bs', 'ms', 'mba', 'phd', 'diploma'];
   const foundEducation = educationKeywords.filter((k) => lc.includes(k));
 
-  // score calculation (very simple)
-  const skillsScore = Math.min(30, extractedSkills.length * 5);
-  const expScore = Math.min(30, experienceYears * 3);
-  const eduScore = foundEducation.length ? 20 : 0;
-  const formattingScore = text.trim().length > 200 ? 20 : 5;
+  // Improved score calculation - more realistic and generous
+  const baseScore = 30; // Start with 30 for effort
+  
+  // Skills scoring (max 25)
+  const skillsScore = Math.min(25, Math.max(5, extractedSkills.length * 3));
+  
+  // Experience scoring (max 20)
+  const expScore = experienceYears > 0 
+    ? Math.min(20, 5 + (experienceYears * 2)) 
+    : 5; // Give 5 points even without exp years
+  
+  // Education scoring (max 15) - be more lenient
+  const eduScore = foundEducation.length > 0 
+    ? Math.min(15, 8 + (foundEducation.length * 3))
+    : 5; // Give 5 points for any education content
+  
+  // Formatting and completeness scoring (max 15)
+  const contentLength = text.trim().length;
+  const formattingScore = contentLength > 500 ? 15 
+    : contentLength > 300 ? 12 
+    : contentLength > 150 ? 8 
+    : 3;
 
-  const totalScore = Math.min(100, skillsScore + expScore + eduScore + formattingScore);
+  const totalScore = Math.min(100, baseScore + skillsScore + expScore + eduScore + formattingScore);
 
   const scoreBreakdown = {
     formatting: formattingScore,
@@ -115,14 +133,22 @@ function analyzeText(text) {
   };
 
   const strengths = [];
-  if (extractedSkills.length) strengths.push('Detected relevant technical skills');
-  if (experienceYears >= 2) strengths.push('Shows practical experience');
-  if (foundEducation.length) strengths.push('Contains education details');
+  if (extractedSkills.length) strengths.push(`Detected ${extractedSkills.length} relevant technical skills`);
+  if (experienceYears >= 2) strengths.push(`Shows ${experienceYears}+ years of practical experience`);
+  if (experienceYears > 0 && experienceYears < 2) strengths.push('Shows early-career development');
+  if (foundEducation.length) strengths.push(`Contains ${foundEducation.length} education qualification(s)`);
+  if (contentLength > 300) strengths.push('Well-detailed resume content');
 
   const suggestions = [];
-  if (!extractedSkills.length) suggestions.push('No recognizable technical skills found. Add keywords like JavaScript, React, Node.js.');
-  if (!foundEducation.length) suggestions.push('Add degree information (e.g., Bachelor of Science in Computer Science).');
-  if (experienceYears === 0) suggestions.push('Describe years of experience, e.g., "3 years".');
+  if (extractedSkills.length === 0) suggestions.push('Add technical skills like JavaScript, React, Node.js, Python, etc. to boost your score.');
+  else if (extractedSkills.length < 5) suggestions.push(`Consider adding more skills. You currently have ${extractedSkills.length}. Add 2-3 more relevant technologies.`);
+  
+  if (foundEducation.length === 0) suggestions.push('Include your education (degree, field of study, university).');
+  
+  if (experienceYears === 0) suggestions.push('Mention your years of experience (e.g., "2 years of experience in Web Development").');
+  else if (experienceYears > 0 && experienceYears < 2) suggestions.push('As a fresher, highlight internships, projects, and certifications.');
+  
+  if (contentLength < 300) suggestions.push('Expand your resume content with more details about projects, achievements, and responsibilities.');
 
   return {
     score: totalScore,
@@ -298,7 +324,51 @@ async function resolveRequesterRole(authHeader) {
   return String(user?.role || '').toLowerCase();
 }
 
-app.post('/api/resume/analyze', upload.single('file'), async (req, res) => {
+async function authorizeRecruiter(req, res) {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const role = await resolveRequesterRole(authHeader);
+
+    if (role !== 'recruiter') {
+      res.status(403).json({
+        success: false,
+        message: 'Only recruiters can access candidate ranking endpoints',
+      });
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Recruiter authorization error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to authorize recruiter request',
+    });
+    return false;
+  }
+}
+
+function extractCandidateList(payload) {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(payload?.candidates)) {
+    return payload.candidates;
+  }
+
+  if (Array.isArray(payload?.data?.candidates)) {
+    return payload.data.candidates;
+  }
+
+  if (Array.isArray(payload?.data)) {
+    return payload.data;
+  }
+
+  return [];
+}
+
+const analyzeResumeHandler = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, error: 'No file uploaded' });
@@ -344,7 +414,11 @@ app.post('/api/resume/analyze', upload.single('file'), async (req, res) => {
     console.error(err);
     return res.status(500).json({ success: false, error: 'Server error' });
   }
-});
+};
+
+app.post('/resume/analyze', upload.single('file'), analyzeResumeHandler);
+app.post('/candidate/resume/analyze', upload.single('file'), analyzeResumeHandler);
+app.post('/candidate/resume/analyze', upload.single('file'), analyzeResumeHandler);
 
 const rankCandidatesHandler = (req, res) => {
   const jobDescription = req.body?.jobDescription || '';
@@ -368,15 +442,9 @@ const rankCandidatesHandler = (req, res) => {
 
 const protectedRankCandidatesHandler = async (req, res) => {
   try {
-    const authHeader = req.headers.authorization || '';
-    const role = await resolveRequesterRole(authHeader);
-
-    if (role !== 'recruiter') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only recruiters can rank candidates',
-        rankedCandidates: [],
-      });
+    const authorized = await authorizeRecruiter(req, res);
+    if (!authorized) {
+      return;
     }
 
     return rankCandidatesHandler(req, res);
@@ -392,6 +460,71 @@ const protectedRankCandidatesHandler = async (req, res) => {
 
 app.post('/api/v1/candidate/candidates/rank', protectedRankCandidatesHandler);
 app.post('/candidate/candidates/rank', protectedRankCandidatesHandler);
+
+const recruiterCandidatesListHandler = async (req, res) => {
+  const authorized = await authorizeRecruiter(req, res);
+  if (!authorized) {
+    return;
+  }
+
+  const authHeader = req.headers.authorization || '';
+  const upstreamBase = String(process.env.UPSTREAM_API_URL || process.env.API_BASE_URL || process.env.VITE_API_URL || '').replace(/\/$/, '');
+  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+
+  if (!upstreamBase) {
+    return res.status(503).json({
+      success: false,
+      message: 'Upstream API URL is not configured',
+      candidates: [],
+    });
+  }
+
+  const payload = await fetchJsonIfPossible(`${upstreamBase}/candidate/candidates${query}`, authHeader);
+  const candidates = extractCandidateList(payload);
+
+  return res.json({
+    success: payload?.success ?? true,
+    message: payload?.message,
+    candidates,
+    count: typeof payload?.count === 'number' ? payload.count : candidates.length,
+  });
+};
+
+const recruiterCandidatesRankedHandler = async (req, res) => {
+  const authorized = await authorizeRecruiter(req, res);
+  if (!authorized) {
+    return;
+  }
+
+  const authHeader = req.headers.authorization || '';
+  const upstreamBase = String(process.env.UPSTREAM_API_URL || process.env.API_BASE_URL || process.env.VITE_API_URL || '').replace(/\/$/, '');
+  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+
+  if (!upstreamBase) {
+    return res.status(503).json({
+      success: false,
+      message: 'Upstream API URL is not configured',
+      rankedCandidates: [],
+    });
+  }
+
+  const payload = await fetchJsonIfPossible(`${upstreamBase}/candidate/candidates/ranked${query}`, authHeader);
+  const rankedCandidates = Array.isArray(payload?.rankedCandidates)
+    ? payload.rankedCandidates
+    : extractCandidateList(payload);
+
+  return res.json({
+    success: payload?.success ?? true,
+    message: payload?.message,
+    rankedCandidates,
+    count: typeof payload?.count === 'number' ? payload.count : rankedCandidates.length,
+  });
+};
+
+app.get('/api/v1/candidate/candidates', recruiterCandidatesListHandler);
+app.get('/candidate/candidates', recruiterCandidatesListHandler);
+app.get('/api/v1/candidate/candidates/ranked', recruiterCandidatesRankedHandler);
+app.get('/candidate/candidates/ranked', recruiterCandidatesRankedHandler);
 
 const candidateGapHandler = async (req, res) => {
   try {
@@ -529,6 +662,132 @@ app.post('/company/:companyId/reviews', createCompanyReviewHandler);
 app.put('/company/:companyId/reviews', updateCompanyReviewHandler);
 app.delete('/company/:companyId/reviews', deleteCompanyReviewHandler);
 
+/*
+  Proxy /api/v1/company/:companyId/profile to upstream API if configured.
+  Falls back to a few common upstream paths and returns a 503 if no upstream is configured.
+*/
+const getCompanyProfileHandler = async (req, res) => {
+  try {
+    const companyId = String(req.params.companyId || '').trim();
+    if (!companyId) {
+      return res.status(400).json({ success: false, message: 'companyId is required' });
+    }
+
+    const authHeader = req.headers.authorization || '';
+    const upstreamBase = String(process.env.UPSTREAM_API_URL || process.env.API_BASE_URL || process.env.VITE_API_URL || '').replace(/\/$/, '');
+
+    if (!upstreamBase) {
+      return res.status(503).json({ success: false, message: 'Upstream API URL is not configured' });
+    }
+
+    // try a few common upstream paths for company profile
+    const candidates = [
+      `${upstreamBase}/company/${companyId}/profile`,
+      `${upstreamBase}/company/${companyId}`,
+      `${upstreamBase}/companies/${companyId}`,
+    ];
+
+    let payload = null;
+    for (const url of candidates) {
+      payload = await fetchJsonIfPossible(url, authHeader);
+      if (payload) break;
+    }
+
+    if (!payload) {
+      return res.status(404).json({ success: false, message: 'Company profile not found' });
+    }
+
+    return res.json({ success: true, data: payload.data ?? payload });
+  } catch (err) {
+    console.error('Get company profile error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch company profile' });
+  }
+};
+
+app.get('/api/v1/company/:companyId/profile', getCompanyProfileHandler);
+app.get('/company/:companyId/profile', getCompanyProfileHandler);
+
+/*
+  List companies (proxied to upstream). Supports querystring passthrough.
+*/
+const listCompaniesHandler = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const upstreamBase = String(process.env.UPSTREAM_API_URL || process.env.API_BASE_URL || process.env.VITE_API_URL || '').replace(/\/$/, '');
+
+    if (!upstreamBase) {
+      return res.status(503).json({ success: false, message: 'Upstream API URL is not configured' });
+    }
+
+    const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+
+    const candidates = [
+      `${upstreamBase}/company${qs}`,
+      `${upstreamBase}/companies${qs}`,
+      `${upstreamBase}/api/v1/company${qs}`,
+      `${upstreamBase}/api/v1/companies${qs}`,
+    ];
+
+    let payload = null;
+    for (const url of candidates) {
+      payload = await fetchJsonIfPossible(url, authHeader);
+      if (payload) break;
+    }
+
+    if (!payload) {
+      return res.status(404).json({ success: false, message: 'No companies found' });
+    }
+
+    return res.json({ success: payload?.success ?? true, data: payload.data ?? payload });
+  } catch (err) {
+    console.error('List companies error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to list companies' });
+  }
+};
+
+app.get('/api/v1/company', listCompaniesHandler);
+app.get('/company', listCompaniesHandler);
+
+/*
+  Fetch basic company info by id (proxied to upstream).
+*/
+const getCompanyBasicHandler = async (req, res) => {
+  try {
+    const companyId = String(req.params.companyId || '').trim();
+    if (!companyId) return res.status(400).json({ success: false, message: 'companyId is required' });
+
+    const authHeader = req.headers.authorization || '';
+    const upstreamBase = String(process.env.UPSTREAM_API_URL || process.env.API_BASE_URL || process.env.VITE_API_URL || '').replace(/\/$/, '');
+
+    if (!upstreamBase) {
+      return res.status(503).json({ success: false, message: 'Upstream API URL is not configured' });
+    }
+
+    const candidates = [
+      `${upstreamBase}/company/${companyId}`,
+      `${upstreamBase}/companies/${companyId}`,
+      `${upstreamBase}/api/v1/company/${companyId}`,
+      `${upstreamBase}/api/v1/companies/${companyId}`,
+    ];
+
+    let payload = null;
+    for (const url of candidates) {
+      payload = await fetchJsonIfPossible(url, authHeader);
+      if (payload) break;
+    }
+
+    if (!payload) return res.status(404).json({ success: false, message: 'Company not found' });
+
+    return res.json({ success: payload?.success ?? true, data: payload.data ?? payload });
+  } catch (err) {
+    console.error('Get company basic error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch company' });
+  }
+};
+
+app.get('/api/v1/company/:companyId', getCompanyBasicHandler);
+app.get('/company/:companyId', getCompanyBasicHandler);
+
 app.post('/api/v1/candidate/resume', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
@@ -556,5 +815,159 @@ app.post('/candidate/resume', upload.single('file'), async (req, res) => {
     return res.status(500).json({ success: false, message: err.message || 'Failed to upload resume' });
   }
 });
+
+/*
+  Accept profile updates (PUT or POST). Supports:
+  - multipart/form-data with a file field named 'resume' (File upload)
+  - form or json body with 'resume' as a URL string
+  Returns a simple profile-like object under `data` for client-side consumption.
+*/
+const upsertCandidateProfileHandler = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const upstreamBase = String(process.env.UPSTREAM_API_URL || process.env.API_BASE_URL || process.env.VITE_API_URL || '').replace(/\/$/, '');
+    const file = req.file;
+    const body = req.body || {};
+
+    const parseSkills = () => {
+      try {
+        if (!body.skills) {
+          return undefined;
+        }
+
+        return Array.isArray(body.skills) ? body.skills : JSON.parse(body.skills);
+      } catch (error) {
+        return undefined;
+      }
+    };
+
+    const buildLocalProfile = (resumeUrl) => {
+      const profile = {
+        _id: body?._id || body?.userId || body?.user?._id || undefined,
+        name: body?.name || body?.fullName || undefined,
+        phone: body?.phone || undefined,
+        headline: body?.headline || undefined,
+        location: body?.location || body?.address || undefined,
+        biodata: body?.biodata || body?.bio || body?.summary || undefined,
+        skills: parseSkills(),
+        resume: resumeUrl || body?.resume || undefined,
+        avatar: body?.avatar || undefined,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const storeKey = String(profile._id || body?.userId || req.headers['x-user-id'] || 'default');
+      const existing = candidateProfileStore.get(storeKey) || {};
+      const merged = { ...existing, ...profile };
+
+      candidateProfileStore.set(storeKey, merged);
+      return merged;
+    };
+
+    let resumeUrl = typeof body.resume === 'string' ? String(body.resume).trim() : '';
+
+    if (file) {
+      try {
+        const uploadResult = await uploadResumeToCloudinary(file);
+        resumeUrl = uploadResult.fileUrl || uploadResult.sourceUrl || uploadResult.downloadUrl || resumeUrl;
+      } catch (uploadError) {
+        console.error('Resume upload during profile save failed:', uploadError);
+      }
+    }
+
+    const localProfile = buildLocalProfile(resumeUrl);
+
+    if (!upstreamBase) {
+      return res.json({ success: true, message: 'Profile updated', data: localProfile });
+    }
+
+    // When upstream is configured, forward the request to upstream profile endpoints as a best effort.
+    const endpoints = [
+      `${upstreamBase}/candidate/profile`,
+      `${upstreamBase}/api/v1/candidate/profile`,
+      `${upstreamBase}/users/profile`,
+      `${upstreamBase}/api/v1/users/profile`,
+    ];
+
+    let upstreamResponse = null;
+
+    for (const url of endpoints) {
+      try {
+        if (file) {
+          const forwardForm = new FormData();
+          // copy fields
+          for (const key of Object.keys(body)) {
+            if (typeof body[key] !== 'undefined') {
+              forwardForm.append(key, body[key]);
+            }
+          }
+          // attach file as 'resume' to match client expectations
+          try {
+            const blob = new Blob([file.buffer], { type: file.mimetype || 'application/octet-stream' });
+            forwardForm.append('resume', blob, file.originalname || 'resume');
+          } catch (e) {
+            // fallback: if Blob isn't available, upload the file to Cloudinary first and send URL
+            const up = await uploadResumeToCloudinary(file);
+            forwardForm.append('resume', up.fileUrl || up.sourceUrl || up.downloadUrl || '');
+          }
+
+          upstreamResponse = await fetch(url, { method: 'PUT', headers: { Authorization: authHeader }, body: forwardForm });
+        } else {
+          // JSON body
+          upstreamResponse = await fetch(url, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+            body: JSON.stringify(body),
+          });
+        }
+
+        if (!upstreamResponse) continue;
+        if (upstreamResponse.status >= 200 && upstreamResponse.status < 300) {
+          const payload = await upstreamResponse.json().catch(() => null);
+          return res.json({ success: true, data: payload?.data ?? payload ?? localProfile });
+        }
+      } catch (err) {
+        // continue to next candidate endpoint
+        continue;
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: 'Profile updated locally',
+      data: localProfile,
+    });
+  } catch (err) {
+    console.error('Profile upsert error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Failed to update profile' });
+  }
+};
+
+app.put('/api/v1/candidate/profile', upload.single('resume'), upsertCandidateProfileHandler);
+app.post('/api/v1/candidate/profile', upload.single('resume'), upsertCandidateProfileHandler);
+app.put('/candidate/profile', upload.single('resume'), upsertCandidateProfileHandler);
+app.post('/candidate/profile', upload.single('resume'), upsertCandidateProfileHandler);
+
+/*
+  Retrieve candidate profile. Accepts optional query `userId` or header `x-user-id` to select stored profile.
+*/
+const getCandidateProfileHandler = async (req, res) => {
+  try {
+    const userId = String(req.query.userId || req.headers['x-user-id'] || 'default');
+    const profile = candidateProfileStore.get(userId) || candidateProfileStore.get('default') || null;
+
+    if (!profile) {
+      return res.status(404).json({ success: false, message: 'Profile not found' });
+    }
+
+    return res.json({ success: true, data: profile });
+  } catch (err) {
+    console.error('Get candidate profile error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch profile' });
+  }
+};
+
+app.get('/api/v1/candidate/profile', getCandidateProfileHandler);
+app.get('/candidate/profile', getCandidateProfileHandler);
+
 const port = process.env.PORT || 4000;
 app.listen(port, () => console.log(`Resume analysis server listening on ${port}`));

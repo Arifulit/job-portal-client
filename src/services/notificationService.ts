@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Notification } from '../types';
@@ -101,8 +102,22 @@ export const useNotifications = (enabled = true) => {
   return useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
-      const response = await api.get('/notifications');
-      return extractArray(response.data).map(normalizeNotification);
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        return [];
+      }
+
+      try {
+        const response = await api.get('/notifications');
+        return extractArray(response.data).map(normalizeNotification);
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          return [];
+        }
+
+        throw error;
+      }
     },
     enabled,
     staleTime: 30 * 1000,
@@ -115,7 +130,16 @@ export const useMarkNotificationRead = () => {
 
   return useMutation({
     mutationFn: async (notificationId: string) => {
-      await api.put(`/notifications/${notificationId}/read`);
+      try {
+        await api.put(`/notifications/${notificationId}/read`);
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          return notificationId;
+        }
+
+        throw error;
+      }
+
       return notificationId;
     },
     onSuccess: () => {

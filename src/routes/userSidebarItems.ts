@@ -2,7 +2,7 @@
 // ========== userSidebarItems.tsx ==========
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import { LayoutDashboard, User, Briefcase, FileText, Bookmark } from "lucide-react";
+import { LayoutDashboard, User, Briefcase, FileText, Bookmark, Zap } from "lucide-react";
 // import Jobs from "@/pages/Jobs/Jobs";
 
 const CandidateDashboard = React.lazy(() =>
@@ -11,8 +11,8 @@ const CandidateDashboard = React.lazy(() =>
 const CandidateProfile = React.lazy(() => import("../pages/Candidate/CandidateProfile"));
 const MyApplications = React.lazy(() => import("@/pages/Candidate/MyApplications"));
 const SavedJobs = React.lazy(() => import("@/pages/Candidate/SavedJobs"));
+const ResumeAnalyzer = React.lazy(() => import("@/pages/Candidate/ResumeAnalyzer"));
 const Jobs = React.lazy(() => import("@/pages/Job/Jobs"));
-const CandidateSkillGap = React.lazy(() => import("../pages/Candidate/CandidateSkillGap"));
 
 interface ISidebarItem {
   title: string;
@@ -53,10 +53,10 @@ export const userSidebarItems: ISidebarItem[] = [
         component: SavedJobs,
       },
       {
-        title: "Skill Gap",
-        url: "/candidate/skill-gap",
-        icon: FileText,
-        component: CandidateSkillGap,
+        title: "Resume Analyzer",
+        url: "/candidate/resume-analyzer",
+        icon: Zap,
+        component: ResumeAnalyzer,
       },
     ],
   },

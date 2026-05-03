@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications, useMarkNotificationRead } from '../../services/notificationService';
@@ -8,6 +8,15 @@ interface NotificationBellProps {
   buttonClassName?: string;
   panelClassName?: string;
   iconClassName?: string;
+}
+
+interface NotificationItem {
+  _id: string;
+  title: string;
+  message?: string;
+  createdAt: string;
+  isRead: boolean;
+  link?: string;
 }
 
 const formatRelativeTime = (value: string): string => {
@@ -48,15 +57,18 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
 }) => {
   const navigate = useNavigate();
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
 
   const [open, setOpen] = useState(false);
   const [pendingReadIds, setPendingReadIds] = useState<Record<string, boolean>>({});
 
   const {
-    data: notifications = [],
+    data: notificationsData = [],
     isLoading,
     refetch,
   } = useNotifications();
+
+  const notifications = useMemo<NotificationItem[]>(() => notificationsData as NotificationItem[], [notificationsData]);
 
   const { mutateAsync: markAsReadAsync } = useMarkNotificationRead();
 
@@ -91,16 +103,16 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
     };
   }, [open]);
 
-  const handleOpenToggle = async () => {
+  const handleOpenToggle = useCallback(async () => {
     const nextOpen = !open;
     setOpen(nextOpen);
 
     if (nextOpen) {
       await refetch();
     }
-  };
+  }, [open, refetch]);
 
-  const markNotificationRead = async (notificationId: string) => {
+  const markNotificationRead = useCallback(async (notificationId: string) => {
     setPendingReadIds((previous) => ({ ...previous, [notificationId]: true }));
 
     try {
@@ -112,26 +124,35 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
         return next;
       });
     }
-  };
+  }, [markAsReadAsync]);
 
-  const handleNotificationClick = async (notificationId: string, isRead: boolean, link?: string) => {
-    if (!isRead) {
-      await markNotificationRead(notificationId);
-    }
+  const handleNotificationClick = useCallback(
+    async (notificationId: string, isRead: boolean, link?: string) => {
+      if (!isRead) {
+        await markNotificationRead(notificationId);
+      }
 
-    if (!link) {
-      return;
-    }
+      if (!link) return;
 
-    setOpen(false);
+      setOpen(false);
 
-    if (link.startsWith('/')) {
-      navigate(link);
-      return;
-    }
+      if (link.startsWith('/')) {
+        navigate(link);
+        return;
+      }
 
-    window.open(link, '_blank', 'noopener,noreferrer');
-  };
+      window.open(link, '_blank', 'noopener,noreferrer');
+    },
+    [markNotificationRead, navigate]
+  );
+
+  useEffect(() => {
+    if (!open) return;
+
+    // focus first actionable item in the panel for keyboard users
+    const el = panelRef.current?.querySelector<HTMLElement>('button[data-notification]');
+    if (el) el.focus();
+  }, [open]);
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -141,6 +162,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
         onClick={() => {
           void handleOpenToggle();
         }}
+        aria-haspopup="menu"
+        aria-expanded={open}
         className={
           buttonClassName ||
           `relative inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
@@ -167,6 +190,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
               isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'
             }`
           }
+          ref={panelRef}
+          role="menu"
+          aria-label="Notifications panel"
         >
           <div
             className={`flex items-center justify-between border-b px-4 py-3 ${
@@ -211,10 +237,19 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                   >
                     <button
                       type="button"
+                      data-notification
+                      role="menuitem"
+                      tabIndex={0}
                       onClick={() => {
                         void handleNotificationClick(notification._id, notification.isRead, notification.link);
                       }}
-                      className="w-full text-left"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          void handleNotificationClick(notification._id, notification.isRead, notification.link);
+                        }
+                      }}
+                      className="w-full text-left focus:outline-none"
                     >
                       <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                         {notification.title}

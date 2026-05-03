@@ -6,7 +6,6 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
-import Cookies from "js-cookie";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -20,6 +19,10 @@ export function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const googleLoginUrl = `${API_BASE}/auth/google?redirect=${encodeURIComponent(window.location.origin + "/auth/google/success?redirect=/")}`;
+
+  // The login page should respect the global theme. Any page-specific
+  // overrides are handled via `.login-card` CSS rules so both dark and light
+  // render correctly without mutating the document root.
 
   const getRedirectPath = (role?: string) => {
     const normalizedRole = String(role || '').toLowerCase();
@@ -70,7 +73,7 @@ export function Login() {
         </div>
 
         {/* Login Card */}
-        <div className="bg-white/95 dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 backdrop-blur-sm">
+        <div className="bg-white/95 dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 backdrop-blur-sm login-card">
           {/* Card Header */}
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
             <h2 className="text-xl font-bold text-white">Sign In</h2>
@@ -166,7 +169,7 @@ export function Login() {
                 <span className="w-full border-t border-slate-200 dark:border-slate-700" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white dark:bg-slate-900 px-3 text-slate-500 dark:text-slate-400">or continue with</span>
+                <span className="bg-white dark:bg-slate-900 px-3 !text-slate-500 dark:!text-slate-400">or continue with</span>
               </div>
             </div>
 
@@ -182,7 +185,7 @@ export function Login() {
                 <path fill="#4A90E2" d="M6.5 13.92A6.02 6.02 0 016.18 12c0-.67.12-1.32.32-1.92l-3.41-2.64A9.99 9.99 0 002 12c0 1.6.38 3.1 1.09 4.44l3.41-2.52z" />
                 <path fill="#FBBC05" d="M12 6.03c1.47 0 2.78.5 3.81 1.49l2.86-2.86C16.96 3.07 14.7 2 12 2 8.08 2 4.75 4.15 3.09 7.44l3.41 2.64c.77-2.32 2.94-4.05 5.5-4.05z" />
               </svg>
-              Continue with Google
+              <span className="!text-slate-800 dark:!text-slate-100">Continue with Google</span>
             </Button>
 
             {/* Register Link */}

@@ -12,9 +12,10 @@ export const analyzeResume = async (resumeFile: File) => {
   return res.data;
 };
 
-// Candidate Ranking: GET /api/analytics/rank-candidates?jobId=...
-export const rankCandidates = async (jobId: string) => {
-  const res = await axios.get(`${API_BASE}/api/analytics/rank-candidates?jobId=${jobId}`);
+// Candidate Ranking: GET /candidate/candidates/ranked
+export const rankCandidates = async (jobId?: string) => {
+  const query = jobId ? `?jobId=${encodeURIComponent(jobId)}` : '';
+  const res = await axios.get(`${API_BASE}/candidate/candidates/ranked${query}`);
   return res.data;
 };
 

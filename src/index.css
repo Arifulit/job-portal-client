@@ -1,4 +1,6 @@
-/* এই ফাইলটি global CSS style, base layer এবং design token/style rule নির্ধারণ করে। */
+/* Global professional design system */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,11 +8,14 @@
 @layer base {
 	html {
 		@apply scroll-smooth;
+		font-feature-settings: 'rlig' 1, 'calt' 1;
 	}
 
 	body {
-		@apply bg-white text-slate-900 antialiased transition-colors duration-200;
+		@apply bg-white text-slate-900 antialiased transition-colors duration-200 font-sans;
 		overflow-x: hidden;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
 	}
 
 	img,
@@ -19,16 +24,72 @@
 	canvas {
 		max-width: 100%;
 		height: auto;
+		display: block;
 	}
 
 	#root {
 		min-height: 100dvh;
+		display: flex;
+		flex-direction: column;
 	}
 
+	/* Headings with professional styling */
+	h1, h2, h3, h4, h5, h6 {
+		@apply font-display font-bold tracking-tight;
+	}
+
+	h1 {
+		@apply text-4xl md:text-5xl lg:text-6xl;
+	}
+
+	h2 {
+		@apply text-3xl md:text-4xl;
+	}
+
+	h3 {
+		@apply text-2xl md:text-3xl;
+	}
+
+	h4 {
+		@apply text-xl md:text-2xl;
+	}
+
+	h5 {
+		@apply text-lg md:text-xl;
+	}
+
+	h6 {
+		@apply text-base md:text-lg;
+	}
+
+	/* Links styling */
+	a {
+		@apply text-primary-600 hover:text-primary-700 transition-colors duration-150;
+	}
+
+	a:visited {
+		@apply text-primary-600;
+	}
+
+	/* Dark mode */
 	.dark body {
 		@apply bg-slate-950 text-slate-100;
 	}
 
+	.dark h1,
+	.dark h2,
+	.dark h3,
+	.dark h4,
+	.dark h5,
+	.dark h6 {
+		@apply text-slate-100;
+	}
+
+	.dark a {
+		@apply text-primary-400 hover:text-primary-300;
+	}
+
+	/* Theme transition */
 	.theme-transitioning *,
 	.theme-transitioning *::before,
 	.theme-transitioning *::after {
@@ -37,7 +98,64 @@
 		transition-timing-function: ease-out;
 	}
 
-	/* Global dark compatibility layer for existing utility-heavy pages */
+	/* Smooth scrollbar */
+	::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+
+	::-webkit-scrollbar-track {
+		background-color: rgb(241 245 249);
+	}
+
+	::-webkit-scrollbar-thumb {
+		background-color: rgb(203 213 225);
+		border-radius: 0.5rem;
+	}
+
+	::-webkit-scrollbar-thumb:hover {
+		background-color: rgb(148 163 184);
+	}
+
+	.dark ::-webkit-scrollbar-track {
+		background-color: rgb(30 41 59);
+	}
+
+	.dark ::-webkit-scrollbar-thumb {
+		background-color: rgb(71 85 105);
+	}
+
+	.dark ::-webkit-scrollbar-thumb:hover {
+		background-color: rgb(100 116 139);
+	}
+
+	/* Input styling */
+	input,
+	textarea,
+	select {
+		@apply font-sans;
+	}
+
+	/* Focus visible for accessibility */
+	:focus-visible {
+		@apply outline-none ring-2 ring-primary-500 ring-offset-2;
+	}
+
+	.dark :focus-visible {
+		@apply outline-none ring-2 ring-primary-500 ring-offset-2;
+		ring-offset-color: rgb(3 7 18) !important;
+	}
+
+	/* Placeholder styling */
+	::placeholder {
+		color: rgb(148 163 184);
+	}
+
+	.dark ::placeholder {
+		color: rgb(100 116 139);
+	}
+
+	/* Global dark compatibility layer */
 	.dark .bg-white {
 		background-color: rgb(15 23 42) !important;
 	}
@@ -92,7 +210,6 @@
 		background-color: rgb(30 41 59) !important;
 	}
 
-	/* Handle hardcoded hex and gradient utility classes used across pages */
 	.dark [class*="bg-[#"] {
 		background-color: rgb(15 23 42) !important;
 	}
@@ -115,7 +232,6 @@
 		background-color: rgb(15 23 42) !important;
 	}
 
-	/* Keep interactive controls readable in dark mode even when classes are light-only */
 	.dark input,
 	.dark select,
 	.dark textarea {
@@ -142,5 +258,223 @@
 	.dark [class*="hover:bg-emerald"]:hover,
 	.dark [class*="hover:bg-violet"]:hover {
 		background-color: rgb(51 65 85) !important;
+	}
+}
+
+@layer components {
+	/* Professional card styling */
+	.card-base {
+		@apply rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200;
+	}
+
+	.card-hover {
+		@apply card-base hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 cursor-pointer;
+	}
+
+	.dark .card-base {
+		@apply border-slate-700 bg-slate-900;
+	}
+
+	.dark .card-hover {
+		@apply hover:border-slate-600;
+	}
+
+	/* Professional button styles */
+	.btn-base {
+		@apply inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+	}
+
+	.btn-primary {
+		@apply btn-base bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+	}
+
+	.btn-secondary {
+		@apply btn-base bg-slate-100 text-slate-900 hover:bg-slate-200 active:bg-slate-300 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+	}
+
+	.btn-outline {
+		@apply btn-base border-2 border-primary-600 text-primary-600 hover:bg-primary-50 active:bg-primary-100 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+	}
+
+	.dark .btn-secondary {
+		@apply bg-slate-800 text-slate-100 hover:bg-slate-700 active:bg-slate-600;
+	}
+
+	.dark .btn-outline {
+		@apply border-primary-500 text-primary-400 hover:bg-slate-900 active:bg-slate-800;
+	}
+
+	/* Badge styling */
+	.badge-base {
+		@apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold;
+	}
+
+	.badge-success {
+		@apply badge-base bg-success-50 text-success-700;
+	}
+
+	.badge-warning {
+		@apply badge-base bg-warning-50 text-warning-700;
+	}
+
+	.badge-error {
+		@apply badge-base bg-error-50 text-error-700;
+	}
+
+	.badge-primary {
+		@apply badge-base bg-primary-50 text-primary-700;
+	}
+
+	.dark .badge-success {
+		@apply bg-success-700 text-success-200;
+	}
+
+	.dark .badge-warning {
+		@apply bg-warning-700 text-warning-200;
+	}
+
+	.dark .badge-error {
+		@apply bg-error-700 text-error-200;
+	}
+
+	.dark .badge-primary {
+		@apply bg-primary-900 text-primary-300;
+	}
+
+	/* Input styling */
+	.input-base {
+		@apply w-full rounded-lg border-2 border-slate-200 bg-white px-4 py-2.5 text-base font-medium transition-all duration-200 hover:border-slate-300 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100;
+	}
+
+	.dark .input-base {
+		@apply border-slate-700 bg-slate-900 text-slate-100 hover:border-slate-600 focus:ring-primary-900;
+	}
+
+	/* Explicit placeholder color to avoid circular @apply with placeholder: utilities */
+	.input-base::placeholder {
+		color: rgb(148 163 184);
+	}
+
+	.dark .input-base::placeholder {
+		color: rgb(148 163 184) !important;
+	}
+
+	/* Gradient text */
+	.gradient-text {
+		@apply bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent;
+	}
+
+	/* Divider */
+	.divider {
+		@apply h-px w-full bg-slate-200;
+	}
+
+	.dark .divider {
+		@apply bg-slate-700;
+	}
+
+	/* Loading skeleton */
+	.skeleton {
+		@apply animate-pulse rounded-lg bg-slate-200;
+	}
+
+	.dark .skeleton {
+		@apply bg-slate-800;
+	}
+
+	/* Section container */
+	.section-container {
+		@apply mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8;
+	}
+
+	/* Smooth transitions */
+	.transition-smooth {
+		@apply transition-all duration-300 ease-in-out;
+	}
+
+	/* Hover lift effect */
+	.hover-lift {
+		@apply transition-all duration-200 hover:-translate-y-1;
+	}
+
+	/* Backdrop blur */
+	.backdrop-blur-lg {
+		backdrop-filter: blur(16px);
+	}
+}
+
+/* Login card: targeted overrides so the login card renders correctly in
+   both light and dark themes without mutating the document root classes. */
+.login-card {
+	background-color: rgba(255,255,255,0.95) !important;
+	color: #0f172a !important;
+	border-color: rgb(226 232 240) !important;
+}
+.login-card ::placeholder {
+	color: rgb(148 163 184) !important;
+}
+.login-card .text-slate-500,
+.login-card .text-slate-600,
+.login-card .text-slate-700 {
+	color: rgb(100 116 139) !important;
+}
+
+.dark .login-card {
+	background-color: rgb(15 23 42) !important;
+	color: rgb(241 245 249) !important;
+	border-color: rgb(51 65 85) !important;
+}
+.dark .login-card ::placeholder {
+	color: rgb(148 163 184) !important;
+}
+
+@layer utilities {
+	/* Text utilities */
+	.text-truncate {
+		@apply truncate;
+	}
+
+	.text-line-clamp-2 {
+		@apply line-clamp-2;
+	}
+
+	.text-line-clamp-3 {
+		@apply line-clamp-3;
+	}
+
+	/* Flex utilities */
+	.flex-center {
+		@apply flex items-center justify-center;
+	}
+
+	.flex-between {
+		@apply flex items-center justify-between;
+	}
+
+	.flex-col-center {
+		@apply flex flex-col items-center justify-center;
+	}
+
+	/* Grid utilities */
+	.grid-cols-auto {
+		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+	}
+
+	/* Animations */
+	.animate-fade-in {
+		@apply animate-fade-in;
+	}
+
+	.animate-slide-up {
+		@apply animate-slide-up;
+	}
+
+	.animate-slide-down {
+		@apply animate-slide-down;
+	}
+
+	/* Opacity utilities */
+	.opacity-disabled {
+		@apply opacity-50;
 	}
 }

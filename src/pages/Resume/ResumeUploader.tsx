@@ -26,14 +26,14 @@ export default function ResumeUploader() {
   };
 
   const handleUpload = async () => {
-    if (!file) return toast.error('Please choose a file first');
+    if (!file) return toast({ title: 'Error', description: 'Please choose a file first', variant: 'destructive' });
     setLoading(true);
     try {
       const data = await uploadResume(file);
       setResult(data as AnalysisResult);
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || 'Upload failed');
+      toast({ title: 'Error', description: err.message || 'Upload failed', variant: 'destructive' });
     } finally {
       setLoading(false);
     }

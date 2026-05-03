@@ -1,5 +1,6 @@
 // এই ফাইলটি project wide helper, route utility অথবা shared function প্রদান করে।
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import Cookies from 'js-cookie';
 
 const API_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL;
 
@@ -23,7 +24,7 @@ api.interceptors.request.use(
       }
     }
 
-    const token = localStorage.getItem('token');
+    const token = Cookies.get('accessToken') || localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -38,7 +39,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
-      const hadToken = !!localStorage.getItem('token');
+      const hadToken = !!(Cookies.get('accessToken') || localStorage.getItem('token'));
       const currentPath = window.location.pathname;
       const isProtectedRoute =
         currentPath.startsWith('/admin') ||
@@ -46,8 +47,11 @@ api.interceptors.response.use(
         currentPath.startsWith('/candidate') ||
         currentPath.startsWith('/user');
 
+      Cookies.remove('accessToken');
+      Cookies.remove('refreshToken');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('refreshToken');
 
       // Redirect only when an existing session becomes invalid.
       // Public pages can receive 401 for guest requests and should not force-login.
@@ -87,10 +91,29 @@ export const uploadToCloudinary = async (
   formData.append('upload_preset', uploadPreset);
 
   try {
-    const response = await axios.post(
+    // Create a separate axios instance and ensure no Authorization header is sent
+    // (some code paths set axios.defaults.headers.common.Authorization). We must
+    // explicitly clear it on the instance to avoid CORS preflight failures.
+    const cloudinaryAxios = axios.create();
+    // remove any preconfigured common auth header on the new instance
+    try {
+      if (cloudinaryAxios.defaults && cloudinaryAxios.defaults.headers && cloudinaryAxios.defaults.headers.common) {
+        delete cloudinaryAxios.defaults.headers.common.Authorization;
+      }
+    } catch {
+      /* ignore */
+    }
+
+    const response = await cloudinaryAxios.post(
       `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
       formData,
       {
+        headers: {
+          // Explicitly not setting Authorization header for Cloudinary
+          'X-Requested-With': 'XMLHttpRequest',
+          // ensure request-level override
+          Authorization: undefined,
+        },
         onUploadProgress: (event) => {
           if (!event.total) return;
           const progress = Math.round((event.loaded / event.total) * 100);
@@ -99,8 +122,9 @@ export const uploadToCloudinary = async (
       }
     );
     return response.data.secure_url;
-  } catch {
-    throw new Error('Failed to upload file');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to upload file to Cloudinary';
+    throw new Error(message);
   }
 };
 

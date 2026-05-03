@@ -68,8 +68,8 @@ const parseProfileData = (payload: ProfilePayload): unknown => {
   return payload?.data ?? payload?.user ?? null;
 };
 
-const profileGetEndpoints = ['/recruiter/profile', '/users/profile', '/auth/me'];
-const profileUpdateEndpoints = ['/recruiter/profile', '/users/profile'];
+const profileGetEndpoints = ['/recruiter/profile', '/candidate/profile', '/auth/me'];
+const profileUpdateEndpoints = ['/recruiter/profile', '/candidate/profile'];
 
 const recruiterService = {
   getRecruiterProfile: async () => {

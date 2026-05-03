@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowUpRight,
+  Bookmark,
   Briefcase,
   Building2,
-  CalendarClock,
   ChevronRight,
   CheckCircle2,
   GraduationCap,
@@ -28,6 +28,7 @@ import nagadLogo from "../images/nagod.png";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useJobRecommendations } from "@/services/jobService";
+import { getJobDetailsPath } from "@/utils/helpers";
 
 type FeaturedJobItem = {
   title: string;
@@ -81,8 +82,38 @@ const HomePage: React.FC = () => {
   const [searchText, setSearchText] = useState("");
   const [jobTypeFilter, setJobTypeFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
+  const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
 
   const { data: recommendedJobs, isLoading: isLoadingRecommendations } = useJobRecommendations(10);
+
+  // Load saved jobs from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("savedJobs");
+    if (stored) {
+      try {
+        setSavedJobs(new Set(JSON.parse(stored)));
+      } catch (e) {
+        console.error("Failed to load saved jobs:", e);
+      }
+    }
+  }, []);
+
+  // Save to localStorage whenever savedJobs changes
+  useEffect(() => {
+    localStorage.setItem("savedJobs", JSON.stringify(Array.from(savedJobs)));
+  }, [savedJobs]);
+
+  const handleSaveJob = (jobId: string) => {
+    setSavedJobs((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(jobId)) {
+        newSet.delete(jobId);
+      } else {
+        newSet.add(jobId);
+      }
+      return newSet;
+    });
+  };
 
   const backendJobs = useMemo(
     () => (recommendedJobs || []) as unknown as HomeApiJob[],
@@ -383,13 +414,13 @@ const HomePage: React.FC = () => {
       </section>
 
       <section className="mx-auto max-w-[1320px] px-4 pb-4 md:px-6">
-        <div className="rounded-xl border border-blue-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Trusted by Leading Companies</p>
-          <div className="grid grid-cols-2 gap-3 text-center sm:grid-cols-4 lg:grid-cols-8">
+        <div className="rounded-xl border border-blue-100 dark:border-slate-800 bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-slate-800 p-6 shadow-md">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Trusted by Leading Companies</p>
+          <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-4 lg:grid-cols-8">
             {companies.map((company) => (
-              <div key={company.name} className="flex flex-col items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-3 text-sm font-bold text-slate-700 dark:text-slate-200">
-                <img src={company.logo} alt={company.name} className="h-8 w-auto mb-2 object-contain" />
-                {company.name}
+              <div key={company.name} className="group flex flex-col items-center justify-center rounded-lg bg-white dark:bg-slate-800/60 px-4 py-5 text-sm font-medium text-slate-700 dark:text-slate-200 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-slate-700 dark:hover:to-slate-600 border border-transparent hover:border-blue-200 dark:hover:border-slate-600">
+                <img src={company.logo} alt={company.name} className="h-10 w-auto mb-2 object-contain opacity-100 group-hover:scale-110 transition-transform duration-300 filter saturate-100 group-hover:drop-shadow-lg" />
+                <span className="truncate text-xs font-semibold text-slate-600 dark:text-slate-300">{company.name}</span>
               </div>
             ))}
           </div>
@@ -433,26 +464,67 @@ const HomePage: React.FC = () => {
             ))
           ) : (
             featuredJobs.map((job) => (
-              <article key={job.routeId} className="rounded-xl border border-blue-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-[#e9f2ff] px-3 py-1 text-xs font-bold uppercase text-[#1f4f93]">{job.type}</span>
-                  <span className="rounded-full bg-[#ffeaf7] px-3 py-1 text-xs font-bold uppercase text-[#b42880]">Featured</span>
-                </div>
+              <Link
+                key={job.routeId}
+                to={getJobDetailsPath(job.routeId)}
+                className="no-underline"
+              >
+                <article className="group rounded-xl bg-white dark:bg-slate-900 p-6 shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl overflow-hidden border border-transparent cursor-pointer h-full flex flex-col">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#f0f6ff] to-[#eef8ff] px-3 py-1 text-xs font-semibold text-[#1f4f93]">{job.type}</span>
+                      <span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#fff0f7] to-[#fff6fb] px-3 py-1 text-xs font-semibold text-[#b42880]">Featured</span>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSaveJob(job.routeId);
+                      }}
+                      className={`p-2 rounded-lg transition-all duration-200 ${
+                        savedJobs.has(job.routeId)
+                          ? "bg-blue-50 dark:bg-blue-900/30 text-[#1f4f93]"
+                          : "bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-[#1f4f93] hover:bg-blue-50 dark:hover:bg-slate-700"
+                      }`}
+                      title={savedJobs.has(job.routeId) ? "Unsave job" : "Save job"}
+                    >
+                      <Bookmark
+                        className="h-5 w-5"
+                        fill={savedJobs.has(job.routeId) ? "currentColor" : "none"}
+                      />
+                    </button>
+                  </div>
+                  
+                  <div className="text-sm text-slate-400 mb-4">{job.deadline}</div>
 
-                <h4 className="mt-3 text-xl font-bold text-slate-900 dark:text-slate-100">{job.title}</h4>
-                <p className="mt-1 text-sm font-semibold text-slate-700 dark:text-slate-300">{job.company}</p>
+                  <h4 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100 leading-tight group-hover:text-[#1f4f93]">{job.title}</h4>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{job.company}</p>
 
-                <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600 dark:text-slate-400">
-                  <p className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-slate-400" />{job.location}</p>
-                  <p className="inline-flex items-center gap-2"><Briefcase className="h-4 w-4 text-slate-400" />{job.salary}</p>
-                  <p className="col-span-2 inline-flex items-center gap-2"><CalendarClock className="h-4 w-4 text-slate-400" />{job.deadline}</p>
-                </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+                    <div className="inline-flex items-center gap-2 rounded-md bg-slate-50 dark:bg-slate-800 px-3 py-2">
+                      <MapPin className="h-4 w-4 text-slate-400" />
+                      <span className="font-medium">{job.location}</span>
+                    </div>
+                    <div className="inline-flex items-center gap-2 rounded-md bg-slate-50 dark:bg-slate-800 px-3 py-2">
+                      <Briefcase className="h-4 w-4 text-slate-400" />
+                      <span className="font-medium">{job.salary}</span>
+                    </div>
+                  </div>
 
-                <div className="mt-4 flex items-center justify-between">
-                  <Link to={job.routeId ? `/jobs/${job.routeId}` : "/jobs"} className="text-sm font-semibold text-[#1f4f93] hover:text-[#153a6f]">See details</Link>
-                  <Button className="h-10 rounded-md bg-[#cf2f92] px-4 text-sm text-white hover:bg-[#b42880]">Apply Now</Button>
-                </div>
-              </article>
+                  <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
+                    <span className="text-sm font-semibold text-[#1f4f93] group-hover:text-[#153a6f]">See details</span>
+                    <Button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      className="h-10 rounded-md bg-[#cf2f92] px-4 text-sm text-white hover:bg-[#b42880]"
+                    >
+                      Apply Now
+                    </Button>
+                  </div>
+                </article>
+              </Link>
             ))
           )}
         </div>
@@ -492,17 +564,19 @@ const HomePage: React.FC = () => {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {resourceCards.map((item) => (
-            <article key={item.title} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-              <span className="rounded bg-[#edf4ff] px-2 py-1 text-xs font-bold uppercase text-[#1f4f93]">{item.tag}</span>
-              <h4 className="mt-4 text-xl font-bold text-slate-900 dark:text-slate-100">{item.title}</h4>
+            <article key={item.title} className="rounded-xl bg-white dark:bg-slate-900 p-6 shadow-md hover:shadow-lg transition-transform duration-200 hover:-translate-y-1">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-2 rounded-full bg-[#f3f9ff] px-3 py-1 text-xs font-semibold text-[#1f4f93]">{item.tag}</span>
+                <ArrowUpRight className="h-4 w-4 text-slate-400" />
+              </div>
+
+              <h4 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-100">{item.title}</h4>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{item.desc}</p>
-              <Link
-                to={`/resources/${item.id}`}
-                className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#1f4f93] hover:text-[#153a6f]"
-              >
-                Read Article
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
+
+              <div className="mt-4 flex items-center justify-between">
+                <Link to={`/resources/${item.id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-[#1f4f93] hover:text-[#153a6f]">Read Article</Link>
+                <span className="text-xs text-slate-400">2 min read</span>
+              </div>
             </article>
           ))}
         </div>

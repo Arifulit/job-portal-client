@@ -1,5 +1,5 @@
 // এই ফাইলটি project wide helper, route utility অথবা shared function প্রদান করে।
-// /* eslint-disable @typescript-eslint/no-explicit-any */
+ /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as React from 'react';
 import { RouteObject } from 'react-router-dom';

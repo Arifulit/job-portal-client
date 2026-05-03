@@ -29,6 +29,10 @@ const GoogleSuccess = React.lazy(() => import("../components/auth/GoogleSuccess"
 const Unauthorized = React.lazy(() => import("../pages/status/Unauthorized"));
 const NotFound = React.lazy(() => import("../pages/status/NotFound"));
 const JobPost = React.lazy(() => import("../pages/Recruiter/JobPost"));
+const CandidateProfile = React.lazy(() => import("../pages/Candidate/CandidateProfile"));
+const ResumeAnalyzer = React.lazy(() => import("../pages/Candidate/ResumeAnalyzer"));
+const RecruiterProfile = React.lazy(() => import("../pages/Recruiter/RecruiterProfile"));
+const AdminProfile = React.lazy(() => import("../pages/admin/AdminProfile"));
 
 // Simple inline RouteError component used as errorElement fallback
 function RouteError({ error }: { error?: unknown }) {
@@ -143,6 +147,10 @@ export const router = createBrowserRouter([
         element: <Navigate to="/jobs" replace />,
       },
       {
+        path: "profile",
+        element: <Navigate to="/dashboard" replace />,
+      },
+      {
         path: "jobs/:id",
         element: withSuspense(<JobDetails />),
       },
@@ -176,6 +184,8 @@ export const router = createBrowserRouter([
     errorElement: <RouteError />,
     children: [
       { index: true, element: <Navigate to="/admin/dashboard" replace /> },
+      { path: "profile", element: withSuspense(<AdminProfile />) },
+      { path: "profile/edit", element: withSuspense(<AdminProfile />) },
       ...generateRoutes(adminSidebarItems),
     ],
   },
@@ -187,6 +197,8 @@ export const router = createBrowserRouter([
     errorElement: <RouteError />,
     children: [
       { index: true, element: <Navigate to="/recruiter/dashboard" replace /> },
+      { path: "profile", element: withSuspense(<RecruiterProfile />) },
+      { path: "profile/edit", element: withSuspense(<RecruiterProfile />) },
       { path: "jobs/edit/:jobId", element: withSuspense(<JobPost />) },
       ...generateRoutes(recruiterSidebarItems),
     ],
@@ -199,6 +211,9 @@ export const router = createBrowserRouter([
     errorElement: <RouteError />,
     children: [
       { index: true, element: <Navigate to="/candidate/dashboard" replace /> },
+      { path: "profile", element: withSuspense(<CandidateProfile />) },
+      { path: "profile/edit", element: withSuspense(<CandidateProfile />) },
+      { path: "resume-analyzer", element: withSuspense(<ResumeAnalyzer />) },
       ...generateRoutes(userSidebarItems),
     ],
   },
