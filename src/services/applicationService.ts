@@ -219,13 +219,23 @@ export const useUpdateApplicationStatus = () => {
     mutationFn: async ({
       id,
       status,
+      interviewScheduledAt,
     }: {
       id: string;
       status: ApplicationStatus;
+      interviewScheduledAt?: string;
     }) => {
+      const payload: Record<string, unknown> = {
+        status: toStatusPayload(status),
+      };
+
+      if (status === 'interview' && interviewScheduledAt) {
+        payload.interviewScheduledAt = interviewScheduledAt;
+      }
+
       const response = await api.put<ApiResponse<Application>>(
         `/applications/${id}`,
-        { status: toStatusPayload(status) }
+        payload
       );
       if (!response.data.data) {
         throw new Error(response.data.message || 'Failed to update application status');

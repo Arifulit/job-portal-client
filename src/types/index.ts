@@ -160,6 +160,7 @@ export interface Application {
   candidate?: User;
   recruiterId: string;
   status: ApplicationStatus;
+  interviewScheduledAt?: string;
   resume: string;
   downloadUrl?: string;
   coverLetter?: string;

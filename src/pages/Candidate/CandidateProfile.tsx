@@ -1,24 +1,15 @@
 
 
-import React, { useMemo, useRef, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useCandidateProfile, useUpdateCandidateProfile } from '../../services/candidateService';
 import { Skeleton } from '../../components/ui/skeleton';
 import {
   Mail, Phone, Calendar, Briefcase, MapPin, User,
-  Pencil, X, CheckCircle2, UploadCloud, FileText, Layers,
+  Pencil, X, CheckCircle2, FileText, Layers,
   TrendingUp, Sparkles, Shield, Trash2, ExternalLink, Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { uploadResumeToBackend, uploadToCloudinary } from '../../utils/api';
-
-const MAX_RESUME_SIZE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_RESUME_MIME_TYPES = [
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-];
-const ALLOWED_RESUME_EXTENSIONS = ['pdf', 'doc', 'docx'];
 
 /* ─── InfoRow ─────────────────────────────────────────────────────────────── */
 const InfoRow = ({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) => (
@@ -41,25 +32,38 @@ const StatCard = ({ label, value, accent }: { label: string; value: string | num
   </div>
 );
 
-/* ─── SkillBadge — staggered fade+slide in ────────────────────────────────── */
+/* ─── SkillBadge — enhanced professional skill display ────────────────────── */
 const SkillBadge = ({ skill, index }: { skill: string; index: number }) => {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setVisible(true), index * 80);
+    const t = setTimeout(() => setVisible(true), index * 60);
     return () => clearTimeout(t);
   }, [index]);
+
+  const skillColors = [
+    'bg-violet-50 border-violet-200 text-violet-700 dark:bg-violet-950/30 dark:border-violet-700 dark:text-violet-300',
+    'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-700 dark:text-blue-300',
+    'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-700 dark:text-emerald-300',
+    'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/30 dark:border-amber-700 dark:text-amber-300',
+    'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/30 dark:border-rose-700 dark:text-rose-300',
+    'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-950/30 dark:border-indigo-700 dark:text-indigo-300',
+  ];
+  
+  const colorClass = skillColors[index % skillColors.length];
+
   return (
     <span
-      className={`inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700 transition-all duration-300 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:border-violet-700 dark:hover:bg-violet-950/40 dark:hover:text-violet-300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
-      style={{ transitionDelay: `${index * 60}ms` }}
+      className={`inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-semibold transition-all duration-300 hover:shadow-md hover:scale-105 ${colorClass} ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+      style={{ transitionDelay: `${index * 50}ms` }}
     >
+      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
       {skill}
     </span>
   );
 };
 
 /* ─── ResumeViewer — collapsible inline PDF preview ──────────────────────── */
-const ResumeViewer = ({ url, onRemove }: { url: string; onRemove: () => void }) => {
+const ResumeViewer = ({ url, onRemove, showConfirm, setShowConfirm }: { url: string; onRemove: () => void; showConfirm: boolean; setShowConfirm: (v: boolean) => void }) => {
   const [expanded, setExpanded] = useState(false);
   const isPdf = url.toLowerCase().includes('.pdf') || url.includes('application/pdf') || url.includes('cloudinary');
 
@@ -93,7 +97,7 @@ const ResumeViewer = ({ url, onRemove }: { url: string; onRemove: () => void }) 
             <Eye className="h-3 w-3" /> {expanded ? 'Hide' : 'Preview'}
           </button>
           <button
-            onClick={onRemove}
+            onClick={() => setShowConfirm(true)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-rose-100 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40"
           >
             <Trash2 className="h-3 w-3" /> Remove
@@ -131,77 +135,20 @@ const ResumeViewer = ({ url, onRemove }: { url: string; onRemove: () => void }) 
   );
 };
 
-/* ─── InlineResumeUpload ──────────────────────────────────────────────────── */
-const InlineResumeUpload = ({ onUploaded }: { onUploaded: (url: string) => void }) => {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const [dragging, setDragging]   = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress]   = useState(0);
-
-  const process = async (file: File) => {
-    if (file.size > MAX_RESUME_SIZE_BYTES) { toast.error('Max file size is 5 MB.'); return; }
-    const ext = file.name.split('.').pop()?.toLowerCase() || '';
-    if (!ALLOWED_RESUME_MIME_TYPES.includes(file.type) && !ALLOWED_RESUME_EXTENSIONS.includes(ext)) {
-      toast.error('PDF, DOC or DOCX only.'); return;
-    }
-    setUploading(true); setProgress(0);
-    try {
-      let url = '';
-      try { url = await uploadResumeToBackend(file, p => setProgress(p)); }
-      catch { url = await uploadToCloudinary(file, p => setProgress(p)); }
-      setProgress(100);
-      toast.success('Resume uploaded!');
-      onUploaded(url);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Upload failed.');
-    } finally { setUploading(false); }
-  };
-
+/* ─── ConfirmDeleteModal ─────────────────────────────────────────────────── */
+const ConfirmDeleteModal = ({ isOpen, onConfirm, onCancel }: { isOpen: boolean; onConfirm: () => void; onCancel: () => void }) => {
+  if (!isOpen) return null;
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden dark:border-slate-800/80 dark:bg-[#0e1624]">
-      <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-950/40">
-          <UploadCloud className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl dark:bg-[#0e1624] border border-slate-200 dark:border-slate-800">
+        <div className="px-6 py-5">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Delete Resume?</h2>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Are you sure you want to remove your resume? This action cannot be undone.</p>
         </div>
-        <div>
-          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Resume</p>
-          <p className="text-xs text-amber-600 dark:text-amber-400">Not uploaded yet</p>
+        <div className="border-t border-slate-100 dark:border-slate-800 flex items-center gap-3 px-6 py-4">
+          <button onClick={onCancel} className="flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">Cancel</button>
+          <button onClick={onConfirm} className="flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 active:scale-[0.98] dark:bg-rose-600 dark:hover:bg-rose-700">Delete</button>
         </div>
-      </div>
-
-      <div className="p-5">
-        <div
-          onDragOver={e => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={e => { e.preventDefault(); setDragging(false); }}
-          onDrop={async e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files?.[0]; if (f) await process(f); }}
-          onClick={() => !uploading && inputRef.current?.click()}
-          className={`cursor-pointer rounded-xl border-2 border-dashed px-5 py-8 text-center transition ${
-            dragging
-              ? 'border-violet-400 bg-violet-50 dark:border-violet-500 dark:bg-violet-950/20'
-              : 'border-slate-200 hover:border-violet-300 dark:border-slate-700 dark:hover:border-violet-600'
-          } ${uploading ? 'pointer-events-none opacity-60' : ''}`}
-        >
-          <UploadCloud className="mx-auto mb-2 h-7 w-7 text-slate-300 dark:text-slate-600" />
-          <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
-            {uploading ? 'Uploading…' : 'Drag & drop or click to upload'}
-          </p>
-          <p className="mt-0.5 text-xs text-slate-400">PDF, DOC, DOCX — max 5 MB</p>
-        </div>
-
-        <input
-          ref={inputRef} type="file" accept=".pdf,.doc,.docx"
-          onChange={async e => { const f = e.target.files?.[0]; if (f) await process(f); }}
-          className="hidden"
-        />
-
-        {uploading && (
-          <div className="mt-3">
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-              <div className="h-full rounded-full bg-violet-500 transition-all duration-200" style={{ width: `${progress}%` }} />
-            </div>
-            <p className="mt-1 text-right text-xs text-slate-400">{progress}%</p>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -214,6 +161,44 @@ const inputCls =
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /*  MAIN COMPONENT                                                             */
 /* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Helper: Parse nested JSON skills safely */
+const parseSkills = (skills: unknown): string[] => {
+  if (!skills) return [];
+  
+  if (Array.isArray(skills)) {
+    let result: string[] = [];
+    for (const item of skills) {
+      if (typeof item === 'string') {
+        try {
+          const parsed = JSON.parse(item);
+          if (Array.isArray(parsed)) {
+            result = result.concat(parseSkills(parsed));
+          } else if (typeof parsed === 'string') {
+            result.push(parsed);
+          }
+        } catch {
+          result.push(item);
+        }
+      } else if (typeof item === 'number') {
+        result.push(String(item));
+      }
+    }
+    return result.filter((s, i, arr) => s && arr.indexOf(s) === i);
+  }
+  
+  if (typeof skills === 'string') {
+    try {
+      const parsed = JSON.parse(skills);
+      return parseSkills(parsed);
+    } catch {
+      return [skills];
+    }
+  }
+  
+  return [];
+};
+
 const CandidateProfile = () => {
   const { user, updateUser } = useAuth();
   const { data, isLoading }  = useCandidateProfile();
@@ -235,8 +220,12 @@ const CandidateProfile = () => {
 
   const profileAvatar = profile.avatar || profile.profileImage || profile.user?.avatar || profile.user?.profileImage || user?.avatar || user?.profileImage || '';
 
-  /* live resume state — can be changed by InlineResumeUpload without opening edit modal */
+  /* Parse and normalize skills */
+  const cleanedSkills = useMemo(() => parseSkills(profile.skills), [profile.skills]);
+
+  /* live resume state — can be removed from the profile page */
   const [liveResume, setLiveResume] = useState(profile.resume || user?.resume || '');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   useEffect(() => { setLiveResume(profile.resume || user?.resume || ''); }, [profile.resume, user?.resume]);
 
   const displayEmail      = profile.user?.email || profile.email || user?.email || '';
@@ -260,10 +249,10 @@ const CandidateProfile = () => {
     const checks = [
       Boolean(profile.name?.trim()), Boolean(displayEmail.trim()), Boolean(profile.phone?.trim()),
       Boolean(displayLocation.trim()), Boolean(displayBiodata.trim()), Boolean(profileAvatar),
-      Boolean(liveResume), Boolean(profile.experienceLevel?.trim()), Boolean((profile.skills || []).length),
+      Boolean(liveResume), Boolean(profile.experienceLevel?.trim()), Boolean(cleanedSkills.length),
     ];
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
-  }, [displayBiodata, displayEmail, displayLocation, profile, profileAvatar, liveResume]);
+  }, [displayBiodata, displayEmail, displayLocation, profile, profileAvatar, liveResume, cleanedSkills.length]);
 
   const openEdit = () => {
     setForm({
@@ -271,7 +260,7 @@ const CandidateProfile = () => {
       location: profile.location || profile.address || '', experienceLevel: profile.experienceLevel || '',
       biodata: profile.biodata || profile.bio || profile.summary || '',
       summary: profile.biodata || profile.bio || profile.summary || '',
-      skills: [...(profile.skills || [])],
+      skills: [...cleanedSkills],
     });
     setAvatarPreview(profileAvatar); setAvatarFile(null);
     setIsEditing(true);
@@ -283,18 +272,9 @@ const CandidateProfile = () => {
     const f = e.target.files?.[0]; if (!f) return; setAvatarFile(f); setAvatarPreview(URL.createObjectURL(f));
   };
 
-  /* Resume uploaded directly from profile page */
-  const handleResumeUploaded = (url: string) => {
-    setLiveResume(url);
-    const payload = new FormData(); payload.append('resume', url);
-    updateProfile(payload, {
-      onSuccess: () => { updateUser({ resume: url }); toast.success('Resume saved!'); },
-      onError:   err => toast.error(err.message),
-    });
-  };
-
   /* Remove resume */
   const handleRemoveResume = () => {
+    setShowDeleteConfirm(false);
     setLiveResume('');
     const payload = new FormData(); payload.append('resume', '');
     updateProfile(payload, {
@@ -365,54 +345,53 @@ const CandidateProfile = () => {
       <div className="mx-auto max-w-5xl space-y-5">
 
         {/* ── Hero ──────────────────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-3xl bg-[#0c1120] text-white shadow-2xl">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0c1120] via-[#1a1f35] to-[#0c1120] text-white shadow-2xl">
           <div aria-hidden className="pointer-events-none absolute inset-0"
-            style={{ backgroundImage: `radial-gradient(circle at 70% -10%,rgba(109,40,217,.28) 0%,transparent 55%),radial-gradient(circle at 10% 110%,rgba(37,99,235,.18) 0%,transparent 50%)` }} />
-          <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.04]"
+            style={{ backgroundImage: `radial-gradient(circle at 70% -10%,rgba(109,40,217,.32) 0%,transparent 55%),radial-gradient(circle at 10% 110%,rgba(37,99,235,.24) 0%,transparent 50%)` }} />
+          <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.02]"
             style={{ backgroundImage: 'repeating-linear-gradient(0deg,#fff 0px,#fff 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,#fff 0px,#fff 1px,transparent 1px,transparent 40px)' }} />
 
           <div className="relative flex flex-col gap-6 p-7 sm:flex-row sm:items-start sm:p-10">
             {/* Avatar */}
             <div className="relative flex-shrink-0">
-              <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl ring-2 ring-white/10 overflow-hidden bg-violet-700/30 flex items-center justify-center text-3xl font-bold">
-                {profileAvatar ? <img src={profileAvatar} alt={profile.name || 'Candidate'} className="h-full w-full object-cover" /> : <span>{initials}</span>}
+              <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-2xl ring-4 ring-violet-400/20 overflow-hidden bg-gradient-to-br from-violet-600/30 to-blue-600/30 flex items-center justify-center text-4xl font-bold shadow-xl">
+                {profileAvatar ? <img src={profileAvatar} alt={profile.name || 'Candidate'} className="h-full w-full object-cover" /> : <span className="text-white">{initials}</span>}
               </div>
-              <div className="absolute -bottom-1.5 -right-1.5 h-6 w-6 rounded-full bg-emerald-500 ring-2 ring-[#0c1120] flex items-center justify-center">
-                <div className="h-2.5 w-2.5 rounded-full bg-white" />
+              <div className="absolute -bottom-2 -right-2 h-7 w-7 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-500 ring-4 ring-[#0c1120] flex items-center justify-center shadow-lg">
+                <div className="h-3 w-3 rounded-full bg-white" />
               </div>
             </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.08] px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-violet-300">
-                  <Shield className="h-3 w-3" />
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.08] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-violet-200 backdrop-blur-sm">
+                  <Shield className="h-3.5 w-3.5" />
                   {profile.user?.role ? profile.user.role.charAt(0).toUpperCase() + profile.user.role.slice(1) : 'Candidate'}
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.08] px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-blue-300">
-                  <Sparkles className="h-3 w-3" /> {profileCompletion}% Complete
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.08] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-blue-200 backdrop-blur-sm">
+                  <TrendingUp className="h-3.5 w-3.5" /> {profileCompletion}% Complete
                 </span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">{profile.name || profile.user?.name}</h1>
-              <p className="mt-1.5 text-base text-slate-300">{displayHeadline}</p>
-              <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-400">
-                {displayLocation && <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-violet-400" />{displayLocation}</span>}
-                <span className="flex items-center gap-1.5"><Briefcase className="h-3.5 w-3.5 text-blue-400" />{displayExperience}</span>
-                {displayEmail && <span className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 text-slate-500" />{displayEmail}</span>}
+              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white drop-shadow-lg">{profile.name || profile.user?.name}</h1>
+              <p className="mt-2.5 text-lg text-slate-200 font-medium drop-shadow-md">{displayHeadline}</p>
+              <div className="mt-5 flex flex-wrap gap-4 text-sm text-slate-300">
+                {displayLocation && <span className="flex items-center gap-2"><MapPin className="h-4 w-4 text-violet-300 flex-shrink-0" /><span>{displayLocation}</span></span>}
+                <span className="flex items-center gap-2"><Briefcase className="h-4 w-4 text-blue-300 flex-shrink-0" /><span>{displayExperience}</span></span>
               </div>
             </div>
 
             {/* Edit btn */}
             <div className="sm:self-start">
               <button onClick={openEdit}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/[0.14] active:scale-95">
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/20 hover:border-white/30 active:scale-95 shadow-lg">
                 <Pencil className="h-4 w-4" /> Edit Profile
               </button>
             </div>
           </div>
 
           {/* Progress strip */}
-          <div className="h-0.5 w-full bg-white/10">
+          <div className="h-1 w-full bg-white/10">
             <div className={`h-full transition-all duration-700 ${completionBar}`} style={{ width: `${profileCompletion}%` }} />
           </div>
         </div>
@@ -422,10 +401,30 @@ const CandidateProfile = () => {
 
           {/* Left column */}
           <div className="space-y-5 lg:col-span-1">
+            {/* Profile Card with Avatar & Email */}
+            <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800/80 dark:from-[#0e1624] dark:to-[#0a0f1a]">
+              <div className="flex flex-col items-center text-center">
+                <div className="mb-4 h-20 w-20 overflow-hidden rounded-2xl ring-4 ring-violet-100 dark:ring-violet-900/30 bg-gradient-to-br from-violet-600/20 to-blue-600/20 flex items-center justify-center shadow-lg">
+                  {profileAvatar 
+                    ? <img src={profileAvatar} alt={profile.name} className="h-full w-full object-cover" /> 
+                    : <span className="text-3xl font-bold text-violet-600 dark:text-violet-400">{initials}</span>
+                  }
+                </div>
+                <h4 className="mb-1 text-sm font-bold text-slate-900 dark:text-slate-100">{profile.name || 'Candidate'}</h4>
+                <div className="mb-3 flex items-center justify-center gap-1.5 rounded-lg bg-violet-50 px-3 py-1.5 dark:bg-violet-950/30">
+                  <Mail className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                  <p className="text-xs font-semibold text-violet-700 dark:text-violet-300 break-all">{displayEmail || 'No email'}</p>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{displayHeadline}</p>
+              </div>
+            </div>
+
             {/* Contact */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800/80 dark:bg-[#0e1624]">
-              <h3 className="mb-1 px-2 text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Contact</h3>
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800/80 dark:bg-[#0e1624]">
+              <h3 className="mb-4 px-2 text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-2">
+                <Mail className="h-4 w-4 text-slate-400" /> Contact Information
+              </h3>
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/60 space-y-0">
                 <InfoRow icon={Mail}     label="Email"        value={displayEmail || '—'} />
                 <InfoRow icon={Phone}    label="Phone"        value={profile.phone || '—'} />
                 <InfoRow icon={Calendar} label="Member since" value={profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }) : 'Recently joined'} />
@@ -433,19 +432,21 @@ const CandidateProfile = () => {
             </div>
 
             {/* Snapshot */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800/80 dark:bg-[#0e1624]">
-              <h3 className="mb-4 text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Snapshot</h3>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800/80 dark:bg-[#0e1624]">
+              <h3 className="mb-4 text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-amber-500" /> Profile Snapshot
+              </h3>
               <div className="grid grid-cols-2 gap-3">
-                <StatCard label="Skills"       value={profile.skills?.length || 0} />
-                <StatCard label="Applications" value={profile.applications?.length || 0} />
-                <StatCard label="Resume"       value={liveResume ? 'Uploaded' : 'Missing'} accent={liveResume ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-500'} />
+                <StatCard label="Skills"       value={cleanedSkills.length} accent={cleanedSkills.length ? 'text-violet-600 dark:text-violet-400' : ''} />
+                <StatCard label="Applications" value={profile.applications?.length || 0} accent={profile.applications?.length ? 'text-blue-600 dark:text-blue-400' : ''} />
+                <StatCard label="Resume"       value={liveResume ? '✓' : '—'} accent={liveResume ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'} />
                 <StatCard label="Completion"   value={`${profileCompletion}%`} accent={completionColor} />
               </div>
-              <div className="mt-4 space-y-1.5">
-                <div className="flex justify-between text-xs font-medium text-slate-400">
-                  <span>Profile strength</span><span>{profileCompletion}%</span>
+              <div className="mt-4 space-y-2">
+                <div className="flex justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  <span>Profile Strength</span><span className={completionColor}>{profileCompletion}%</span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800/80">
                   <div className={`h-full rounded-full transition-all duration-700 ${completionBar}`} style={{ width: `${profileCompletion}%` }} />
                 </div>
               </div>
@@ -457,39 +458,65 @@ const CandidateProfile = () => {
 
             {/* About */}
             {displayBiodata && (
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800/80 dark:bg-[#0e1624]">
+              <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800/80 dark:bg-[#0e1624]">
                 <h3 className="mb-4 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                  <TrendingUp className="h-4 w-4" /> About
+                  <TrendingUp className="h-4 w-4 text-violet-500 dark:text-violet-400" /> Professional Summary
                 </h3>
-                <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">{displayBiodata}</p>
+                <div className="rounded-lg border border-slate-100 bg-gradient-to-r from-slate-50/50 to-slate-50/30 p-4 dark:border-slate-700/50 dark:from-slate-800/30 dark:to-slate-900/20">
+                  <p className="text-sm leading-7 text-slate-700 dark:text-slate-300 whitespace-pre-wrap font-[500]">{displayBiodata}</p>
+                </div>
               </div>
             )}
 
-            {/* ── Skills — staggered one-by-one reveal ─────────────────── */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800/80 dark:bg-[#0e1624]">
-              <h3 className="mb-5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                <Layers className="h-4 w-4" /> Skills
-              </h3>
-              {profile.skills && profile.skills.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {profile.skills.map((skill, i) => (
-                    <SkillBadge key={skill} skill={skill} index={i} />
-                  ))}
+            {/* ── Skills — professional card with enhanced display ─────────────────── */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800/80 dark:bg-[#0e1624]">
+              <div className="mb-5 flex items-center justify-between">
+                <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                  <Layers className="h-4 w-4" /> Skills & Expertise
+                </h3>
+                {cleanedSkills.length > 0 && (
+                  <span className="inline-flex items-center rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700 dark:bg-violet-950/40 dark:text-violet-300">
+                    {cleanedSkills.length} Skills
+                  </span>
+                )}
+              </div>
+
+              {cleanedSkills.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    {cleanedSkills.map((skill, i) => (
+                      <SkillBadge key={skill} skill={skill} index={i} />
+                    ))}
+                  </div>
+                  <div className="mt-4 rounded-lg border border-slate-100 bg-gradient-to-r from-slate-50 to-slate-50/50 p-3 dark:border-slate-800 dark:from-slate-900/30 dark:to-slate-900/10">
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="h-4 w-4 flex-shrink-0 text-violet-500 dark:text-violet-400 mt-0.5" />
+                      <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+                        Highlight these skills in your resume and cover letters to increase your chances of getting hired by recruiters.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <p className="text-sm italic text-slate-400 dark:text-slate-500">
-                  No skills added yet —{' '}
-                  <button onClick={openEdit} className="font-semibold text-violet-600 hover:underline dark:text-violet-400">edit profile</button>
-                  {' '}to add some.
-                </p>
+                <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/50 p-6 text-center dark:border-slate-700 dark:bg-slate-800/20">
+                  <Layers className="mx-auto mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    No skills added yet
+                  </p>
+                  <button onClick={openEdit} className="mt-2 text-xs font-semibold text-violet-600 hover:text-violet-700 hover:underline dark:text-violet-400 dark:hover:text-violet-300">
+                    Add skills to your profile
+                  </button>
+                </div>
               )}
             </div>
 
-            {/* ── Resume — inline viewer OR upload widget ───────────────── */}
-            {liveResume
-              ? <ResumeViewer url={liveResume} onRemove={handleRemoveResume} />
-              : <InlineResumeUpload onUploaded={handleResumeUploaded} />
-            }
+            {/* ── Resume — viewer only ─────────────────────────────────── */}
+            {liveResume ? (
+              <>
+                <ResumeViewer url={liveResume} onRemove={handleRemoveResume} showConfirm={showDeleteConfirm} setShowConfirm={setShowDeleteConfirm} />
+                <ConfirmDeleteModal isOpen={showDeleteConfirm} onConfirm={handleRemoveResume} onCancel={() => setShowDeleteConfirm(false)} />
+              </>
+            ) : null}
           </div>
         </div>
       </div>

@@ -11,7 +11,7 @@ const CandidateDashboard = React.lazy(() =>
 const CandidateProfile = React.lazy(() => import("../pages/Candidate/CandidateProfile"));
 const MyApplications = React.lazy(() => import("@/pages/Candidate/MyApplications"));
 const SavedJobs = React.lazy(() => import("@/pages/Candidate/SavedJobs"));
-const ResumeAnalyzer = React.lazy(() => import("@/pages/Candidate/ResumeAnalyzer"));
+// Resume Analyzer removed from sidebar
 const Jobs = React.lazy(() => import("@/pages/Job/Jobs"));
 
 interface ISidebarItem {
@@ -52,12 +52,7 @@ export const userSidebarItems: ISidebarItem[] = [
         icon: Bookmark,
         component: SavedJobs,
       },
-      {
-        title: "Resume Analyzer",
-        url: "/candidate/resume-analyzer",
-        icon: Zap,
-        component: ResumeAnalyzer,
-      },
+      // Resume Analyzer removed
     ],
   },
   {

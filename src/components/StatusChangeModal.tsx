@@ -9,7 +9,8 @@ interface StatusChangeModalProps {
   currentStatus: ApplicationStatus;
   statusOptions: ApplicationStatus[];
   loading?: boolean;
-  onConfirm: (status: ApplicationStatus) => void;
+  currentInterviewScheduledAt?: string;
+  onConfirm: (status: ApplicationStatus, interviewScheduledAt?: string) => void;
   onCancel: () => void;
 }
 
@@ -31,16 +32,25 @@ export const StatusChangeModal: React.FC<StatusChangeModalProps> = ({
   currentStatus,
   statusOptions,
   loading = false,
+  currentInterviewScheduledAt = '',
   onConfirm,
   onCancel,
 }) => {
   const titleId = useId();
   const confirmButtonRef = useRef<HTMLButtonElement | null>(null);
   const [selectedStatus, setSelectedStatus] = React.useState<ApplicationStatus>(currentStatus);
+  const [interviewScheduledAt, setInterviewScheduledAt] = React.useState(currentInterviewScheduledAt);
 
   useEffect(() => {
     setSelectedStatus(currentStatus);
-  }, [currentStatus, open]);
+    setInterviewScheduledAt(currentInterviewScheduledAt);
+  }, [currentStatus, currentInterviewScheduledAt, open]);
+
+  useEffect(() => {
+    if (selectedStatus !== 'interview') {
+      setInterviewScheduledAt('');
+    }
+  }, [selectedStatus]);
 
   useEffect(() => {
     if (!open) return;
@@ -134,6 +144,25 @@ export const StatusChangeModal: React.FC<StatusChangeModalProps> = ({
           </div>
         </div>
 
+        {selectedStatus === 'interview' && (
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+            <label htmlFor={titleId + '-interview-datetime'} className="block text-sm font-semibold text-amber-900 dark:text-amber-100">
+              Interview Date & Time
+            </label>
+            <p className="mt-1 text-xs text-amber-800/80 dark:text-amber-200/80">
+              Pick the scheduled interview time before sending the email.
+            </p>
+            <input
+              id={titleId + '-interview-datetime'}
+              type="datetime-local"
+              value={interviewScheduledAt}
+              onChange={(event) => setInterviewScheduledAt(event.target.value)}
+              disabled={loading}
+              className="mt-3 w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200 disabled:opacity-50 dark:border-amber-900/40 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-amber-500 dark:focus:ring-amber-900/30"
+            />
+          </div>
+        )}
+
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
           <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
             Cancel
@@ -142,10 +171,18 @@ export const StatusChangeModal: React.FC<StatusChangeModalProps> = ({
             ref={confirmButtonRef}
             type="button"
             variant="default"
-            onClick={() => onConfirm(selectedStatus)}
-            disabled={loading || selectedStatus === currentStatus}
+            onClick={() => onConfirm(selectedStatus, selectedStatus === 'interview' ? interviewScheduledAt : undefined)}
+            disabled={
+              loading ||
+              selectedStatus === currentStatus ||
+              (selectedStatus === 'interview' && !interviewScheduledAt.trim())
+            }
           >
-            {loading ? 'Updating...' : 'Update Status'}
+            {loading
+              ? 'Updating...'
+              : selectedStatus === 'interview' && !interviewScheduledAt.trim()
+              ? 'Select interview time'
+              : 'Update Status'}
           </Button>
         </div>
       </div>

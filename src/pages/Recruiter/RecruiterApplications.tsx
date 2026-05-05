@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { Loader2, Search, Edit2 } from 'lucide-react';
 import { useRecruiterAllApplications, useUpdateApplicationStatus } from '../../services/applicationService';
 import { StatusChangeModal } from '../../components/StatusChangeModal';
-import { ApplicationStatus } from '../../types';
+import { Application, ApplicationStatus } from '../../types';
 import { Button } from '../../components/ui/button';
 
 const statusOptions: ApplicationStatus[] = [
@@ -41,7 +41,7 @@ const RecruiterApplications: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<'all' | ApplicationStatus>('all');
   const [selectedJob, setSelectedJob] = useState<'all' | string>('all');
   const [statusModalOpen, setStatusModalOpen] = useState(false);
-  const [selectedApplicationForModal, setSelectedApplicationForModal] = useState<any>(null);
+  const [selectedApplicationForModal, setSelectedApplicationForModal] = useState<Application | null>(null);
 
   const jobOptions = useMemo(() => {
     const titleSet = new Set<string>();
@@ -248,11 +248,13 @@ const RecruiterApplications: React.FC = () => {
         candidateName={selectedApplicationForModal?.candidate?.name || 'Candidate'}
         currentStatus={selectedApplicationForModal?.status || 'applied'}
         statusOptions={statusOptions}
+        currentInterviewScheduledAt={selectedApplicationForModal?.interviewScheduledAt || ''}
         loading={isPending}
-        onConfirm={(newStatus) => {
+        onConfirm={(newStatus, interviewScheduledAt) => {
           updateStatus({
             id: selectedApplicationForModal._id,
             status: newStatus,
+            interviewScheduledAt,
           });
           setStatusModalOpen(false);
           setSelectedApplicationForModal(null);

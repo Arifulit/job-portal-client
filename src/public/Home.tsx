@@ -27,8 +27,9 @@ import darazLogo from "../images/daraz.png";
 import nagadLogo from "../images/nagod.png";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { useJobRecommendations } from "@/services/jobService";
+import { api } from "@/utils/api";
 import { getJobDetailsPath } from "@/utils/helpers";
+import { useCareerResources } from "@/services/resourceService";
 
 type FeaturedJobItem = {
   title: string;
@@ -83,8 +84,47 @@ const HomePage: React.FC = () => {
   const [jobTypeFilter, setJobTypeFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
+  const [recommendedJobs, setRecommendedJobs] = useState<HomeApiJob[]>([]);
+  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(true);
 
-  const { data: recommendedJobs, isLoading: isLoadingRecommendations } = useJobRecommendations(10);
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadRecommendations = async () => {
+      setIsLoadingRecommendations(true);
+
+      try {
+        const response = await api.get<{
+          success?: boolean;
+          data?: HomeApiJob[];
+          message?: string;
+        }>("/candidate/profile/recommendations?limit=10");
+
+        if (response.data.success === false) {
+          throw new Error(response.data.message || "Failed to fetch job recommendations");
+        }
+
+        if (!isCancelled) {
+          setRecommendedJobs(Array.isArray(response.data.data) ? response.data.data : []);
+        }
+      } catch (error) {
+        console.error("Failed to load job recommendations:", error);
+        if (!isCancelled) {
+          setRecommendedJobs([]);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingRecommendations(false);
+        }
+      }
+    };
+
+    void loadRecommendations();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   // Load saved jobs from localStorage on mount
   useEffect(() => {
@@ -189,7 +229,20 @@ const HomePage: React.FC = () => {
 
 
 
-  const resourceCards = [
+  const { data: allResources = [] } = useCareerResources(3);
+
+  // Map database resources to display format, using actual _id and category
+  const resourceCards = useMemo(() => {
+    return allResources.map(resource => ({
+      id: resource._id,
+      title: resource.title,
+      desc: resource.description || 'Learn more about this career topic',
+      tag: resource.tag || resource.category || 'Career',
+    }));
+  }, [allResources]);
+
+  // Fallback to default resources if none found
+  const displayResources = resourceCards.length > 0 ? resourceCards : [
     {
       id: "cv",
       title: "How To Build A Winning CV In 2026",
@@ -372,18 +425,20 @@ const HomePage: React.FC = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            className="mt-6 bg-[#255c9f] p-6 text-white lg:mt-0"
+            className="mt-6 rounded-lg bg-gradient-to-br from-[#255c9f] to-[#1e4b7b] p-6 shadow-lg text-white lg:mt-0"
           >
-            <h2 className="mb-4 text-3xl font-bold uppercase" style={{ fontFamily: "Montserrat, sans-serif" }}>
+            <h2 className="mb-6 text-2xl font-bold uppercase tracking-wide" style={{ fontFamily: "Montserrat, sans-serif" }}>
               Quick Links
             </h2>
-            <ul className="space-y-3">
+            <ul className="space-y-4">
               {quickLinks.map((item) => (
-                <li key={item.label}>
-                  <Link to={item.href} className="flex items-center gap-2 text-base text-white/95 transition hover:text-white">
-                    <ChevronRight className="h-4 w-4" />
-                    <span>{item.label}</span>
-                    <span className="ml-auto rounded bg-white/20 px-2 py-0.5 text-xs font-semibold">{item.count}</span>
+                <li key={item.label} className="hover:bg-white/10 rounded-md p-2 transition-colors">
+                  <Link to={item.href} className="flex items-center justify-between gap-3 text-base text-white/95 transition hover:text-white no-underline">
+                    <div className="flex items-center gap-2">
+                      <ChevronRight className="h-5 w-5 flex-shrink-0" />
+                      <span className="font-medium">{item.label}</span>
+                    </div>
+                    <span className="ml-auto flex-shrink-0 rounded-full bg-white/25 px-3 py-1 text-sm font-bold text-white">{item.count || 0}</span>
                   </Link>
                 </li>
               ))}
@@ -563,21 +618,23 @@ const HomePage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {resourceCards.map((item) => (
-            <article key={item.title} className="rounded-xl bg-white dark:bg-slate-900 p-6 shadow-md hover:shadow-lg transition-transform duration-200 hover:-translate-y-1">
-              <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-2 rounded-full bg-[#f3f9ff] px-3 py-1 text-xs font-semibold text-[#1f4f93]">{item.tag}</span>
-                <ArrowUpRight className="h-4 w-4 text-slate-400" />
-              </div>
+          {displayResources.map((item) => (
+            <Link key={item.id} to={`/resources/${item.id}`} className="no-underline">
+              <article className="rounded-xl bg-white dark:bg-slate-900 p-6 shadow-md hover:shadow-lg transition-transform duration-200 hover:-translate-y-1 cursor-pointer h-full">
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[#f3f9ff] px-3 py-1 text-xs font-semibold text-[#1f4f93]">{item.tag}</span>
+                  <ArrowUpRight className="h-4 w-4 text-slate-400" />
+                </div>
 
-              <h4 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-100">{item.title}</h4>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{item.desc}</p>
+                <h4 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-100">{item.title}</h4>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 line-clamp-2">{item.desc}</p>
 
-              <div className="mt-4 flex items-center justify-between">
-                <Link to={`/resources/${item.id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-[#1f4f93] hover:text-[#153a6f]">Read Article</Link>
-                <span className="text-xs text-slate-400">2 min read</span>
-              </div>
-            </article>
+                <div className="mt-4 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-[#1f4f93]">Read Article</span>
+                  <span className="text-xs text-slate-400">2 min read</span>
+                </div>
+              </article>
+            </Link>
           ))}
         </div>
       </section>
@@ -601,7 +658,7 @@ const HomePage: React.FC = () => {
               <Button className="h-11 rounded-md bg-[#cf2f92] px-5 font-semibold text-white hover:bg-[#b42880]">Join As Candidate</Button>
             </Link>
             <Link to="/register/recruiter">
-              <Button variant="outline" className="h-11 rounded-md border-white bg-transparent px-5 font-semibold text-white hover:bg-white hover:text-[#123f7a]">Hire Talent</Button>
+              <Button variant="outline" className="h-11 rounded-md border-white bg-transparent px-5 font-semibold hover:text-[#123f7a]">Hire Talent</Button>
             </Link>
           </div>
         </div>

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // এই ফাইলটি authentication related form, input validation ও submit behavior সামলায়।
 /* eslint-disable @typescript-eslint/no-explicit-any */
 

@@ -36,7 +36,7 @@ ReactDOM.createRoot(root).render(
       <ThemeProvider defaultTheme="system" storageKey="job-portal-theme">
         <AuthProvider>
           <RouterProvider router={router} />
-          <Toaster richColors position="top-right" />
+          <Toaster richColors position="top-right" offset={80} />
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

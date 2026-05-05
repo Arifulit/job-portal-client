@@ -402,3 +402,5 @@ export const RecruiterDashboard = () => {
     </div>
   );
 };
+
+export default RecruiterDashboard;

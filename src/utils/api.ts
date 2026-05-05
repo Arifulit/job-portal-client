@@ -104,14 +104,14 @@ export const uploadToCloudinary = async (
       /* ignore */
     }
 
+    // Use the raw upload endpoint for documents (PDF/DOC/DOCX)
+    // and include the upload preset (unsigned) if provided.
     const response = await cloudinaryAxios.post(
-      `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
+      `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`,
       formData,
       {
         headers: {
-          // Explicitly not setting Authorization header for Cloudinary
           'X-Requested-With': 'XMLHttpRequest',
-          // ensure request-level override
           Authorization: undefined,
         },
         onUploadProgress: (event) => {
@@ -121,8 +121,16 @@ export const uploadToCloudinary = async (
         },
       }
     );
-    return response.data.secure_url;
+
+    // Cloudinary returns either secure_url or url depending on resource type
+    return response.data.secure_url || response.data.url;
   } catch (error) {
+    // If Cloudinary returns JSON error details, include them for debugging
+    if (axios.isAxiosError(error)) {
+      const details = (error.response && error.response.data) ? JSON.stringify(error.response.data) : error.message;
+      throw new Error(`Cloudinary upload failed: ${details}`);
+    }
+
     const message = error instanceof Error ? error.message : 'Failed to upload file to Cloudinary';
     throw new Error(message);
   }

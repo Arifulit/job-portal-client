@@ -6,8 +6,10 @@ export type CareerResource = {
   title: string;
   description?: string;
   tag?: string;
+  category?: string;
   slug?: string;
   createdAt?: string;
+  updatedAt?: string;
 };
 
 export const useCareerResources = (limit = 6) => {

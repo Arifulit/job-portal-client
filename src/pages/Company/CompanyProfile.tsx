@@ -31,6 +31,25 @@ const formatReviewDate = (value?: string) => {
   });
 };
 
+/* ─── ConfirmDeleteModal ─────────────────────────────────────────────────── */
+const ConfirmDeleteModal = ({ isOpen, onConfirm, onCancel }: { isOpen: boolean; onConfirm: () => void; onCancel: () => void }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl dark:bg-[#0e1624] border border-slate-200 dark:border-slate-800">
+        <div className="px-6 py-5">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Delete your review?</h2>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Are you sure you want to delete your review for this company? This action cannot be undone.</p>
+        </div>
+        <div className="border-t border-slate-100 dark:border-slate-800 flex items-center gap-3 px-6 py-4">
+          <button onClick={onCancel} className="flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">Cancel</button>
+          <button onClick={onConfirm} className="flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 active:scale-[0.98] dark:bg-rose-600 dark:hover:bg-rose-700">Delete</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const CompanyProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated, user } = useAuth();
@@ -45,6 +64,7 @@ const CompanyProfile: React.FC = () => {
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
   const [mode, setMode] = useState<'create' | 'update'>('create');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const createReviewMutation = useCreateCompanyReview(id);
   const updateReviewMutation = useUpdateCompanyReview(id);
@@ -106,11 +126,11 @@ const CompanyProfile: React.FC = () => {
       return;
     }
 
-    const confirmed = window.confirm('Delete your review for this company?');
-    if (!confirmed) {
-      return;
-    }
+    setShowDeleteConfirm(true);
+  };
 
+  const confirmDeleteReview = () => {
+    setShowDeleteConfirm(false);
     deleteReviewMutation.mutate(undefined, {
       onSuccess: () => {
         setReviewText('');
@@ -287,6 +307,13 @@ const CompanyProfile: React.FC = () => {
                 )}
               </div>
             </section>
+
+            {/* Confirmation Modal */}
+            <ConfirmDeleteModal
+              isOpen={showDeleteConfirm}
+              onConfirm={confirmDeleteReview}
+              onCancel={() => setShowDeleteConfirm(false)}
+            />
 
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between gap-2">

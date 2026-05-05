@@ -25,14 +25,16 @@ const RecruiterRegister = React.lazy(() => import("../components/auth/RecruiterR
 const Login = React.lazy(() =>
   import("../components/auth/Login").then((module) => ({ default: module.Login }))
 );
+const ForgotPassword = React.lazy(() => import("../components/auth/ForgotPassword"));
+const ResetPassword = React.lazy(() => import("../components/auth/ResetPassword"));
 const GoogleSuccess = React.lazy(() => import("../components/auth/GoogleSuccess").then((m) => ({ default: m.default })));
 const Unauthorized = React.lazy(() => import("../pages/status/Unauthorized"));
 const NotFound = React.lazy(() => import("../pages/status/NotFound"));
 const JobPost = React.lazy(() => import("../pages/Recruiter/JobPost"));
 const CandidateProfile = React.lazy(() => import("../pages/Candidate/CandidateProfile"));
-const ResumeAnalyzer = React.lazy(() => import("../pages/Candidate/ResumeAnalyzer"));
 const RecruiterProfile = React.lazy(() => import("../pages/Recruiter/RecruiterProfile"));
 const AdminProfile = React.lazy(() => import("../pages/admin/AdminProfile"));
+const ResourceDetails = React.lazy(() => import("../pages/resources/ResourceDetails"));
 
 // Simple inline RouteError component used as errorElement fallback
 function RouteError({ error }: { error?: unknown }) {
@@ -103,6 +105,14 @@ export const router = createBrowserRouter([
         element: withSuspense(<Login />),
       },
       {
+        path: "forgot-password",
+        element: withSuspense(<ForgotPassword />),
+      },
+      {
+        path: "reset-password",
+        element: withSuspense(<ResetPassword />),
+      },
+      {
         path: "auth/google/success",
         element: withSuspense(<GoogleSuccess />),
       },
@@ -167,6 +177,10 @@ export const router = createBrowserRouter([
         element: withSuspense(<ApplyPage />),
       },
       {
+        path: "resources/:id",
+        element: withSuspense(<ResourceDetails />),
+      },
+      {
         path: "unauthorized",
         element: withSuspense(<Unauthorized />),
       },
@@ -213,7 +227,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="/candidate/dashboard" replace /> },
       { path: "profile", element: withSuspense(<CandidateProfile />) },
       { path: "profile/edit", element: withSuspense(<CandidateProfile />) },
-      { path: "resume-analyzer", element: withSuspense(<ResumeAnalyzer />) },
+      // Resume Analyzer route removed
       ...generateRoutes(userSidebarItems),
     ],
   },
