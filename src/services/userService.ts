@@ -147,10 +147,13 @@ const extractDashboardStats = (payload: unknown): DashboardStats => {
 };
 
 export const useProfile = () => {
+  const { user } = useAuth();
+
   return useQuery({
-    queryKey: ['profile'],
+    queryKey: ['profile', user?._id || user?.email || 'anonymous'],
     queryFn: async () => {
       const primaryEndpoint = getPrimaryProfileEndpoint();
+      const isAdminEndpoint = primaryEndpoint === '/admin/profile';
       const secondaryEndpoint = primaryEndpoint === '/admin/profile' ? '/candidate/profile' : '/admin/profile';
 
       try {
@@ -161,6 +164,9 @@ export const useProfile = () => {
         }
         return profile;
       } catch {
+        if (isAdminEndpoint) {
+          throw new Error('Failed to load admin profile');
+        }
         const fallbackResponse = await api.get(secondaryEndpoint);
         const profile = extractProfile(fallbackResponse.data);
         if (!profile) {
@@ -174,7 +180,7 @@ export const useProfile = () => {
 
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
-  const { updateUser } = useAuth();
+  const { user, updateUser } = useAuth();
 
   return useMutation({
     mutationFn: async (data: Partial<User> | FormData) => {
@@ -191,6 +197,7 @@ export const useUpdateProfile = () => {
       }
 
       const primaryEndpoint = getPrimaryProfileEndpoint();
+      const isAdminEndpoint = primaryEndpoint === '/admin/profile';
       const secondaryEndpoint = primaryEndpoint === '/admin/profile' ? '/candidate/profile' : '/admin/profile';
 
       try {
@@ -201,6 +208,9 @@ export const useUpdateProfile = () => {
         }
         return profile;
       } catch {
+        if (isAdminEndpoint) {
+          throw new Error('Failed to update admin profile');
+        }
         const fallbackResponse = await api.put(secondaryEndpoint, data);
         const profile = extractProfile(fallbackResponse.data);
         if (!profile) {
@@ -210,7 +220,13 @@ export const useUpdateProfile = () => {
       }
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      // Directly set the updated data in cache with user-specific key
+      if (user?._id || user?.email) {
+        const cacheKey = ['profile', user._id || user.email];
+        queryClient.setQueryData(cacheKey, data);
+      }
+      // Also invalidate all profile queries to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ['profile'], exact: false });
       if (data) {
         updateUser(data);
       }
@@ -231,22 +247,13 @@ export const useDashboardStats = () => {
       const isCandidateContext = currentPath.startsWith('/candidate') || getStoredRole() === 'candidate';
       const isRecruiterContext = currentPath.startsWith('/recruiter') || getStoredRole() === 'recruiter';
 
-      const endpoints = [
-        '/admin/dashboard/stats',
-        '/recruiter/dashboard/stats',
-        '/candidate/dashboard/stats',
-        '/users/dashboard/stats',
-        '/admin/stats',
-        '/dashboard/stats',
-      ];
-
       const orderedEndpoints = isAdminContext
-        ? endpoints
+        ? ['/admin/dashboard/stats', '/admin/stats', '/users/dashboard/stats']
         : isRecruiterContext
-        ? ['/recruiter/dashboard/stats', '/users/dashboard/stats', '/dashboard/stats', '/admin/dashboard/stats']
+        ? ['/recruiter/dashboard/stats', '/users/dashboard/stats', '/dashboard/stats']
         : isCandidateContext
-        ? ['/candidate/dashboard/stats', '/users/dashboard/stats', '/admin/dashboard/stats', '/dashboard/stats']
-        : ['/users/dashboard/stats', '/admin/dashboard/stats', '/dashboard/stats'];
+        ? ['/candidate/dashboard/stats', '/users/dashboard/stats', '/dashboard/stats']
+        : ['/users/dashboard/stats', '/dashboard/stats'];
 
       for (const endpoint of orderedEndpoints) {
         try {

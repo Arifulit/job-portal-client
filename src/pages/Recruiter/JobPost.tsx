@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Plus, X } from "lucide-react";
+import { Briefcase, CalendarClock, Plus, Wallet, X } from "lucide-react";
 import { useCreateJob, useJob, useUpdateJob } from "../../services/jobService";
 import { api } from "@/utils/api";
 import { Job, JobStatus } from "../../types";
@@ -474,33 +474,28 @@ export default function JobPost() {
   }
 
   return (
-    <>
-      {/* Company Logo Upload */}
-      <div className="mb-3">
-        <label className="mb-1.5 block text-sm font-semibold text-gray-700">Company Logo</label>
-        {logoUrl && (
-          <div className="mb-2">
-            <img src={logoUrl} alt="Company Logo" className="h-16 rounded border mb-2" />
-          </div>
-        )}
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleLogoChange}
-          className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
-        />
-      </div>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 px-4 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-cyan-50/40 px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          <div className="mb-8 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-600 px-6 py-7 text-white shadow-lg">
+          <div className="mb-8 rounded-3xl border border-cyan-200/70 bg-gradient-to-r from-slate-900 via-cyan-900 to-teal-800 px-6 py-7 text-white shadow-2xl">
             <h1 className="text-3xl font-black sm:text-4xl">
             {isEditMode ? "Edit Job Posting" : "Create a New Job Posting"}
           </h1>
-          <p className="mt-2 text-sm text-emerald-50 sm:text-base">
+          <p className="mt-2 text-sm text-cyan-50 sm:text-base">
             {isEditMode
               ? "Update your job details and keep your listing accurate for candidates."
               : "Publish a clear and complete job post to attract better candidates faster."}
           </p>
+          <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold text-cyan-50/90">
+            <div className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-1.5">
+              <Briefcase className="h-3.5 w-3.5" /> Role Clarity
+            </div>
+            <div className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-1.5">
+              <Wallet className="h-3.5 w-3.5" /> Salary Transparency
+            </div>
+            <div className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-1.5">
+              <CalendarClock className="h-3.5 w-3.5" /> Faster Hiring
+            </div>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -509,9 +504,24 @@ export default function JobPost() {
           <div className="space-y-5">
 
             {/* Job Info */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+            <div className="rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-xl backdrop-blur-sm">
               <h2 className="text-xl font-bold text-gray-900 mb-5">Job Details</h2>
               <p className="mb-4 text-sm text-gray-500">Enter a clear title, work location, salary range, and a short role description.</p>
+
+              <div className="mb-5 rounded-xl border border-cyan-100 bg-cyan-50/70 p-4">
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Company Logo</label>
+                {logoUrl && (
+                  <div className="mb-2">
+                    <img src={logoUrl} alt="Company Logo" className="h-16 rounded-lg border border-slate-200 bg-white p-1" />
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-cyan-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-cyan-700"
+                />
+              </div>
 
               <div className="mb-3">
                 <label className="mb-1.5 block text-sm font-semibold text-gray-700">Job Title *</label>
@@ -608,7 +618,7 @@ export default function JobPost() {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+            <div className="rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-xl backdrop-blur-sm">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Hiring Preferences</h3>
               <p className="mb-4 text-xs text-gray-500">Set eligibility and profile preferences so candidates can understand the fit quickly.</p>
 
@@ -666,10 +676,10 @@ export default function JobPost() {
             </div>
 
             {/* Skills */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+            <div className="rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-xl backdrop-blur-sm">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold text-gray-900">Skills</h3>
-                <button type="button" onClick={() => addField("skills")} className="text-blue-600 p-2 rounded-lg">
+                <button type="button" onClick={() => addField("skills")} className="rounded-lg border border-cyan-200 bg-cyan-50 p-2 text-cyan-700 hover:bg-cyan-100">
                   <Plus className="w-5 h-5" />
                 </button>
               </div>
@@ -678,7 +688,7 @@ export default function JobPost() {
                 <div key={i} className="flex gap-2 mb-3">
                   <input {...register(`skills.${i}`)} placeholder="e.g. React, Node.js, MongoDB" className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white" />
                   {skills.length > 1 && (
-                    <button type="button" onClick={() => removeField("skills", i)} className="text-red-600 p-2 rounded-lg">
+                    <button type="button" onClick={() => removeField("skills", i)} className="rounded-lg border border-red-200 bg-red-50 p-2 text-red-600 hover:bg-red-100">
                       <X className="w-5 h-5" />
                     </button>
                   )}
@@ -692,10 +702,10 @@ export default function JobPost() {
           <div className="space-y-5">
 
             {/* Requirements */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+            <div className="rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-xl backdrop-blur-sm">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold text-gray-900">Requirements</h3>
-                <button type="button" onClick={() => addField("requirements")} className="text-blue-600 p-2 rounded-lg">
+                <button type="button" onClick={() => addField("requirements")} className="rounded-lg border border-cyan-200 bg-cyan-50 p-2 text-cyan-700 hover:bg-cyan-100">
                   <Plus className="w-5 h-5" />
                 </button>
               </div>
@@ -704,7 +714,7 @@ export default function JobPost() {
                 <div key={i} className="flex gap-2 mb-3">
                   <input {...register(`requirements.${i}`)} placeholder="e.g. Strong Node.js and Express.js knowledge" className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white" />
                   {requirements.length > 1 && (
-                    <button type="button" onClick={() => removeField("requirements", i)} className="text-red-600 p-2 rounded-lg">
+                    <button type="button" onClick={() => removeField("requirements", i)} className="rounded-lg border border-red-200 bg-red-50 p-2 text-red-600 hover:bg-red-100">
                       <X className="w-5 h-5" />
                     </button>
                   )}
@@ -712,10 +722,10 @@ export default function JobPost() {
               ))}
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+            <div className="rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-xl backdrop-blur-sm">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold text-gray-900">Education</h3>
-                <button type="button" onClick={() => addField("education")} className="text-blue-600 p-2 rounded-lg">
+                <button type="button" onClick={() => addField("education")} className="rounded-lg border border-cyan-200 bg-cyan-50 p-2 text-cyan-700 hover:bg-cyan-100">
                   <Plus className="w-5 h-5" />
                 </button>
               </div>
@@ -728,7 +738,7 @@ export default function JobPost() {
                     className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white"
                   />
                   {education.length > 1 && (
-                    <button type="button" onClick={() => removeField("education", i)} className="text-red-600 p-2 rounded-lg">
+                    <button type="button" onClick={() => removeField("education", i)} className="rounded-lg border border-red-200 bg-red-50 p-2 text-red-600 hover:bg-red-100">
                       <X className="w-5 h-5" />
                     </button>
                   )}
@@ -736,10 +746,10 @@ export default function JobPost() {
               ))}
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+            <div className="rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-xl backdrop-blur-sm">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold text-gray-900">Additional Requirements</h3>
-                <button type="button" onClick={() => addField("additionalRequirements")} className="text-blue-600 p-2 rounded-lg">
+                <button type="button" onClick={() => addField("additionalRequirements")} className="rounded-lg border border-cyan-200 bg-cyan-50 p-2 text-cyan-700 hover:bg-cyan-100">
                   <Plus className="w-5 h-5" />
                 </button>
               </div>
@@ -752,7 +762,7 @@ export default function JobPost() {
                     className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white"
                   />
                   {additionalRequirements.length > 1 && (
-                    <button type="button" onClick={() => removeField("additionalRequirements", i)} className="text-red-600 p-2 rounded-lg">
+                    <button type="button" onClick={() => removeField("additionalRequirements", i)} className="rounded-lg border border-red-200 bg-red-50 p-2 text-red-600 hover:bg-red-100">
                       <X className="w-5 h-5" />
                     </button>
                   )}
@@ -760,10 +770,10 @@ export default function JobPost() {
               ))}
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+            <div className="rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-xl backdrop-blur-sm">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold text-gray-900">Business Areas</h3>
-                <button type="button" onClick={() => addField("businessAreas")} className="text-blue-600 p-2 rounded-lg">
+                <button type="button" onClick={() => addField("businessAreas")} className="rounded-lg border border-cyan-200 bg-cyan-50 p-2 text-cyan-700 hover:bg-cyan-100">
                   <Plus className="w-5 h-5" />
                 </button>
               </div>
@@ -776,7 +786,7 @@ export default function JobPost() {
                     className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white"
                   />
                   {businessAreas.length > 1 && (
-                    <button type="button" onClick={() => removeField("businessAreas", i)} className="text-red-600 p-2 rounded-lg">
+                    <button type="button" onClick={() => removeField("businessAreas", i)} className="rounded-lg border border-red-200 bg-red-50 p-2 text-red-600 hover:bg-red-100">
                       <X className="w-5 h-5" />
                     </button>
                   )}
@@ -785,10 +795,10 @@ export default function JobPost() {
             </div>
 
             {/* Responsibilities */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+            <div className="rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-xl backdrop-blur-sm">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold text-gray-900">Responsibilities</h3>
-                <button type="button" onClick={() => addField("responsibilities")} className="text-blue-600 p-2 rounded-lg">
+                <button type="button" onClick={() => addField("responsibilities")} className="rounded-lg border border-cyan-200 bg-cyan-50 p-2 text-cyan-700 hover:bg-cyan-100">
                   <Plus className="w-5 h-5" />
                 </button>
               </div>
@@ -797,7 +807,7 @@ export default function JobPost() {
                 <div key={i} className="flex gap-2 mb-3">
                   <input {...register(`responsibilities.${i}`)} placeholder="e.g. Develop and maintain backend APIs" className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white" />
                   {responsibilities.length > 1 && (
-                    <button type="button" onClick={() => removeField("responsibilities", i)} className="text-red-600 p-2 rounded-lg">
+                    <button type="button" onClick={() => removeField("responsibilities", i)} className="rounded-lg border border-red-200 bg-red-50 p-2 text-red-600 hover:bg-red-100">
                       <X className="w-5 h-5" />
                     </button>
                   )}
@@ -812,7 +822,7 @@ export default function JobPost() {
             <Button
               type="submit"
               disabled={isPending || isUpdating}
-              className="rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 px-14 py-6 text-lg font-bold text-white shadow-xl sm:px-24"
+              className="rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-700 px-14 py-6 text-lg font-bold text-white shadow-2xl transition hover:brightness-110 sm:px-24"
             >
               {isEditMode
                 ? isUpdating
@@ -827,6 +837,5 @@ export default function JobPost() {
         </form>
       </div>
     </div>
-    </>
   );
 }

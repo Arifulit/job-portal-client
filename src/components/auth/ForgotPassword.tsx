@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import axios from 'axios';
 import { api } from '../../utils/api';
 
 const ForgotPassword = () => {
@@ -28,8 +29,13 @@ const ForgotPassword = () => {
       } else {
         toast.error(response.data.message || 'Failed to send reset link');
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Something went wrong');
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error)
+        ? (error.response?.data as { message?: string } | undefined)?.message || error.message
+        : error instanceof Error
+        ? error.message
+        : 'Something went wrong';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

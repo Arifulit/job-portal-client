@@ -447,30 +447,42 @@ const RecruiterProfilePage = () => {
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white py-12 px-4">
       <div className="mx-auto max-w-4xl">
         {/* Hero Header */}
-        <div className="mb-8 overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-700 p-8 text-white shadow-lg">
+        <div className="mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-blue-700 to-slate-900 p-8 text-white shadow-2xl relative">
+          {/* Background accent */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -z-10"></div>
+          
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-6">
-              <div className="h-32 w-32 overflow-hidden rounded-2xl border-4 border-white bg-emerald-100 flex items-center justify-center text-4xl font-bold">
+            <div className="flex items-center gap-8">
+              <div className="h-40 w-40 overflow-hidden rounded-3xl border-4 border-white bg-blue-100 flex items-center justify-center text-5xl font-bold shadow-2xl flex-shrink-0 relative">
                 {profileAvatar ? (
                   <img src={profileAvatar} alt={profile.name} className="h-full w-full object-cover" />
                 ) : (
-                  initials
+                  <span className="bg-gradient-to-br from-blue-400 to-blue-600 text-white w-full h-full flex items-center justify-center">{initials}</span>
                 )}
+                <div className="absolute inset-0 rounded-3xl border-4 border-white/20"></div>
               </div>
-              <div>
-                <h1 className="text-3xl font-bold">{profile.name}</h1>
-                <p className="mt-2 text-emerald-100">{profile.email}</p>
-                <div className="mt-4 flex gap-4 text-sm">
+              <div className="flex-1">
+                <h1 className="text-5xl font-bold tracking-tight mb-2">{profile.name}</h1>
+                {profile.designation && (
+                  <p className="text-blue-100 text-lg font-medium mb-4">{profile.designation}</p>
+                )}
+                <div className="flex items-center gap-2 text-blue-50 mb-6">
+                  <Mail className="h-5 w-5" />
+                  <a href={`mailto:${profile.email}`} className="hover:text-white transition font-medium">
+                    {profile.email}
+                  </a>
+                </div>
+                <div className="flex flex-wrap gap-3 text-sm">
                   {profile.phone && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 bg-white/15 backdrop-blur-md rounded-full px-4 py-2 border border-white/20 hover:bg-white/20 transition">
                       <Phone className="h-4 w-4" />
-                      {profile.phone}
+                      <span className="font-medium">{profile.phone}</span>
                     </div>
                   )}
                   {profile.location && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 bg-white/15 backdrop-blur-md rounded-full px-4 py-2 border border-white/20 hover:bg-white/20 transition">
                       <MapPin className="h-4 w-4" />
-                      {profile.location}
+                      <span className="font-medium">{profile.location}</span>
                     </div>
                   )}
                 </div>
@@ -478,7 +490,7 @@ const RecruiterProfilePage = () => {
             </div>
             <button
               onClick={() => setIsEditing(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-emerald-700 shadow-sm hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 text-sm font-semibold text-blue-700 shadow-lg hover:bg-blue-50 transition-all hover:scale-105 flex-shrink-0"
             >
               <Edit2 className="h-4 w-4" />
               Edit Profile
@@ -490,29 +502,29 @@ const RecruiterProfilePage = () => {
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Left Column - Stats */}
           <div className="space-y-4 lg:col-span-1">
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Stats</p>
-              <div className="mt-6 space-y-4">
-                <div>
+            <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-6 shadow-lg hover:shadow-xl transition-shadow">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-6">Performance Stats</p>
+              <div className="space-y-4">
+                <div className="rounded-xl bg-gradient-to-r from-emerald-50 to-emerald-100/50 p-4 border border-emerald-200/50">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-slate-600">Jobs Posted</span>
-                    <span className="text-2xl font-bold text-emerald-600">
+                    <span className="text-sm font-semibold text-emerald-700">Jobs Posted</span>
+                    <span className="text-3xl font-bold text-emerald-600">
                       {profile.jobsPosted || 0}
                     </span>
                   </div>
                 </div>
-                <div className="border-t border-slate-100 pt-4">
+                <div className="rounded-xl bg-gradient-to-r from-blue-50 to-blue-100/50 p-4 border border-blue-200/50">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-slate-600">Applications</span>
-                    <span className="text-2xl font-bold text-blue-600">
+                    <span className="text-sm font-semibold text-blue-700">Applications</span>
+                    <span className="text-3xl font-bold text-blue-600">
                       {profile.applicantsCount || 0}
                     </span>
                   </div>
                 </div>
-                <div className="border-t border-slate-100 pt-4">
+                <div className="rounded-xl bg-gradient-to-r from-green-50 to-green-100/50 p-4 border border-green-200/50">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-slate-600">Hires</span>
-                    <span className="text-2xl font-bold text-green-600">{profile.hires || 0}</span>
+                    <span className="text-sm font-semibold text-green-700">Hires</span>
+                    <span className="text-3xl font-bold text-green-600">{profile.hires || 0}</span>
                   </div>
                 </div>
               </div>
@@ -543,14 +555,15 @@ const RecruiterProfilePage = () => {
           {/* Right Column - Details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Personal Info Card */}
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-600">
+            <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-7 shadow-lg hover:shadow-xl transition-shadow">
+              <h2 className="mb-6 text-sm font-bold uppercase tracking-widest text-slate-700 flex items-center gap-2">
+                <div className="h-1 w-1 bg-blue-600 rounded-full"></div>
                 Personal Information
               </h2>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {profile.biodata && (
-                  <div className="rounded-lg bg-slate-50 p-4">
-                    <p className="text-sm text-slate-600">{profile.biodata}</p>
+                  <div className="rounded-xl bg-gradient-to-br from-blue-50 to-slate-100 p-5 border border-blue-100/50 italic text-slate-700 leading-relaxed">
+                    "{profile.biodata}"
                   </div>
                 )}
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -643,13 +656,13 @@ const RecruiterProfilePage = () => {
 };
 
 const InfoItem = ({ icon: Icon, label, value }: { icon: any; label: string; value: string }) => (
-  <div className="group flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-slate-50">
-    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 transition-colors group-hover:bg-slate-200">
-      <Icon className="h-4 w-4 text-slate-600" />
+  <div className="group flex items-start gap-4 rounded-xl px-4 py-4 bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200/50 transition-all hover:border-blue-300 hover:shadow-md">
+    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 transition-all group-hover:scale-110">
+      <Icon className="h-5 w-5 text-white" />
     </div>
-    <div className="min-w-0">
-      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p>
-      <p className="truncate text-sm font-medium text-slate-900">{value}</p>
+    <div className="min-w-0 flex-1">
+      <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-1">{label}</p>
+      <p className="truncate text-sm font-semibold text-slate-900 group-hover:text-blue-700 transition">{value}</p>
     </div>
   </div>
 );

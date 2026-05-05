@@ -63,7 +63,7 @@ const SkillBadge = ({ skill, index }: { skill: string; index: number }) => {
 };
 
 /* ─── ResumeViewer — collapsible inline PDF preview ──────────────────────── */
-const ResumeViewer = ({ url, onRemove, showConfirm, setShowConfirm }: { url: string; onRemove: () => void; showConfirm: boolean; setShowConfirm: (v: boolean) => void }) => {
+const ResumeViewer = ({ url, setShowConfirm }: { url: string; setShowConfirm: (v: boolean) => void }) => {
   const [expanded, setExpanded] = useState(false);
   const isPdf = url.toLowerCase().includes('.pdf') || url.includes('application/pdf') || url.includes('cloudinary');
 
@@ -513,7 +513,7 @@ const CandidateProfile = () => {
             {/* ── Resume — viewer only ─────────────────────────────────── */}
             {liveResume ? (
               <>
-                <ResumeViewer url={liveResume} onRemove={handleRemoveResume} showConfirm={showDeleteConfirm} setShowConfirm={setShowDeleteConfirm} />
+                <ResumeViewer url={liveResume} setShowConfirm={setShowDeleteConfirm} />
                 <ConfirmDeleteModal isOpen={showDeleteConfirm} onConfirm={handleRemoveResume} onCancel={() => setShowDeleteConfirm(false)} />
               </>
             ) : null}
