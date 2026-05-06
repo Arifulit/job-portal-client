@@ -97,10 +97,10 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
   const normalizedStatus = String(job.status || '').toLowerCase();
   const statusStyles =
     normalizedStatus === 'approved'
-      ? 'badge-success'
+      ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-900/25 dark:text-emerald-300'
       : normalizedStatus === 'pending'
-        ? 'badge-warning'
-        : 'badge-primary';
+        ? 'border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-900/25 dark:text-amber-300'
+        : 'border border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300';
 
   return (
     <motion.div
@@ -112,18 +112,18 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
     >
       <Link
         to={jobPath}
-        className="group relative block h-full overflow-hidden rounded-[1.5rem] border border-slate-200/80 bg-gradient-to-br from-white via-white to-slate-50 shadow-[0_10px_30px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:border-primary-200 hover:shadow-[0_20px_50px_rgba(37,99,235,0.15)] dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950"
+        className="group relative block h-full overflow-hidden rounded-[1.5rem] border border-slate-200/80 bg-gradient-to-br from-slate-50 via-indigo-50/30 to-cyan-50/20 shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_20px_45px_rgba(15,23,42,0.12)] dark:border-slate-700 dark:from-slate-900 dark:via-indigo-950/20 dark:to-slate-950"
       >
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-500 via-cyan-400 to-fuchsia-500 opacity-80" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-slate-700 via-indigo-500 to-cyan-600 opacity-80" />
         <div className="relative h-full flex flex-col p-5 sm:p-6">
           {/* Gradient background on hover */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-50/70 via-transparent to-fuchsia-50/50 dark:from-primary-900/20 dark:via-transparent dark:to-fuchsia-900/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-50/80 via-transparent to-indigo-50/40 dark:from-slate-900/20 dark:via-transparent dark:to-indigo-950/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
           
           <div className="relative z-10 flex flex-col h-full">
             {/* Header with status badge */}
             <div className="relative mb-4 flex items-start justify-between gap-3">
               <div className="flex flex-1 items-start gap-3">
-                <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
+                <div className="mt-0.5 flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
                   {companyLogo ? (
                     <img src={companyLogo} alt={companyName} className="h-full w-full object-contain p-1" />
                   ) : (
@@ -141,7 +141,7 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
                 >
                   {job.jobType && (
                     <motion.span 
-                      className="inline-flex items-center gap-1 rounded-full border border-primary-100 bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700 shadow-sm dark:border-primary-900 dark:bg-primary-900/70 dark:text-primary-200"
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                       whileHover={{ scale: 1.05 }}
                       transition={{ type: 'spring', stiffness: 400, damping: 10 }}
                     >
@@ -160,7 +160,7 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
                   )}
                 </motion.div>
                 <motion.h3 
-                  className="mb-1 line-clamp-2 text-[1.05rem] font-extrabold leading-tight tracking-tight text-slate-900 transition-colors group-hover:text-primary-700 dark:text-slate-100 dark:group-hover:text-primary-300"
+                  className="mb-1 line-clamp-2 text-[1.05rem] font-extrabold leading-tight tracking-tight text-slate-900 transition-colors group-hover:text-indigo-700 dark:text-slate-100 dark:group-hover:text-indigo-300"
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
                   transition={{ delay: 0.15 }}
@@ -170,7 +170,7 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
                 {companyId ? (
                   <motion.p 
                     onClick={(e) => handleCompanyClick(e, companyId)}
-                    className="line-clamp-1 cursor-pointer text-sm font-medium text-slate-600 transition hover:text-primary-600 hover:underline dark:text-slate-400 dark:hover:text-primary-300"
+                    className="line-clamp-1 cursor-pointer text-sm font-medium text-slate-600 transition hover:text-indigo-600 hover:underline dark:text-slate-400 dark:hover:text-indigo-300"
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
                     transition={{ delay: 0.2 }}
@@ -198,7 +198,7 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
                   aria-label={saved ? 'Unsave job' : 'Save job'}
                   className={`flex-shrink-0 rounded-lg p-2.5 transition-all duration-200 ${
                     saved
-                      ? 'bg-primary-50 text-primary-600 ring-1 ring-primary-100 dark:bg-primary-900/70 dark:text-primary-300 dark:ring-primary-900'
+                      ? 'bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100 dark:bg-indigo-900/35 dark:text-indigo-300 dark:ring-indigo-900/60'
                       : 'bg-slate-100 text-slate-500 ring-1 ring-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700 dark:hover:bg-slate-700'
                   }`}
                   disabled={saveJobMutation.isPending || unsaveJobMutation.isPending}
@@ -271,7 +271,7 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
             {/* Salary info if available */}
             {(job.salary || job.salaryMin) && (
               <motion.div 
-                className="mb-4 flex items-center gap-2 rounded-2xl border border-primary-100 bg-gradient-to-r from-primary-50 via-white to-cyan-50/70 p-3 shadow-sm transition-shadow hover:shadow-md dark:border-primary-900 dark:from-primary-900/30 dark:via-slate-900 dark:to-cyan-900/10"
+                className="mb-4 flex items-center gap-2 rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-50 via-white to-indigo-50/70 p-3 shadow-sm transition-shadow hover:shadow-md dark:border-slate-700 dark:from-slate-800 dark:via-slate-900 dark:to-indigo-950/20"
                 initial={{ opacity: 0, x: -10 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 whileHover={{ x: 4 }}
@@ -281,10 +281,10 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
                   animate={{ rotateZ: [0, 10, -10, 0] }}
                   transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
                 >
-                  <DollarSign className="h-5 w-5 flex-shrink-0 text-primary-600 dark:text-primary-400" />
+                  <DollarSign className="h-5 w-5 flex-shrink-0 text-indigo-600 dark:text-indigo-400" />
                 </motion.div>
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-primary-700 dark:text-primary-300">
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
                     {typeof job.salary === 'object' && salary
                       ? `${salary.currency || 'BDT'} ${salary.min || 0} - ${salary.max || 0}`
                       : typeof job.salary === 'number'
@@ -304,9 +304,9 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
               whileInView={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              <span className="text-sm font-semibold text-slate-700 transition group-hover:text-primary-700 dark:text-slate-300 dark:group-hover:text-primary-300">View Full Details</span>
+              <span className="text-sm font-semibold text-slate-700 transition group-hover:text-indigo-700 dark:text-slate-300 dark:group-hover:text-indigo-300">View Full Details</span>
               <motion.div
-                className="rounded-full bg-primary-50 p-2 text-primary-600 dark:bg-primary-900/50 dark:text-primary-300"
+                className="rounded-full bg-slate-100 p-2 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 animate={{ x: [0, 4, 0] }}
                 transition={{ duration: 1.5, repeat: Infinity }}
               >

@@ -28,6 +28,7 @@ import { useAuth } from "@/context/AuthContext";
 type FeaturedJobItem = {
   title: string;
   company: string;
+  companyLogo?: string;
   location: string;
   type: string;
   salary: string;
@@ -75,6 +76,11 @@ const formatHomeSalary = (job: HomeApiJob) => {
 const getHomeCompanyName = (company: HomeApiJob["company"]) => {
   if (typeof company === "string") return company;
   return company?.name || "Confidential Company";
+};
+
+const getHomeCompanyLogo = (company: HomeApiJob["company"]) => {
+  if (typeof company === "string" || !company) return undefined;
+  return company.logo || undefined;
 };
 
 const estimateReadMinutes = (text: string) => {
@@ -389,19 +395,19 @@ const HomePage: React.FC = () => {
         icon: Users,
         value: dashboardStats.total,
         label: "Open Jobs",
-        color: "bg-[#123f7a]",
+        color: "bg-gradient-to-br from-slate-900 to-slate-700",
       },
       {
         icon: Rocket,
         value: dashboardStats.uniqueCompanies,
         label: "Hiring Companies",
-        color: "bg-[#1c5da8]",
+        color: "bg-gradient-to-br from-indigo-700 to-indigo-500",
       },
       {
         icon: CheckCircle2,
         value: dashboardStats.recent,
         label: "Fresh Openings",
-        color: "bg-[#2d78cb]",
+        color: "bg-gradient-to-br from-cyan-700 to-cyan-500",
       },
     ],
     [dashboardStats.recent, dashboardStats.total, dashboardStats.uniqueCompanies]
@@ -413,6 +419,7 @@ const HomePage: React.FC = () => {
         ? displayJobs.map((job): FeaturedJobItem => ({
           title: job.title,
           company: getHomeCompanyName(job.company),
+          companyLogo: typeof job.company === 'object' ? job.company?.logo : undefined,
           location: job.location || "Bangladesh",
           type: job.jobType || "full-time",
           salary: formatHomeSalary(job),
@@ -430,30 +437,34 @@ const HomePage: React.FC = () => {
   );
 
   return (
-    <div className="bg-[#f3f8ff] dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <section className="relative overflow-hidden border-b border-blue-100 dark:border-slate-800">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#eaf2ff] via-[#d4e4ff] to-[#f0e6ff] dark:from-slate-900 dark:via-slate-950 dark:to-[#1a1f3a]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1f4f93]/15 via-transparent to-transparent" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#cf2f92]/10 to-transparent rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-[#1f4f93]/10 to-transparent rounded-full blur-3xl" />
+    <div className="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+      <section className="relative overflow-hidden border-b border-slate-200/80 dark:border-slate-800">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.08),_transparent_36%),radial-gradient(circle_at_top_right,_rgba(79,70,229,0.08),_transparent_30%),linear-gradient(to_bottom,_rgba(248,250,252,1),_rgba(241,245,249,1))] dark:bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.06),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(79,70,229,0.18),_transparent_28%),linear-gradient(to_bottom,_rgba(15,23,42,1),_rgba(2,6,23,1))]" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-700" />
+        <div className="absolute -right-24 top-12 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl" />
+        <div className="absolute -left-24 bottom-0 h-80 w-80 rounded-full bg-cyan-500/10 blur-3xl" />
 
-        <div className="relative mx-auto grid max-w-[1320px] grid-cols-1 gap-0 px-4 py-8 md:px-6 lg:grid-cols-[1fr_340px]">
+        <div className="relative mx-auto grid max-w-[1320px] grid-cols-1 gap-8 px-4 py-10 md:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start lg:py-14">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
             className="pr-0 lg:pr-8"
           >
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter text-slate-900 dark:text-white" style={{ fontFamily: "Montserrat, sans-serif" }}>
-              Find Your <span className="bg-gradient-to-r from-[#1f4f93] via-[#cf2f92] to-[#1f4f93] bg-clip-text text-transparent">Dream Job Today</span>
-            </h1>
-            <p className="mt-3 text-lg text-slate-600 dark:text-slate-300">Discover thousands of opportunities from the world's leading companies</p>
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              Professional hiring platform for candidates and recruiters
+            </div>
 
-            <div className="mt-7 grid grid-cols-2 gap-4 md:grid-cols-3">
+            <h1 className="mt-5 max-w-2xl text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl md:text-4xl dark:text-white" style={{ fontFamily: "Montserrat, sans-serif" }}>
+              Find The Right Job
+            </h1>
+
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {[
-                { icon: Briefcase, label: "Live Jobs", value: dashboardStats.total, bgColor: "from-blue-500 to-blue-600", cardBg: "from-blue-100 to-blue-50", textColor: "text-blue-700", action: () => navigate("/jobs") },
-                { icon: Building2, label: "Companies", value: dashboardStats.uniqueCompanies, bgColor: "from-pink-500 to-pink-600", cardBg: "from-pink-100 to-pink-50", textColor: "text-pink-700", action: () => navigate("/companies") },
-                { icon: Stethoscope, label: "New Jobs", value: dashboardStats.recent, bgColor: "from-green-500 to-green-600", cardBg: "from-green-100 to-green-50", textColor: "text-green-700", action: () => navigate("/jobs?newOnly=true") },
+                { icon: Briefcase, label: "Live Jobs", value: dashboardStats.total, bgColor: "from-slate-900 to-slate-700", cardBg: "from-white to-slate-50", textColor: "text-slate-900 dark:text-slate-100", action: () => navigate("/jobs") },
+                { icon: Building2, label: "Companies", value: dashboardStats.uniqueCompanies, bgColor: "from-indigo-600 to-indigo-500", cardBg: "from-white to-indigo-50/70", textColor: "text-slate-900 dark:text-slate-100", action: () => navigate("/companies") },
+                { icon: Stethoscope, label: "New Jobs", value: dashboardStats.recent, bgColor: "from-emerald-600 to-emerald-500", cardBg: "from-white to-emerald-50/70", textColor: "text-slate-900 dark:text-slate-100", action: () => navigate("/jobs?newOnly=true") },
               ].map((stat, idx) => {
                 const Icon = stat.icon;
                 return (
@@ -463,13 +474,13 @@ const HomePage: React.FC = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.2 + idx * 0.1 }}
-                    className={`flex items-center gap-3 p-4 rounded-lg bg-gradient-to-br ${stat.cardBg} border border-white/60 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2 cursor-pointer`}
+                    className={`flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-gradient-to-br ${stat.cardBg} p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg dark:border-slate-700`}
                   >
-                    <div className={`flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${stat.bgColor} shadow-lg flex-shrink-0`}>
+                    <div className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${stat.bgColor} shadow-lg`}>
                       <Icon className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-slate-500">{stat.label}</p>
+                      <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">{stat.label}</p>
                       <p className={`text-3xl font-extrabold leading-none ${stat.textColor}`}>{stat.value || 0}</p>
                     </div>
                   </motion.button>
@@ -477,8 +488,8 @@ const HomePage: React.FC = () => {
               })}
             </div>
 
-            <div className="mt-7 rounded-md bg-[#1f4f93] p-3 shadow-lg">
-              <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_240px_160px]" style={{background: "linear-gradient(to right, #1f4f93, #2d6ac0)"}}>
+            <div className="mt-8 rounded-[1.5rem] border border-slate-200 bg-white p-3 shadow-[0_20px_45px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:bg-slate-900">
+              <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_240px_160px]">
                 <label className="relative">
                   <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                   <input
@@ -486,7 +497,7 @@ const HomePage: React.FC = () => {
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                     placeholder="Search by keyword"
-                    className="h-14 w-full rounded-lg border-0 bg-white/95 dark:bg-slate-900 dark:text-slate-100 pl-12 pr-4 text-lg outline-none ring-0 shadow-md focus:ring-2 focus:ring-[#cf2f92] focus:ring-offset-0 transition-all"
+                    className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-base outline-none transition-all placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/40"
                   />
                 </label>
 
@@ -495,7 +506,7 @@ const HomePage: React.FC = () => {
                   <select
                     value={jobTypeFilter}
                     onChange={(e) => setJobTypeFilter(e.target.value)}
-                    className="h-14 w-full appearance-none rounded-lg border-0 bg-white/95 dark:bg-slate-900 pl-12 pr-10 text-lg text-slate-500 dark:text-slate-300 outline-none shadow-md focus:ring-2 focus:ring-[#cf2f92] transition-all"
+                    className="h-14 w-full appearance-none rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-10 text-base text-slate-600 outline-none transition-all focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/40"
                   >
                     <option value="">Job Type</option>
                     <option value="full-time">Full-time</option>
@@ -510,7 +521,7 @@ const HomePage: React.FC = () => {
                 <Button
                   type="submit"
                   onClick={handleSearch}
-                  className="h-14 rounded-lg bg-gradient-to-r from-[#9ac8a2] to-[#7bb888] text-lg font-bold text-white shadow-lg hover:shadow-xl hover:from-[#8fbe97] hover:to-[#70ae7d] transition-all active:scale-95"
+                  className="h-14 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-700 to-cyan-700 text-base font-semibold text-white shadow-lg transition-all hover:shadow-xl active:scale-[0.98]"
                 >
                   Search
                 </Button>
@@ -523,7 +534,7 @@ const HomePage: React.FC = () => {
                   key={city}
                   type="button"
                   onClick={() => navigate(`/jobs?location=${encodeURIComponent(city.split(" (")[0])}`)}
-                  className="rounded-full bg-gradient-to-r from-[#4a70a8] to-[#3a5f95] px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:shadow-lg hover:scale-105 active:scale-95 shadow-md"
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-200 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-700 dark:hover:text-indigo-300"
                 >
                   {city}
                 </button>
@@ -537,20 +548,20 @@ const HomePage: React.FC = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            className="mt-6 rounded-xl bg-gradient-to-br from-[#255c9f] via-[#1f4f93] to-[#1a3d6e] p-8 shadow-2xl text-white lg:mt-0 border border-blue-400/20"
+            className="mt-6 rounded-[1.5rem] border border-slate-200 bg-white p-7 shadow-[0_24px_60px_rgba(15,23,42,0.1)] lg:mt-0 dark:border-slate-700 dark:bg-slate-900"
           >
-            <h2 className="mb-8 text-2xl font-bold uppercase tracking-widest text-white" style={{ fontFamily: "Montserrat, sans-serif" }}>
+            <h2 className="mb-6 text-2xl font-bold tracking-tight text-slate-950 dark:text-white" style={{ fontFamily: "Montserrat, sans-serif" }}>
               Quick Links
             </h2>
-            <ul className="space-y-4">
+            <ul className="space-y-3">
               {quickLinks.map((item) => (
-                <li key={item.label} className="hover:bg-white/15 rounded-lg p-3 transition-all duration-300">
-                  <Link to={item.href} className="flex items-center justify-between gap-3 text-base text-white/90 transition hover:text-white no-underline">
+                <li key={item.label}>
+                  <Link to={item.href} className="group flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-base text-slate-700 transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-200 hover:bg-white hover:shadow-sm no-underline dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-indigo-700 dark:hover:bg-slate-800">
                     <div className="flex items-center gap-2">
-                      <ChevronRight className="h-5 w-5 flex-shrink-0 group-hover:translate-x-1 transition-transform" />
+                      <ChevronRight className="h-5 w-5 flex-shrink-0 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-indigo-500" />
                       <span className="font-medium">{item.label}</span>
                     </div>
-                    <span className="ml-auto flex-shrink-0 rounded-full bg-gradient-to-r from-[#cf2f92] to-[#e84ba8] px-3 py-1 text-sm font-bold text-white shadow-md">{item.count || 0}</span>
+                    <span className="ml-auto flex-shrink-0 rounded-full bg-slate-900 px-3 py-1 text-sm font-bold text-white shadow-sm dark:bg-white dark:text-slate-900">{item.count || 0}</span>
                   </Link>
                 </li>
               ))}
@@ -559,58 +570,70 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      <section className="mx-auto flex max-w-[1320px] flex-col items-center justify-between gap-4 px-4 py-10 md:flex-row md:px-6">
-        <div>
-          <h3 className="text-4xl font-bold text-slate-900 dark:text-white" style={{ fontFamily: "Montserrat, sans-serif" }}>
-            Start Your Journey Today
-          </h3>
-          <p className="mt-3 text-lg text-slate-600 dark:text-slate-400">Create your profile and get hired by top companies in Bangladesh.</p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Link to="/register/candidate">
-            <Button className="h-12 rounded-lg bg-gradient-to-r from-[#cf2f92] to-[#e84ba8] px-8 text-base font-bold text-white hover:shadow-lg shadow-md transition-all active:scale-95 whitespace-nowrap">
-              Candidate Registration
-            </Button>
-          </Link>
-          <Link to="/register/recruiter">
-            <Button variant="outline" className="h-12 rounded-lg border-2 border-[#1f4f93] px-8 text-base font-bold text-[#1f4f93] dark:text-blue-300 hover:bg-[#f0f6ff] dark:hover:bg-slate-800 transition-all shadow-md whitespace-nowrap">
-              Recruiter Registration
-            </Button>
-          </Link>
+      <section className="mx-auto max-w-[1320px] px-4 py-10 md:px-6">
+        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-7 shadow-[0_20px_50px_rgba(15,23,42,0.08)] md:flex md:items-center md:justify-between md:gap-8 md:p-8 dark:border-slate-700 dark:bg-slate-900">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Career kickoff</p>
+            <h3 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 dark:text-white" style={{ fontFamily: "Montserrat, sans-serif" }}>
+              Start Your Journey Today
+            </h3>
+            <p className="mt-3 max-w-2xl text-base text-slate-600 dark:text-slate-400">Create your profile and get hired by top companies in Bangladesh with a more polished application experience.</p>
+          </div>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row md:mt-0">
+            <Link to="/register/candidate">
+              <Button className="h-11 rounded-2xl bg-slate-900 px-6 text-sm font-semibold text-white shadow-md transition-all hover:bg-slate-800 active:scale-[0.98] whitespace-nowrap dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200">
+                Candidate Registration
+              </Button>
+            </Link>
+            <Link to="/register/recruiter">
+              <Button variant="outline" className="h-11 rounded-2xl border-2 border-slate-300 px-6 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900 transition-all shadow-sm whitespace-nowrap">
+                Recruiter Registration
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-[1320px] px-4 pb-4 md:px-6">
-        <div className="rounded-xl border border-blue-100 dark:border-slate-800 bg-gradient-to-br from-white via-blue-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-8 shadow-lg">
+        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-8 shadow-[0_18px_50px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:bg-slate-900">
           <div className="mb-8 text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 mb-3">Trusted by Leading Companies</p>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2" style={{ fontFamily: "Montserrat, sans-serif" }}>Explore Opportunities at Top Organizations</h2>
-            <p className="text-slate-600 dark:text-slate-300">Click on any company to explore all available opportunities</p>
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Trusted employers</p>
+            <h2 className="mb-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-white" style={{ fontFamily: "Montserrat, sans-serif" }}>Meet the teams hiring right now</h2>
+            <p className="text-slate-600 dark:text-slate-300">Browse verified companies, compare open roles, and apply with confidence.</p>
           </div>
-          <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-4 lg:grid-cols-9">
+          <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-4 xl:grid-cols-8">
             {dynamicCompanies.length > 0 ? (
               dynamicCompanies.map((company) => (
                 <button
                   key={company.id}
                   onClick={() => navigate(`/company/${company.id}/profile`)}
-                  className="flex flex-col items-center justify-center rounded-lg bg-white dark:bg-slate-800/60 px-4 py-6 text-sm font-medium text-slate-700 dark:text-slate-200 shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-3 hover:bg-gradient-to-br hover:from-blue-100 hover:to-purple-100 dark:hover:from-slate-700 dark:hover:to-slate-600 border border-transparent hover:border-blue-300 dark:hover:border-purple-500 cursor-pointer h-full w-full"
+                  className="group relative flex h-[15rem] w-full cursor-pointer flex-col items-center justify-between overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white px-4 py-5 text-sm font-medium text-slate-700 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-indigo-200 hover:shadow-lg dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-indigo-700"
                 >
-                  {company.logo ? (
-                    <img src={company.logo} alt={company.name} className="h-12 w-auto mb-3 object-contain opacity-90 hover:opacity-100 hover:scale-125 transition-all duration-300 filter saturate-100 hover:drop-shadow-xl" />
-                  ) : (
-                    <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-purple-100 text-sm font-bold text-[#1f4f93] hover:shadow-lg transition-all duration-300">
-                      {company.name.slice(0, 1).toUpperCase()}
-                    </div>
-                  )}
-                  <span className="truncate text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-[#1f4f93] transition-colors">{company.name}</span>
-                  <span className="mt-1 text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors">{company.openRoles} {company.openRoles === 1 ? 'role' : 'roles'}</span>
-                  <div className="mt-3 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
-                    <ExternalLink className="h-3.5 w-3.5 text-[#1f4f93] hover:text-[#cf2f92]" />
+                  <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-slate-200 via-indigo-200 to-cyan-200 opacity-80 dark:from-slate-700 dark:via-indigo-700 dark:to-cyan-700" />
+                  <div className="flex flex-1 flex-col items-center justify-center pt-1">
+                    {company.logo ? (
+                      <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-transform duration-300 group-hover:scale-105 dark:border-slate-700 dark:bg-slate-900">
+                      <img src={company.logo} alt={company.name} className="h-full w-full object-contain opacity-95" />
+                      </div>
+                    ) : (
+                      <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-200 to-slate-100 text-xl font-bold text-slate-700 transition-all duration-300 dark:from-slate-800 dark:to-slate-700 dark:text-slate-200">
+                        {company.name.slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="max-w-[7.75rem] text-center text-[0.92rem] font-semibold leading-snug text-slate-800 transition-colors line-clamp-2 group-hover:text-indigo-700 dark:text-slate-100 dark:group-hover:text-indigo-300">
+                      {company.name}
+                    </span>
+                    <span className="mt-1 text-xs font-medium text-slate-500 transition-colors dark:text-slate-400">{company.openRoles} active role{company.openRoles === 1 ? '' : 's'}</span>
                   </div>
+                  <div className="flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                    View company
+                    <ExternalLink className="ml-1 h-3.5 w-3.5 text-indigo-600 dark:text-indigo-300" />
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent dark:via-slate-700" />
                 </button>
               ))
             ) : (
-              <div className="col-span-full rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-600 dark:text-slate-400">
+              <div className="col-span-full rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-600 dark:text-slate-400">
                 No company data available yet.
               </div>
             )}
@@ -623,10 +646,11 @@ const HomePage: React.FC = () => {
       {/* Recommended & Featured Jobs Section */}
       <section className="mx-auto max-w-[1320px] px-4 py-12 md:px-6">
         {isAuthenticated && user?.role?.toLowerCase() === 'candidate' && (
-          <div className="mb-12">
+          <div className="mb-12 rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.06)] md:p-6 dark:border-slate-700 dark:bg-slate-900">
             <div className="mb-7 flex items-end justify-between gap-3">
               <div>
-                <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100" style={{ fontFamily: "Montserrat, sans-serif" }}>Recommended Jobs</h3>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Personalized picks</p>
+                <h3 className="text-3xl font-bold tracking-tight text-slate-950 dark:text-slate-100" style={{ fontFamily: "Montserrat, sans-serif" }}>Recommended Jobs</h3>
                 <p className="text-slate-600 dark:text-slate-400">
                   {isLoadingRecommendations
                     ? "Loading recommended jobs..."
@@ -641,7 +665,7 @@ const HomePage: React.FC = () => {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {isLoadingRecommendations ? (
                 Array.from({ length: 6 }).map((_, index) => (
-                  <div key={`recommended-skeleton-${index}`} className="rounded-xl border border-blue-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+                  <div key={`recommended-skeleton-${index}`} className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
                     <div className="animate-pulse">
                       <div className="h-4 bg-gray-200 rounded w-1/4 mb-3"></div>
                       <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
@@ -660,11 +684,11 @@ const HomePage: React.FC = () => {
                     to={getJobDetailsPath(job._id)}
                     className="no-underline"
                   >
-                    <article className="group rounded-xl bg-white dark:bg-slate-900 p-6 shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl overflow-hidden border border-transparent cursor-pointer h-full flex flex-col">
+                    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-indigo-50/30 to-cyan-50/20 p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg dark:border-slate-700 dark:from-slate-900 dark:via-indigo-950/20 dark:to-slate-950">
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#f0f6ff] to-[#eef8ff] px-3 py-1 text-xs font-semibold text-[#1f4f93]">{job.jobType || "full-time"}</span>
-                          <span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#fff0f7] to-[#fff6fb] px-3 py-1 text-xs font-semibold text-[#b42880]">Recommended</span>
+                          <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">{job.jobType || "full-time"}</span>
+                          <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300">Recommended</span>
                         </div>
                         <button
                           onClick={(e) => {
@@ -674,8 +698,8 @@ const HomePage: React.FC = () => {
                           }}
                           className={`p-2 rounded-lg transition-all duration-200 ${
                             savedJobs.has(job._id)
-                              ? "bg-blue-50 dark:bg-blue-900/30 text-[#1f4f93]"
-                              : "bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-[#1f4f93] hover:bg-blue-50 dark:hover:bg-slate-700"
+                                ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300"
+                                : "bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-slate-700"
                           }`}
                           title={savedJobs.has(job._id) ? "Unsave job" : "Save job"}
                         >
@@ -686,42 +710,40 @@ const HomePage: React.FC = () => {
                         </button>
                       </div>
 
-                      <div className="text-sm text-slate-400 mb-4">{job.deadline || "Deadline: Not specified"}</div>
+                      <div className="mb-4 text-sm text-slate-400">{job.deadline || "Deadline: Not specified"}</div>
 
-                      <h4 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100 leading-tight group-hover:text-[#1f4f93]">{job.title}</h4>
-                      <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                        {typeof job.company === 'object' && job.company?.logo ? (
-                          <img src={job.company.logo} alt={getHomeCompanyName(job.company)} className="h-6 w-6 object-contain rounded-sm" />
-                        ) : null}
-                        {typeof job.company === 'object' && job.company?._id ? (
-                          <Link 
-                            to={`/company/${job.company._id}/profile`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="hover:text-[#1f4f93] hover:underline transition-colors"
-                          >
-                            {getHomeCompanyName(job.company)}
-                          </Link>
+                      <h4 className="mt-2 text-xl font-semibold leading-tight text-slate-950 group-hover:text-indigo-700 dark:text-slate-100 dark:group-hover:text-indigo-300">{job.title}</h4>
+                      <p className="mt-2 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                        {getHomeCompanyLogo(job.company) ? (
+                          <img
+                            src={getHomeCompanyLogo(job.company)}
+                            alt={getHomeCompanyName(job.company)}
+                            className="h-8 w-8 rounded-md object-contain ring-1 ring-slate-200 dark:ring-slate-700"
+                          />
                         ) : (
-                          <span>{getHomeCompanyName(job.company)}</span>
+                          <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-[10px] font-bold uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                            {getHomeCompanyName(job.company).slice(0, 2)}
+                          </span>
                         )}
+                        <span>{getHomeCompanyName(job.company)}</span>
                       </p>
 
                       <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                        <div className="inline-flex items-center gap-2 rounded-md bg-slate-50 dark:bg-slate-800 px-3 py-2">
+                        <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800">
                           <MapPin className="h-4 w-4 text-slate-400" />
                           <span className="font-medium">{job.location || "Bangladesh"}</span>
                         </div>
-                        <div className="inline-flex items-center gap-2 rounded-md bg-slate-50 dark:bg-slate-800 px-3 py-2">
+                        <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800">
                           <Briefcase className="h-4 w-4 text-slate-400" />
                           <span className="font-medium">{formatHomeSalary(job)}</span>
                         </div>
                       </div>
 
                       <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
-                        <span className="text-sm font-semibold text-[#1f4f93] group-hover:text-[#153a6f]">See details</span>
+                        <span className="text-sm font-semibold text-slate-700 group-hover:text-indigo-700 dark:text-slate-300 dark:group-hover:text-indigo-300">See details</span>
                         <Button
                           onClick={(e) => handleApply(e, job._id)}
-                          className="h-10 rounded-md bg-[#cf2f92] px-4 text-sm text-white hover:bg-[#b42880]"
+                          className="h-10 rounded-xl bg-slate-900 px-4 text-sm text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
                         >
                           Apply Now
                         </Button>
@@ -738,10 +760,11 @@ const HomePage: React.FC = () => {
           </div>
         )}
 
-        <div>
+        <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.06)] md:p-6 dark:border-slate-700 dark:bg-slate-900">
           <div className="mb-7 flex items-end justify-between gap-3">
             <div>
-              <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100" style={{ fontFamily: "Montserrat, sans-serif" }}>All Jobs</h3>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Latest opportunities</p>
+              <h3 className="text-3xl font-bold tracking-tight text-slate-950 dark:text-slate-100" style={{ fontFamily: "Montserrat, sans-serif" }}>View Jobs</h3>
               <p className="text-slate-600 dark:text-slate-400">
                 {isLoadingPublicJobs
                   ? "Loading jobs..."
@@ -751,7 +774,7 @@ const HomePage: React.FC = () => {
                 }
               </p>
             </div>
-            <Link to="/jobs" className="inline-flex items-center gap-2 text-sm font-semibold text-[#1f4f93] hover:text-[#153a6f]">
+            <Link to="/jobs" className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 hover:text-indigo-900 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/50 dark:hover:text-indigo-200">
               View All Jobs
               <ArrowUpRight className="h-4 w-4" />
             </Link>
@@ -760,7 +783,7 @@ const HomePage: React.FC = () => {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {isLoadingPublicJobs ? (
               Array.from({ length: 6 }).map((_, index) => (
-                <div key={`public-skeleton-${index}`} className="rounded-xl border border-blue-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+                <div key={`public-skeleton-${index}`} className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
                   <div className="animate-pulse">
                     <div className="h-4 bg-gray-200 rounded w-1/4 mb-3"></div>
                     <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
@@ -779,11 +802,11 @@ const HomePage: React.FC = () => {
                   to={getJobDetailsPath(job.routeId)}
                   className="no-underline"
                 >
-                  <article className="group rounded-xl bg-white dark:bg-slate-900 p-6 shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl overflow-hidden border border-transparent cursor-pointer h-full flex flex-col">
+                  <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-indigo-50/30 to-cyan-50/20 p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg dark:border-slate-700 dark:from-slate-900 dark:via-indigo-950/20 dark:to-slate-950">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#f0f6ff] to-[#eef8ff] px-3 py-1 text-xs font-semibold text-[#1f4f93]">{job.type}</span>
-                        <span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#fff0f7] to-[#fff6fb] px-3 py-1 text-xs font-semibold text-[#b42880]">Featured</span>
+                        <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">{job.type}</span>
+                        <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300">Featured</span>
                       </div>
                       <button
                         onClick={(e) => {
@@ -793,8 +816,8 @@ const HomePage: React.FC = () => {
                         }}
                         className={`p-2 rounded-lg transition-all duration-200 ${
                           savedJobs.has(job.routeId)
-                            ? "bg-blue-50 dark:bg-blue-900/30 text-[#1f4f93]"
-                            : "bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-[#1f4f93] hover:bg-blue-50 dark:hover:bg-slate-700"
+                            ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300"
+                            : "bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-slate-700"
                         }`}
                         title={savedJobs.has(job.routeId) ? "Unsave job" : "Save job"}
                       >
@@ -805,29 +828,36 @@ const HomePage: React.FC = () => {
                       </button>
                     </div>
                     
-                    <div className="text-sm text-slate-400 mb-4">{job.deadline}</div>
+                    <div className="mb-4 text-sm text-slate-400">{job.deadline}</div>
 
-                    <h4 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100 leading-tight group-hover:text-[#1f4f93]">{job.title}</h4>
-                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                    <h4 className="mt-2 text-xl font-semibold leading-tight text-slate-950 group-hover:text-indigo-700 dark:text-slate-100 dark:group-hover:text-indigo-300">{job.title}</h4>
+                    <p className="mt-2 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                      {job.companyLogo ? (
+                        <img src={job.companyLogo} alt={job.company} className="h-8 w-8 rounded-sm object-contain ring-1 ring-slate-200 dark:ring-slate-700" />
+                      ) : (
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-sm bg-slate-100 text-[10px] font-bold uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                          {job.company.slice(0, 2)}
+                        </span>
+                      )}
                       <span>{job.company}</span>
                     </p>
 
                     <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                      <div className="inline-flex items-center gap-2 rounded-md bg-slate-50 dark:bg-slate-800 px-3 py-2">
+                      <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800">
                         <MapPin className="h-4 w-4 text-slate-400" />
                         <span className="font-medium">{job.location}</span>
                       </div>
-                      <div className="inline-flex items-center gap-2 rounded-md bg-slate-50 dark:bg-slate-800 px-3 py-2">
+                      <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800">
                         <Briefcase className="h-4 w-4 text-slate-400" />
                         <span className="font-medium">{job.salary}</span>
                       </div>
                     </div>
 
                     <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
-                      <span className="text-sm font-semibold text-[#1f4f93] group-hover:text-[#153a6f]">See details</span>
+                      <span className="text-sm font-semibold text-slate-700 group-hover:text-indigo-700 dark:text-slate-300 dark:group-hover:text-indigo-300">See details</span>
                       <Button
                         onClick={(e) => handleApply(e, job.routeId)}
-                        className="h-10 rounded-md bg-[#cf2f92] px-4 text-sm text-white hover:bg-[#b42880]"
+                        className="h-10 rounded-xl bg-slate-900 px-4 text-sm text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
                       >
                         Apply Now
                       </Button>
@@ -845,9 +875,9 @@ const HomePage: React.FC = () => {
           {homepageHighlights.map((item) => {
             const Icon = item.icon;
             return (
-              <div key={item.label} className={`${item.color} rounded-xl p-6 text-white shadow-md`}>
+              <div key={item.label} className={`${item.color} rounded-2xl p-6 text-white shadow-[0_20px_45px_rgba(15,23,42,0.15)]`}>
                 <Icon className="h-8 w-8" />
-                <h4 className="mt-4 text-3xl font-extrabold">{item.value.toLocaleString()}</h4>
+                <h4 className="mt-4 text-2xl font-extrabold">{item.value.toLocaleString()}</h4>
                 <p className="text-blue-100">{item.label}</p>
               </div>
             );
@@ -858,10 +888,11 @@ const HomePage: React.FC = () => {
       <section className="mx-auto max-w-[1320px] px-4 py-12 md:px-6">
         <div className="mb-7 flex items-end justify-between gap-3">
           <div>
-            <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100" style={{ fontFamily: "Montserrat, sans-serif" }}>Career Resources</h3>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Learning zone</p>
+            <h3 className="text-3xl font-bold tracking-tight text-slate-950 dark:text-slate-100" style={{ fontFamily: "Montserrat, sans-serif" }}>Career Resources</h3>
             <p className="text-slate-600 dark:text-slate-400">Guides to help you get hired faster</p>
           </div>
-          <Link to="/features" className="inline-flex items-center gap-2 text-sm font-semibold text-[#1f4f93] hover:text-[#153a6f]">
+          <Link to="/features" className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 hover:text-indigo-900 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/50 dark:hover:text-indigo-200">
             Explore More
             <ArrowUpRight className="h-4 w-4" />
           </Link>
@@ -870,7 +901,7 @@ const HomePage: React.FC = () => {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {isLoadingResources && !homePageData?.careerResources?.length ? (
             Array.from({ length: 3 }).map((_, index) => (
-              <div key={`resource-skeleton-${index}`} className="rounded-xl bg-white dark:bg-slate-900 p-6 shadow-md">
+              <div key={`resource-skeleton-${index}`} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
                 <div className="animate-pulse">
                   <div className="h-4 w-20 rounded bg-slate-200 mb-3" />
                   <div className="h-5 w-3/4 rounded bg-slate-200 mb-2" />
@@ -882,17 +913,17 @@ const HomePage: React.FC = () => {
           ) : displayResources.length > 0 ? (
             displayResources.map((item) => (
               <Link key={item.id} to={`/resources/${item.id}`} className="no-underline">
-                <article className="rounded-xl bg-white dark:bg-slate-900 p-6 shadow-md hover:shadow-lg transition-transform duration-200 hover:-translate-y-1 cursor-pointer h-full">
+                <article className="h-full cursor-pointer rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-indigo-50/30 to-cyan-50/20 p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-slate-700 dark:from-slate-900 dark:via-indigo-950/20 dark:to-slate-950">
                   <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-2 rounded-full bg-[#f3f9ff] px-3 py-1 text-xs font-semibold text-[#1f4f93]">{item.tag}</span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300">{item.tag}</span>
                     <ArrowUpRight className="h-4 w-4 text-slate-400" />
                   </div>
 
-                  <h4 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-100">{item.title}</h4>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 line-clamp-2">{item.desc}</p>
+                  <h4 className="mt-4 text-base font-semibold text-slate-950 dark:text-slate-100">{item.title}</h4>
+                  <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{item.desc}</p>
 
                   <div className="mt-4 flex items-center justify-between">
-                    <span className="text-sm font-semibold text-[#1f4f93]">Read Article</span>
+                    <span className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">Read Article</span>
                     <span className="text-xs text-slate-400">{estimateReadMinutes(item.desc)}</span>
                   </div>
                 </article>
@@ -909,23 +940,23 @@ const HomePage: React.FC = () => {
    
 
       <section className="mx-auto max-w-[1320px] px-4 pb-14 pt-8 md:px-6">
-        <div className="rounded-2xl bg-gradient-to-r from-[#123f7a] to-[#2b66aa] p-8 text-white md:flex md:items-center md:justify-between">
+        <div className="rounded-[1.75rem] bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 p-8 text-white shadow-[0_24px_60px_rgba(15,23,42,0.2)] md:flex md:items-center md:justify-between">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-bold uppercase tracking-wide">
+            <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em]">
               <GraduationCap className="h-4 w-4" />
               For Freshers & Professionals
             </p>
-            <h3 className="mt-3 text-3xl font-extrabold" style={{ fontFamily: "Montserrat, sans-serif" }}>
+            <h3 className="mt-3 text-3xl font-extrabold tracking-tight" style={{ fontFamily: "Montserrat, sans-serif" }}>
               Build your profile, get discovered, and land your next role
             </h3>
-            <p className="mt-2 text-blue-100">Join thousands of candidates and recruiters in one trusted platform.</p>
+            <p className="mt-2 text-slate-300">Join thousands of candidates and recruiters in one trusted platform.</p>
           </div>
           <div className="mt-5 flex gap-3 md:mt-0">
             <Link to="/register/candidate">
-              <Button className="h-11 rounded-md bg-[#cf2f92] px-5 font-semibold text-white hover:bg-[#b42880]">Join As Candidate</Button>
+              <Button className="h-11 rounded-2xl bg-white px-5 font-semibold text-slate-950 hover:bg-slate-100">Join As Candidate</Button>
             </Link>
             <Link to="/register/recruiter">
-              <Button variant="outline" className="h-11 rounded-md border-white bg-transparent px-5 font-semibold hover:text-[#123f7a]">Hire Talent</Button>
+              <Button className="h-11 rounded-2xl border border-white/35 bg-white/10 px-5 font-semibold text-white shadow-none hover:bg-white/20">Hire Talent</Button>
             </Link>
           </div>
         </div>
