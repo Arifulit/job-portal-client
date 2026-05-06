@@ -327,10 +327,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 
   const register = useCallback(
-    async (payload: RegisterPayload): Promise<User> => {
+    async (payload: RegisterPayload | FormData): Promise<User> => {
       setLoading(true);
       try {
-        const response = await axios.post(`${API_BASE}/auth/register`, payload);
+        let response;
+        if (payload instanceof FormData) {
+          response = await axios.post(`${API_BASE}/auth/register`, payload, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+        } else {
+          response = await axios.post(`${API_BASE}/auth/register`, payload);
+        }
+
         const { token: accessToken, refreshToken, user: userData } = extractAuthData(response.data);
         persistAuth(accessToken, userData, refreshToken);
         return userData;

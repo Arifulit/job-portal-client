@@ -1,6 +1,7 @@
 
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { Skeleton } from '../../components/ui/skeleton';
 import recruiterService from '../../services/recruiterService';
 import {
@@ -26,10 +27,17 @@ const inp =
 interface Company {
   _id?: string;
   name?: string;
+  logo?: string;
   website?: string;
   description?: string;
   size?: string;
   industry?: string;
+  yearOfEstablishment?: number;
+  address?: string;
+  location?: string;
+  email?: string;
+  phone?: string;
+  isVerified?: boolean;
   jobsPosted?: number;
   applicantsCount?: number;
   hires?: number;
@@ -53,6 +61,7 @@ interface RecruiterProfileData {
 }
 
 const RecruiterProfilePage = () => {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<RecruiterProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -69,15 +78,27 @@ const RecruiterProfilePage = () => {
       description: '',
       size: '',
       industry: '',
+      yearOfEstablishment: '',
+      address: '',
+      location: '',
+      email: '',
+      phone: '',
     },
   });
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState('');
+  const [companyLogoFile, setCompanyLogoFile] = useState<File | null>(null);
+  const [companyLogoPreview, setCompanyLogoPreview] = useState('');
 
   const initials = useMemo(
     () => (profile?.name || 'R').trim().charAt(0).toUpperCase(),
     [profile?.name]
+  );
+
+  const displayRole = useMemo(
+    () => String(user?.role || 'recruiter').toLowerCase(),
+    [user?.role]
   );
 
   useEffect(() => {
@@ -87,19 +108,25 @@ const RecruiterProfilePage = () => {
   const fetchProfile = async () => {
     try {
       const response = await recruiterService.getRecruiterProfile();
-      if (response?.success && response.data) {
-        setProfile(response.data);
+      const profileData = response?.data as any;
+      if (response?.success && profileData) {
+        setProfile(profileData);
         setFormData({
-          name: response.data.name || '',
-          phone: response.data.phone || '',
-          location: response.data.location || '',
-          biodata: response.data.biodata || response.data.bio || '',
+          name: profileData.name || '',
+          phone: profileData.phone || '',
+          location: profileData.location || '',
+          biodata: profileData.biodata || profileData.bio || '',
           company: {
-            name: response.data.company?.name || '',
-            website: response.data.company?.website || '',
-            description: response.data.company?.description || '',
-            size: response.data.company?.size || '',
-            industry: response.data.company?.industry || '',
+            name: profileData.company?.name || '',
+            website: profileData.company?.website || '',
+            description: profileData.company?.description || '',
+            size: profileData.company?.size || '',
+            industry: profileData.company?.industry || '',
+            yearOfEstablishment: profileData.company?.yearOfEstablishment ? String(profileData.company.yearOfEstablishment) : '',
+            address: profileData.company?.address || '',
+            location: profileData.company?.location || '',
+            email: profileData.company?.email || '',
+            phone: profileData.company?.phone || '',
           },
         });
       }
@@ -115,6 +142,13 @@ const RecruiterProfilePage = () => {
     if (!file) return;
     setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  const handleCompanyLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCompanyLogoFile(file);
+    setCompanyLogoPreview(URL.createObjectURL(file));
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -141,14 +175,26 @@ const RecruiterProfilePage = () => {
       payload.append('phone', formData.phone);
       payload.append('location', formData.location);
       payload.append('biodata', formData.biodata);
-      payload.append('company[name]', formData.company.name);
-      payload.append('company[website]', formData.company.website);
-      payload.append('company[description]', formData.company.description);
-      payload.append('company[size]', formData.company.size);
-      payload.append('company[industry]', formData.company.industry);
+      payload.append('company', JSON.stringify({
+        name: formData.company.name,
+        website: formData.company.website,
+        description: formData.company.description,
+        size: formData.company.size,
+        industry: formData.company.industry,
+        yearOfEstablishment: formData.company.yearOfEstablishment
+          ? Number(formData.company.yearOfEstablishment)
+          : undefined,
+        address: formData.company.address,
+        location: formData.company.location,
+        email: formData.company.email,
+        phone: formData.company.phone,
+      }));
 
       if (avatarFile) {
         payload.append('avatar', avatarFile);
+      }
+      if (companyLogoFile) {
+        payload.append('companyLogo', companyLogoFile);
       }
 
       const response = await recruiterService.updateRecruiterProfile(payload);
@@ -156,6 +202,8 @@ const RecruiterProfilePage = () => {
         toast.success('Profile updated successfully');
         setAvatarFile(null);
         setAvatarPreview('');
+        setCompanyLogoFile(null);
+        setCompanyLogoPreview('');
         setIsEditing(false);
         fetchProfile();
       } else {
@@ -180,10 +228,17 @@ const RecruiterProfilePage = () => {
         description: profile?.company?.description || '',
         size: profile?.company?.size || '',
         industry: profile?.company?.industry || '',
+        yearOfEstablishment: profile?.company?.yearOfEstablishment ? String(profile.company.yearOfEstablishment) : '',
+        address: profile?.company?.address || '',
+        location: profile?.company?.location || '',
+        email: profile?.company?.email || '',
+        phone: profile?.company?.phone || '',
       },
     });
     setAvatarFile(null);
     setAvatarPreview('');
+    setCompanyLogoFile(null);
+    setCompanyLogoPreview('');
     setIsEditing(false);
   };
 
@@ -212,6 +267,7 @@ const RecruiterProfilePage = () => {
   }
 
   const profileAvatar = avatarPreview || profile.avatar || profile.profileImage || '';
+  const profileCompanyLogo = companyLogoPreview || profile.company?.logo || '';
 
   /* ─── EDIT MODE ─────────────────────────────────────────────────────── */
   if (isEditing) {
@@ -363,6 +419,27 @@ const RecruiterProfilePage = () => {
               <h3 className="mb-6 text-sm font-bold uppercase tracking-wider text-slate-600">
                 Company Information
               </h3>
+              <div className="mb-6 flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border border-slate-300 bg-white">
+                  {profileCompanyLogo ? (
+                    <img src={profileCompanyLogo} alt="Company logo preview" className="h-full w-full object-contain p-1" />
+                  ) : (
+                    <Building2 className="h-6 w-6 text-emerald-600" />
+                  )}
+                </div>
+                <div>
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
+                    <Camera className="h-4 w-4" />
+                    Upload Company Logo
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCompanyLogoChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -421,6 +498,71 @@ const RecruiterProfilePage = () => {
                     disabled={isSaving}
                   />
                 </div>
+                <div>
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Founded Year
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.company.yearOfEstablishment}
+                    onChange={(e) => handleCompanyChange('yearOfEstablishment', e.target.value)}
+                    placeholder="e.g. 2018"
+                    className={inp}
+                    disabled={isSaving}
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Company Email
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.company.email}
+                    onChange={(e) => handleCompanyChange('email', e.target.value)}
+                    placeholder="company@example.com"
+                    className={inp}
+                    disabled={isSaving}
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Company Phone
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.company.phone}
+                    onChange={(e) => handleCompanyChange('phone', e.target.value)}
+                    placeholder="+8801XXXXXXXXX"
+                    className={inp}
+                    disabled={isSaving}
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Company Location
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.company.location}
+                    onChange={(e) => handleCompanyChange('location', e.target.value)}
+                    placeholder="Dhaka, Bangladesh"
+                    className={inp}
+                    disabled={isSaving}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Company Address
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.company.address}
+                    onChange={(e) => handleCompanyChange('address', e.target.value)}
+                    placeholder="Full company address"
+                    className={inp}
+                    disabled={isSaving}
+                  />
+                </div>
                 <div className="sm:col-span-2">
                   <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
                     Company Description
@@ -462,6 +604,12 @@ const RecruiterProfilePage = () => {
                 <div className="absolute inset-0 rounded-3xl border-4 border-white/20"></div>
               </div>
               <div className="flex-1">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-200 backdrop-blur-sm">
+                    <Users className="h-3.5 w-3.5" />
+                    {displayRole}
+                  </span>
+                </div>
                 <h1 className="text-5xl font-bold tracking-tight mb-2">{profile.name}</h1>
                 {profile.designation && (
                   <p className="text-blue-100 text-lg font-medium mb-4">{profile.designation}</p>
@@ -593,8 +741,16 @@ const RecruiterProfilePage = () => {
                 </h2>
                 <div className="space-y-4">
                   <div className="flex items-start gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100">
-                      <Building2 className="h-5 w-5 text-emerald-600" />
+                    <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                      {profile.company.logo ? (
+                        <img
+                          src={profile.company.logo}
+                          alt={profile.company.name || 'Company logo'}
+                          className="h-full w-full object-contain p-1"
+                        />
+                      ) : (
+                        <Building2 className="h-6 w-6 text-emerald-600" />
+                      )}
                     </div>
                     <div>
                       <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -628,6 +784,56 @@ const RecruiterProfilePage = () => {
                           Industry
                         </p>
                         <p className="mt-1 font-medium text-slate-900">{profile.company.industry}</p>
+                      </div>
+                    )}
+                    {profile.company.yearOfEstablishment && (
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                          Founded
+                        </p>
+                        <p className="mt-1 font-medium text-slate-900">{profile.company.yearOfEstablishment}</p>
+                      </div>
+                    )}
+                    {typeof profile.company.isVerified === 'boolean' && (
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                          Verification
+                        </p>
+                        <p className="mt-1 font-medium text-slate-900">
+                          {profile.company.isVerified ? 'Verified' : 'Pending'}
+                        </p>
+                      </div>
+                    )}
+                    {profile.company.email && (
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                          Company Email
+                        </p>
+                        <p className="mt-1 font-medium text-slate-900 break-all">{profile.company.email}</p>
+                      </div>
+                    )}
+                    {profile.company.phone && (
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                          Company Phone
+                        </p>
+                        <p className="mt-1 font-medium text-slate-900">{profile.company.phone}</p>
+                      </div>
+                    )}
+                    {profile.company.address && (
+                      <div className="sm:col-span-2">
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                          Address
+                        </p>
+                        <p className="mt-1 font-medium text-slate-900">{profile.company.address}</p>
+                      </div>
+                    )}
+                    {profile.company.location && (
+                      <div className="sm:col-span-2">
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                          Location
+                        </p>
+                        <p className="mt-1 font-medium text-slate-900">{profile.company.location}</p>
                       </div>
                     )}
                   </div>

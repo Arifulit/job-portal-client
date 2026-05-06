@@ -172,6 +172,7 @@ export interface Application {
     note?: string;
   }[];
   updatedAt: string;
+
 }
 
 export interface SavedJob {
@@ -216,6 +217,7 @@ export interface PaginatedResponse<T> {
     page: number;
     limit: number;
     pages: number;
+    totalVacancies?: number;
   };
 }
 

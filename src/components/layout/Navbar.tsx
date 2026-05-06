@@ -31,6 +31,8 @@ const RECRUITER_LINKS = [
   { label: 'Recruiter Register', href: '/register/recruiter' },
 ];
 
+const prefetchLoginRoute = () => prefetchRoute('/login');
+
 const roleToDashboard: Record<string, string> = {
   admin: '/admin/dashboard',
   recruiter: '/recruiter/dashboard',
@@ -70,6 +72,12 @@ export const Navbar = () => {
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  useEffect(() => {
+    prefetchLoginRoute();
+    prefetchRoute('/register/candidate');
+    prefetchRoute('/register/recruiter');
   }, []);
 
   const normalizedRole = (user?.role || '').toLowerCase();
@@ -148,28 +156,28 @@ export const Navbar = () => {
       className={`sticky top-0 z-50 transition-all duration-300 ${
         isScrolled
           ? isDark
-            ? 'bg-slate-950/95 shadow-lg shadow-black/20 backdrop-blur-md'
-            : 'bg-white/95 shadow-md shadow-slate-200/80 backdrop-blur-md'
+            ? 'border-b border-slate-800/80 bg-slate-950/92 shadow-lg shadow-black/20 backdrop-blur-xl'
+            : 'border-b border-slate-200/80 bg-white/92 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl'
           : isDark
           ? 'bg-slate-950'
           : 'bg-white'
       } border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between gap-6">
+        <div className="flex h-16 items-center justify-between gap-4">
 
           {/* ── Logo ── */}
-          <Link to="/" className="flex shrink-0 items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0E5EA8] shadow-sm">
+          <Link to="/" className="flex shrink-0 items-center gap-3 rounded-xl px-1 py-1 transition-transform duration-200 hover:scale-[1.01]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#0E5EA8] to-[#164C88] shadow-md shadow-blue-900/15 ring-1 ring-white/20">
               <Briefcase className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-extrabold tracking-tight text-[#0E5EA8]">
+            <span className="text-[1.05rem] font-black tracking-tight text-[#0E5EA8] sm:text-xl">
               Job<span className={isDark ? 'text-white' : 'text-slate-900'}>Portal</span>
             </span>
           </Link>
 
           {/* ── Desktop Nav ── */}
-          <nav className="hidden items-center gap-1 lg:flex">
+          <nav className="hidden items-center gap-1.5 lg:flex">
             {NAV_LINKS.map((item) => (
               <Link
                 key={item.label}
@@ -195,17 +203,17 @@ export const Navbar = () => {
           </nav>
 
           {/* ── Right Section ── */}
-          <div className="hidden items-center gap-3 lg:flex">
+          <div className="hidden items-center gap-2.5 lg:flex">
 
             {/* Dark / Light Toggle */}
             <button
               type="button"
               onClick={() => setTheme(isDark ? 'light' : 'dark')}
               aria-label="Toggle theme"
-              className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-all duration-200 ${
                 isDark
-                  ? 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+                  ? 'border-slate-700/80 text-slate-300 hover:border-slate-600 hover:bg-slate-800 hover:text-white'
+                  : 'border-slate-200/80 text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >
               {isDark ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
@@ -221,10 +229,10 @@ export const Navbar = () => {
                   <button
                     type="button"
                     onClick={() => setProfileOpen((p) => !p)}
-                    className={`flex items-center gap-2.5 rounded-xl border px-3 py-1.5 transition-colors ${
+                    className={`flex items-center gap-2.5 rounded-xl border px-3 py-1.5 transition-all duration-200 ${
                       isDark
-                        ? 'border-slate-700 hover:border-slate-600 hover:bg-slate-800'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                        ? 'border-slate-700/80 bg-slate-900/40 hover:border-slate-600 hover:bg-slate-800/80'
+                        : 'border-slate-200/80 bg-white hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
                     <span
@@ -367,6 +375,8 @@ export const Navbar = () => {
                             to={item.href}
                             onClick={() => setRecruiterOpen(false)}
                             onMouseEnter={() => prefetchRoute(item.href)}
+                            onPointerDown={() => prefetchRoute(item.href)}
+                            onTouchStart={() => prefetchRoute(item.href)}
                             onFocus={() => prefetchRoute(item.href)}
                             className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                               isDark
@@ -386,22 +396,27 @@ export const Navbar = () => {
                   to="/register/candidate"
                   onMouseEnter={() => prefetchRoute('/register/candidate')}
                   onFocus={() => prefetchRoute('/register/candidate')}
-                  className={`inline-flex h-9 items-center rounded-lg border px-4 text-sm font-semibold transition-colors ${
+                  className={`inline-flex h-10 items-center rounded-xl border px-4 text-sm font-semibold transition-all duration-200 ${
                     isDark
-                      ? 'border-slate-700 text-slate-300 hover:border-slate-600 hover:bg-slate-800 hover:text-white'
-                      : 'border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50'
+                      ? 'border-slate-700/80 bg-slate-900/30 text-slate-300 hover:border-slate-600 hover:bg-slate-800 hover:text-white'
+                      : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50'
                   }`}
                 >
                   Register
                 </Link>
-                <Link
-                  to="/login"
-                  onMouseEnter={() => prefetchRoute('/login')}
-                  onFocus={() => prefetchRoute('/login')}
-                  className="inline-flex h-9 items-center rounded-lg bg-[#0E5EA8] px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#0a4d8f]"
+                <button
+                  type="button"
+                  onClick={() => {
+                    prefetchLoginRoute();
+                    navigate('/login');
+                  }}
+                  onMouseEnter={prefetchLoginRoute}
+                  onPointerDown={prefetchLoginRoute}
+                  onTouchStart={prefetchLoginRoute}
+                  className="inline-flex h-10 items-center rounded-xl bg-gradient-to-r from-[#0E5EA8] to-[#164C88] px-5 text-sm font-semibold text-white shadow-md shadow-blue-900/15 transition-all duration-200 hover:translate-y-[-1px] hover:shadow-lg hover:shadow-blue-900/20"
                 >
                   Sign In
-                </Link>
+                </button>
               </>
             )}
           </div>
@@ -533,24 +548,29 @@ export const Navbar = () => {
                 </>
               ) : (
                 <>
-                  <Link
-                    to="/login"
-                    onClick={() => setMobileOpen(false)}
-                    onMouseEnter={() => prefetchRoute('/login')}
-                    onFocus={() => prefetchRoute('/login')}
-                    className="block rounded-lg bg-[#0E5EA8] px-3 py-2.5 text-center text-sm font-semibold text-white hover:bg-[#0a4d8f]"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileOpen(false);
+                      prefetchLoginRoute();
+                      navigate('/login');
+                    }}
+                    onMouseEnter={prefetchLoginRoute}
+                    onPointerDown={prefetchLoginRoute}
+                    onTouchStart={prefetchLoginRoute}
+                    className="block w-full rounded-xl bg-gradient-to-r from-[#0E5EA8] to-[#164C88] px-3 py-2.5 text-center text-sm font-semibold text-white shadow-md shadow-blue-900/15 transition-all duration-200 hover:shadow-lg"
                   >
                     Sign In
-                  </Link>
+                  </button>
                   <Link
                     to="/register/candidate"
                     onClick={() => setMobileOpen(false)}
                     onMouseEnter={() => prefetchRoute('/register/candidate')}
                     onFocus={() => prefetchRoute('/register/candidate')}
-                    className={`block rounded-lg border px-3 py-2.5 text-center text-sm font-semibold transition-colors ${
+                    className={`block rounded-xl border px-3 py-2.5 text-center text-sm font-semibold transition-all duration-200 ${
                       isDark
-                        ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
-                        : 'border-slate-300 text-slate-700 hover:bg-slate-50'
+                        ? 'border-slate-700/80 bg-slate-900/30 text-slate-300 hover:bg-slate-800'
+                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                   >
                     Register

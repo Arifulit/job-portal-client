@@ -19,6 +19,7 @@ const FAQ = React.lazy(() => import("../public/FAQ"));
 const Jobs = React.lazy(() => import("../pages/Job/Jobs"));
 const JobDetails = React.lazy(() => import("../pages/Job/JobDetails"));
 const CompanyProfile = React.lazy(() => import("../pages/Company/CompanyProfile"));
+const Companies = React.lazy(() => import("../pages/Company/Companies"));
 const ApplyPage = React.lazy(() => import("../pages/Application/ApplyPage"));
 const Register = React.lazy(() => import("../components/auth/Register"));
 const RecruiterRegister = React.lazy(() => import("../components/auth/RecruiterRegister"));
@@ -167,6 +168,10 @@ export const router = createBrowserRouter([
       {
         path: "company/:id/profile",
         element: withSuspense(<CompanyProfile />),
+      },
+      {
+        path: "companies",
+        element: withSuspense(<Companies />),
       },
       {
         path: "candidate/jobs/:id",

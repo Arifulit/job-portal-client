@@ -1,6 +1,6 @@
 // এই ফাইলটি job listing/details related page rendering ও data flow পরিচালনা করে।
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { useJobs, useSavedJobs } from '../../services/jobService';
 import { JobCard } from '../../components/JobCard';
 import { Loader } from '../../components/Loader';
@@ -51,14 +51,13 @@ const Jobs = () => {
   }, [searchParams]);
 
   const { data, isLoading, isError } = useJobs(filters);
-  const { data: savedJobs = [] } = useSavedJobs();
+  const { data: savedJobs = [] } = useSavedJobs(canUseSavedJobs && !!user);
   const savedJobIds = new Set(
     canUseSavedJobs ? savedJobs.map((job) => String(job._id || (job as { id?: string }).id || '')) : []
   );
   const jobs = data?.data || [];
   const totalPages = data?.pagination?.pages || 1;
   const totalJobs = data?.pagination?.total || 0;
-  const totalVacancies = jobs.reduce((sum, job) => sum + (typeof job.vacancies === 'number' ? job.vacancies : 0), 0);
   const activeFilterCount = [
     filters.keyword,
     filters.location,
@@ -67,6 +66,36 @@ const Jobs = () => {
     filters.experienceLevel,
   ].filter(Boolean).length;
   const currentPage = filters.page || 1;
+
+  // Support showing only 'new' jobs when ?newOnly=true is present in URL
+  const newOnly = searchParams.get('newOnly') === 'true';
+  const NEW_WITHIN_DAYS = 7;
+  const jobsFiltered = newOnly
+    ? jobs.filter((job) => {
+        if (!job || !job.createdAt) return false;
+        const created = new Date(job.createdAt as string).getTime();
+        if (!Number.isFinite(created)) return false;
+        const cutoff = Date.now() - NEW_WITHIN_DAYS * 24 * 60 * 60 * 1000;
+        return created >= cutoff;
+      })
+    : jobs;
+
+  const displayJobs = jobsFiltered;
+  const displayTotalJobs = newOnly ? jobsFiltered.length : totalJobs;
+  const displayTotalVacancies = data?.pagination?.totalVacancies ?? 0;
+
+  const location = useLocation();
+  // If navigated with a hash (e.g. /jobs#jobs), scroll to the target element
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace('#', '');
+      // Small timeout to allow route/content to render
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 60);
+    }
+  }, [location]);
 
   const getPaginationItems = (page: number, pages: number): Array<number | 'ellipsis'> => {
     if (pages <= 7) {
@@ -199,11 +228,11 @@ const Jobs = () => {
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-300 pb-3">
           <p className="text-3xl font-extrabold leading-none text-[#0b3d66] md:text-4xl">
-            {totalJobs} Jobs <span className="mx-2 text-slate-500">|</span>
-            <span className="text-2xl text-[#334e68] md:text-3xl">{totalVacancies || `${Math.max(totalJobs * 4, totalJobs)}`}+ Vacancies</span>
+            {displayTotalJobs} Jobs <span className="mx-2 text-slate-500">|</span>
+            <span className="text-2xl text-[#334e68] md:text-3xl">{displayTotalVacancies.toLocaleString()} Vacancies</span>
           </p>
 
-          {totalPages > 1 && (
+          {!newOnly && totalPages > 1 && (
             <div className="flex items-center gap-2 rounded-xl">
               <button
                 className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
@@ -420,8 +449,8 @@ const Jobs = () => {
 
               {data && data.data.length > 0 ? (
                 <>
-                  <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
-                    {data.data.map((job, idx) => (
+                  <div id="jobs" className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                    {displayJobs.map((job, idx) => (
                       <motion.div
                         key={job._id}
                         initial={{ opacity: 0, y: 12 }}
@@ -437,7 +466,7 @@ const Jobs = () => {
                     ))}
                   </div>
 
-                  {totalPages > 1 && (
+                  {!newOnly && totalPages > 1 && (
                     <div className="flex justify-center">
                       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-300 bg-white p-2 shadow-sm">
                         <button

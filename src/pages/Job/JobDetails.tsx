@@ -5,9 +5,13 @@ import { useJob } from '../../services/jobService';
 import { useMyApplications } from '../../services/applicationService';
 import { useSaveJob, useSavedJobs, useUnsaveJob } from '../../services/jobService';
 import { useAuth } from '../../context/AuthContext';
+import { useCompanies } from '../../services/companyService';
+import { api } from '../../utils/api';
+import { toast } from 'sonner';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Button } from '../../components/ui/button';
 import Badge from '../../components/ui/badge';
+import { useEffect, useMemo, useState } from 'react';
 import {
   MapPin,
   Briefcase,
@@ -24,6 +28,8 @@ import {
   Bookmark,
   BookmarkCheck,
 } from 'lucide-react';
+ 
+ 
 
 const formatSalary = (
   salary?: number | { min?: number; max?: number; currency?: string },
@@ -145,14 +151,31 @@ const JobDetails = () => {
   // Ensure id is a valid string
   const jobId = id && String(id).trim() !== '' ? id : undefined;
   
-  const { data: job, isLoading, error } = useJob(jobId);
+  const { data: job, isLoading, error, refetch } = useJob(jobId);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { data: companies = [] } = useCompanies();
+  const [retryCount, setRetryCount] = useState(0);
+
+  // Auto-retry on error after delay
+  useEffect(() => {
+    if (error && retryCount < 3) {
+      const timer = setTimeout(() => {
+        setRetryCount(retryCount + 1);
+        refetch();
+      }, 2000 + retryCount * 1000); // Progressive delay: 2s, 3s, 4s
+      
+      return () => clearTimeout(timer);
+    }
+  }, [error, retryCount, refetch]);
+
+  
+  
 
   const roleValue = String(user?.role || '').toLowerCase();
   const canApply = roleValue === 'candidate' || roleValue === 'seeker' || roleValue === 'job_seeker';
   const canSave = canApply;
-  const { data: savedJobs = [] } = useSavedJobs();
+  const { data: savedJobs = [] } = useSavedJobs(canSave && !!user);
   const saveJobMutation = useSaveJob();
   const unsaveJobMutation = useUnsaveJob();
   const { data: myApplicationsData, isLoading: myApplicationsLoading } = useMyApplications(canApply);
@@ -175,7 +198,61 @@ const JobDetails = () => {
     typeof job?.company === 'string'
       ? job.company
       : job?.company?._id || '';
-  const canOpenCompanyProfile = isLikelyObjectId(String(companyId || ''));
+  const resolvedCompanyId = useMemo(() => {
+    const directId = String(companyId || '').trim();
+
+    if (isLikelyObjectId(directId)) {
+      return directId;
+    }
+
+    const companyNameValue = String(companyName || '').trim().toLowerCase();
+    if (!companyNameValue || !Array.isArray(companies) || companies.length === 0) {
+      return '';
+    }
+
+    const matchedCompany = companies.find(
+      (company) => String(company.name || '').trim().toLowerCase() === companyNameValue
+    );
+
+    return matchedCompany && isLikelyObjectId(String(matchedCompany._id || ''))
+      ? String(matchedCompany._id)
+      : '';
+  }, [companies, companyId, companyName]);
+
+  const canOpenCompanyProfile = Boolean(resolvedCompanyId);
+  const handleCompanyProfileNavigate = async () => {
+    const directId = String(companyId || '').trim();
+
+    if (isLikelyObjectId(directId)) {
+      navigate(`/company/${directId}/profile`);
+      return;
+    }
+
+    if (resolvedCompanyId) {
+      navigate(`/company/${resolvedCompanyId}/profile`);
+      return;
+    }
+
+    try {
+      const response = await api.get('/company');
+      const payload = response.data as { data?: Array<{ _id?: string; name?: string }> };
+      const list = Array.isArray(payload.data) ? payload.data : [];
+      const matchedCompany = list.find(
+        (company) => String(company.name || '').trim().toLowerCase() === String(companyName || '').trim().toLowerCase()
+      );
+
+      const fallbackId = String(matchedCompany?._id || '').trim();
+      if (isLikelyObjectId(fallbackId)) {
+        navigate(`/company/${fallbackId}/profile`);
+        return;
+      }
+    } catch {
+      // Keep the user on the current page if company resolution fails.
+      // This avoids sending them to an unrelated page on click.
+    }
+
+    toast.error('Company profile is not ready yet. Please try again in a moment.');
+  };
   const urlJobId = String(job?._id || jobId || '');
   const isSaved = savedJobs.some((item) => String(item._id || '') === urlJobId);
 
@@ -266,7 +343,10 @@ const JobDetails = () => {
               ← Back to jobs
             </Link>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                setRetryCount(0);
+                refetch();
+              }}
               className="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Retry
@@ -307,16 +387,25 @@ const JobDetails = () => {
                 </div>
                 <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">{job.title}</h1>
                 <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-100 px-4 py-2 dark:border-white/20 dark:bg-white/5">
-                    <Building className="h-4 w-4" />
-                    {canOpenCompanyProfile ? (
-                      <Link to={`/company/${companyId}/profile`} className="hover:underline">
-                        {companyName}
-                      </Link>
+                  <div className="inline-flex items-center gap-3 rounded-full border border-slate-300 bg-slate-100 px-4 py-2 dark:border-white/20 dark:bg-white/5">
+                    {typeof job.company === 'object' && job.company?.logo ? (
+                      <img
+                        src={job.company.logo}
+                        alt={companyName}
+                        className="h-6 w-6 rounded object-cover"
+                        onError={(e) => (e.currentTarget.style.display = 'none')}
+                      />
                     ) : (
-                      companyName
+                      <Building className="h-4 w-4" />
                     )}
-                  </span>
+                    <button
+                      type="button"
+                      onClick={handleCompanyProfileNavigate}
+                      className={`text-left transition-colors ${canOpenCompanyProfile ? 'hover:underline' : ''}`}
+                    >
+                      {companyName}
+                    </button>
+                  </div>
                   <span className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-100 px-4 py-2 dark:border-white/20 dark:bg-white/5">
                     <MapPin className="h-4 w-4" />
                     {job.location || 'Location not specified'}
@@ -457,6 +546,32 @@ const JobDetails = () => {
               )}
             </SectionCard>
 
+            {job?.createdBy && (
+              <SectionCard title="Posted by Recruiter" icon={Users}>
+                <div className="flex items-center gap-4">
+                  <div className="rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 p-0.5">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white">
+                      <span className="text-lg font-bold text-cyan-600">
+                        {typeof job.createdBy === 'object' && job.createdBy?.name
+                          ? job.createdBy.name.charAt(0).toUpperCase()
+                          : 'R'}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                      {typeof job.createdBy === 'object' ? job.createdBy?.name || 'Recruiter' : 'Recruiter'}
+                    </p>
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                      {typeof job.createdBy === 'object' ? job.createdBy?.email : 'recruiter@example.com'}
+                    </p>
+                  </div>
+                </div>
+              </SectionCard>
+            )}
+
+            
+
             <SectionCard title="Compensation & Timeline" icon={Clock}>
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <InfoRow label="Posted Date" value={formatDate(job.createdAt)} />
@@ -547,13 +662,13 @@ const JobDetails = () => {
                 <InfoRow
                   label="Company"
                   value={
-                    canOpenCompanyProfile ? (
-                      <Link to={`/company/${companyId}/profile`} className="font-semibold text-blue-700 hover:underline dark:text-blue-300">
-                        {companyName}
-                      </Link>
-                    ) : (
-                      companyName
-                    )
+                    <button
+                      type="button"
+                      onClick={handleCompanyProfileNavigate}
+                      className={`font-semibold text-blue-700 dark:text-blue-300 ${canOpenCompanyProfile ? 'hover:underline' : ''}`}
+                    >
+                      {companyName}
+                    </button>
                   }
                 />
                 <InfoRow label="Location" value={job.location || 'Not specified'} />

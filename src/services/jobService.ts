@@ -5,6 +5,11 @@ import { Job, JobFilters, PaginatedResponse, ApiResponse, RecommendedJob, SavedJ
 import { toast } from 'sonner';
 import axios from 'axios';
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  'http://localhost:5000/api/v1';
+
 const extractJob = (payload: unknown): Job | undefined => {
   if (!payload || typeof payload !== 'object') {
     return undefined;
@@ -52,7 +57,7 @@ const normalizePaginatedJobs = (payload: unknown): PaginatedResponse<Job> => {
     message?: string;
     data?: Job[] | { jobs?: Job[]; data?: Job[]; pagination?: PaginatedResponse<Job>['pagination'] };
     jobs?: Job[];
-    pagination?: PaginatedResponse<Job>['pagination'];
+    pagination?: PaginatedResponse<Job>['pagination'] & { totalPages?: number; totalVacancies?: number };
   };
 
   if (response.success === false) {
@@ -67,7 +72,8 @@ const normalizePaginatedJobs = (payload: unknown): PaginatedResponse<Job> => {
         total: response.pagination.total ?? response.data.length,
         page: response.pagination.page ?? 1,
         limit: response.pagination.limit ?? 10,
-        pages: response.pagination.pages ?? 1,
+        pages: response.pagination.pages ?? response.pagination.totalPages ?? 1,
+        totalVacancies: response.pagination.totalVacancies,
       },
     };
   }
@@ -93,7 +99,8 @@ const normalizePaginatedJobs = (payload: unknown): PaginatedResponse<Job> => {
           total: nestedPagination.total ?? nestedJobs.length,
           page: nestedPagination.page ?? 1,
           limit: nestedPagination.limit ?? 10,
-          pages: nestedPagination.pages ?? 1,
+          pages: nestedPagination.pages ?? nestedPagination.totalPages ?? 1,
+          totalVacancies: nestedPagination.totalVacancies,
         },
       };
     }
@@ -107,7 +114,8 @@ const normalizePaginatedJobs = (payload: unknown): PaginatedResponse<Job> => {
         total: response.pagination.total ?? response.jobs.length,
         page: response.pagination.page ?? 1,
         limit: response.pagination.limit ?? 10,
-        pages: response.pagination.pages ?? 1,
+        pages: response.pagination.pages ?? response.pagination.totalPages ?? 1,
+        totalVacancies: response.pagination.totalVacancies,
       },
     };
   }
@@ -284,8 +292,7 @@ export const useJob = (id: string | undefined) => {
           // 403. In that case retry as a guest using a plain axios instance.
           if (axios.isAxiosError(error) && error.response?.status === 403) {
             try {
-              const API_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL;
-              const guest = axios.create({ baseURL: API_URL });
+              const guest = axios.create({ baseURL: API_BASE_URL });
               const guestResp = await guest.get(endpoint);
               const guestJob = extractJob(guestResp.data);
               if (!guestJob) {
@@ -308,9 +315,42 @@ export const useJob = (id: string | undefined) => {
         }
       }
 
+      // Final fallback: resolve the job from the general jobs list if the
+      // dedicated detail endpoint is unavailable in the current runtime.
+      try {
+        const listResponse = await api.get('/jobs?limit=1000');
+        const payload = listResponse.data as {
+          data?: Job[] | { jobs?: Job[]; data?: Job[] };
+          jobs?: Job[];
+        };
+
+        const list = Array.isArray(payload.data)
+          ? payload.data
+          : payload.data && typeof payload.data === 'object'
+            ? Array.isArray(payload.data.jobs)
+              ? payload.data.jobs
+              : Array.isArray(payload.data.data)
+                ? payload.data.data
+                : []
+            : Array.isArray(payload.jobs)
+              ? payload.jobs
+              : [];
+
+        const fallbackJob = list.find((item) => String(item?._id || '') === String(id));
+        if (fallbackJob) {
+          return fallbackJob;
+        }
+      } catch (fallbackError) {
+        lastError = fallbackError;
+      }
+
       throw lastError || new Error('Failed to fetch job');
     },
     enabled: !!id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };
 
@@ -319,7 +359,7 @@ export const useJob = (id: string | undefined) => {
 export const useCreateJob = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Job, Error, Partial<Job>>({
+  return useMutation<Job, Error, Partial<Job> | FormData>({
     mutationFn: async (jobData) => {
       try {
         const response = await api.post('/jobs/create', jobData);
@@ -340,7 +380,24 @@ export const useCreateJob = () => {
         throw new Error(handleApiError(error));
       }
     },
-    onSuccess: () => {
+    onSuccess: (createdJob) => {
+      queryClient.setQueryData(['recruiter-jobs'], (current: unknown) => {
+        if (!current || typeof current !== 'object') {
+          return current;
+        }
+
+        const payload = current as { data?: Job[]; pagination?: { total?: number } };
+        const jobs = Array.isArray(payload.data) ? payload.data : [];
+
+        return {
+          ...payload,
+          data: [createdJob, ...jobs.filter((job) => String(job._id) !== String(createdJob._id))],
+          pagination: {
+            ...payload.pagination,
+            total: (payload.pagination?.total ?? jobs.length) + 1,
+          },
+        };
+      });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['all-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['recruiter-jobs'] });
@@ -357,7 +414,7 @@ export const useUpdateJob = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Job> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Job> | FormData }) => {
       const requests = [
         () => api.put(`/jobs/${id}`, data),
         () => api.patch(`/jobs/${id}`, data),
@@ -393,7 +450,20 @@ export const useUpdateJob = () => {
 
       throw lastError || new Error('Failed to update job');
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (updatedJob, variables) => {
+      queryClient.setQueryData(['recruiter-jobs'], (current: unknown) => {
+        if (!current || typeof current !== 'object') {
+          return current;
+        }
+
+        const payload = current as { data?: Job[]; pagination?: { total?: number } };
+        const jobs = Array.isArray(payload.data) ? payload.data : [];
+
+        return {
+          ...payload,
+          data: jobs.map((job) => (String(job._id) === String(variables.id) ? updatedJob : job)),
+        };
+      });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['all-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['recruiter-jobs'] });
@@ -415,7 +485,24 @@ export const useDeleteJob = () => {
       const response = await api.delete<ApiResponse<void>>(`/jobs/${id}`);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      queryClient.setQueryData(['recruiter-jobs'], (current: unknown) => {
+        if (!current || typeof current !== 'object') {
+          return current;
+        }
+
+        const payload = current as { data?: Job[]; pagination?: { total?: number } };
+        const jobs = Array.isArray(payload.data) ? payload.data : [];
+
+        return {
+          ...payload,
+          data: jobs.filter((job) => String(job._id) !== String(id)),
+          pagination: {
+            ...payload.pagination,
+            total: Math.max(0, (payload.pagination?.total ?? jobs.length) - 1),
+          },
+        };
+      });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['all-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['admin-all-jobs'] });
@@ -432,6 +519,9 @@ export const useDeleteJob = () => {
 export const useRecruiterJobs = () => {
   return useQuery({
     queryKey: ['recruiter-jobs'],
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const endpoints = ['/recruiter/jobs', '/jobs'];
       let lastError: unknown;
@@ -474,9 +564,10 @@ export const useRecruiterJobs = () => {
   });
 };
 
-export const useSavedJobs = () => {
+export const useSavedJobs = (enabled: boolean = true) => {
   return useQuery({
     queryKey: ['saved-jobs'],
+    enabled,
     queryFn: async () => {
       const response = await api.get('/jobs/saved/me');
       const payload = response.data as
@@ -547,9 +638,10 @@ export const useSaveJob = () => {
   });
 };
 
-export const useJobRecommendations = (limit: number = 10) => {
+export const useJobRecommendations = (limit: number = 10, enabled: boolean = true) => {
   return useQuery({
     queryKey: ['job-recommendations', limit],
+    enabled,
     queryFn: async () => {
       const response = await api.get<ApiResponse<RecommendedJob[]>>(`/candidate/profile/recommendations?limit=${limit}`);
       if (!response.data.success) {

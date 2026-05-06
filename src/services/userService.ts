@@ -241,6 +241,9 @@ export const useUpdateProfile = () => {
 export const useDashboardStats = () => {
   return useQuery({
     queryKey: ['dashboard-stats'],
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
       const isAdminContext = currentPath.startsWith('/admin') || getStoredRole() === 'admin';

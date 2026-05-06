@@ -1,5 +1,5 @@
 // এই ফাইলটি নির্দিষ্ট feature/component UI ও interaction logic বাস্তবায়ন করে।
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Job } from '../types';
 import {
   MapPin,
@@ -21,6 +21,17 @@ interface JobCardProps {
   job: Job;
   isSaved?: boolean;
 }
+
+const getCompanyId = (company: Job['company']): string | undefined => {
+  if (!company || typeof company === 'string') {
+    return undefined;
+  }
+
+  const companyRecord = company as Record<string, unknown>;
+  const rawId = companyRecord._id ?? companyRecord.id;
+
+  return typeof rawId === 'string' || typeof rawId === 'number' ? String(rawId) : undefined;
+};
 
 export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
   const { user } = useAuth();
@@ -59,6 +70,18 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
     typeof job.company === 'string'
       ? job.company
       : job.company?.name || 'Confidential Company';
+  const companyLogo =
+    typeof job.company === 'string'
+      ? undefined
+      : job.company?.logo;
+  const companyId = getCompanyId(job.company);
+  const navigate = useNavigate();
+
+  const handleCompanyClick = (e: React.MouseEvent, id?: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (id) navigate(`/company/${id}/profile`);
+  };
   const salary = job.salary as
     | {
         currency?: string;
@@ -89,25 +112,36 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
     >
       <Link
         to={jobPath}
-        className="group block h-full rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-xl dark:border-slate-700 dark:bg-slate-900 overflow-hidden"
+        className="group relative block h-full overflow-hidden rounded-[1.5rem] border border-slate-200/80 bg-gradient-to-br from-white via-white to-slate-50 shadow-[0_10px_30px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:border-primary-200 hover:shadow-[0_20px_50px_rgba(37,99,235,0.15)] dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950"
       >
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-500 via-cyan-400 to-fuchsia-500 opacity-80" />
         <div className="relative h-full flex flex-col p-5 sm:p-6">
           {/* Gradient background on hover */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-50 to-transparent dark:from-primary-900/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-50/70 via-transparent to-fuchsia-50/50 dark:from-primary-900/20 dark:via-transparent dark:to-fuchsia-900/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
           
           <div className="relative z-10 flex flex-col h-full">
             {/* Header with status badge */}
             <div className="relative mb-4 flex items-start justify-between gap-3">
-              <div className="flex-1">
+              <div className="flex flex-1 items-start gap-3">
+                <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
+                  {companyLogo ? (
+                    <img src={companyLogo} alt={companyName} className="h-full w-full object-contain p-1" />
+                  ) : (
+                    <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                      {companyName.slice(0, 2)}
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1">
                 <motion.div 
-                  className="flex items-center gap-2 mb-2 flex-wrap"
+                  className="mb-2 flex flex-wrap items-center gap-2"
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
                   transition={{ delay: 0.1 }}
                 >
                   {job.jobType && (
                     <motion.span 
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 dark:bg-primary-900 dark:text-primary-200"
+                      className="inline-flex items-center gap-1 rounded-full border border-primary-100 bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700 shadow-sm dark:border-primary-900 dark:bg-primary-900/70 dark:text-primary-200"
                       whileHover={{ scale: 1.05 }}
                       transition={{ type: 'spring', stiffness: 400, damping: 10 }}
                     >
@@ -117,7 +151,7 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
                   )}
                   {job.status && (
                     <motion.span 
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${statusStyles}`}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold capitalize shadow-sm ${statusStyles}`}
                       whileHover={{ scale: 1.05 }}
                       transition={{ type: 'spring', stiffness: 400, damping: 10 }}
                     >
@@ -126,21 +160,34 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
                   )}
                 </motion.div>
                 <motion.h3 
-                  className="mb-1 line-clamp-2 text-lg font-bold leading-tight text-slate-900 dark:text-slate-100 transition-colors group-hover:text-primary-600 dark:group-hover:text-primary-400"
+                  className="mb-1 line-clamp-2 text-[1.05rem] font-extrabold leading-tight tracking-tight text-slate-900 transition-colors group-hover:text-primary-700 dark:text-slate-100 dark:group-hover:text-primary-300"
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
                   transition={{ delay: 0.15 }}
                 >
                   {job.title}
                 </motion.h3>
-                <motion.p 
-                  className="line-clamp-1 text-sm font-medium text-slate-600 dark:text-slate-400"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  {companyName}
-                </motion.p>
+                {companyId ? (
+                  <motion.p 
+                    onClick={(e) => handleCompanyClick(e, companyId)}
+                    className="line-clamp-1 cursor-pointer text-sm font-medium text-slate-600 transition hover:text-primary-600 hover:underline dark:text-slate-400 dark:hover:text-primary-300"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    {companyName}
+                  </motion.p>
+                ) : (
+                  <motion.p 
+                    className="line-clamp-1 text-sm font-medium text-slate-600 dark:text-slate-400"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    {companyName}
+                  </motion.p>
+                )}
+              </div>
               </div>
               
               {/* Save button with animation */}
@@ -151,8 +198,8 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
                   aria-label={saved ? 'Unsave job' : 'Save job'}
                   className={`flex-shrink-0 rounded-lg p-2.5 transition-all duration-200 ${
                     saved
-                      ? 'bg-primary-50 text-primary-600 dark:bg-primary-900 dark:text-primary-400'
-                      : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      ? 'bg-primary-50 text-primary-600 ring-1 ring-primary-100 dark:bg-primary-900/70 dark:text-primary-300 dark:ring-primary-900'
+                      : 'bg-slate-100 text-slate-500 ring-1 ring-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700 dark:hover:bg-slate-700'
                   }`}
                   disabled={saveJobMutation.isPending || unsaveJobMutation.isPending}
                   whileHover={{ scale: 1.1 }}
@@ -176,7 +223,7 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
 
             {/* Location with animation */}
             <motion.div 
-              className="mb-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm font-medium text-slate-600 dark:text-slate-300"
+              className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
               initial={{ opacity: 0, x: -10 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.25 }}
@@ -206,7 +253,7 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
               ].map((item, idx) => (
                 <motion.div
                   key={idx}
-                  className="flex items-center gap-2 rounded-lg bg-slate-50 dark:bg-slate-800 p-3 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600 dark:hover:bg-slate-700"
                   initial={{ opacity: 0, scale: 0.95 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   whileHover={{ scale: 1.02 }}
@@ -224,7 +271,7 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
             {/* Salary info if available */}
             {(job.salary || job.salaryMin) && (
               <motion.div 
-                className="mb-4 flex items-center gap-2 rounded-lg border-2 border-primary-100 dark:border-primary-900 bg-gradient-to-r from-primary-50 to-primary-100/50 dark:from-primary-900/30 dark:to-primary-800/20 p-3 hover:shadow-md transition-shadow"
+                className="mb-4 flex items-center gap-2 rounded-2xl border border-primary-100 bg-gradient-to-r from-primary-50 via-white to-cyan-50/70 p-3 shadow-sm transition-shadow hover:shadow-md dark:border-primary-900 dark:from-primary-900/30 dark:via-slate-900 dark:to-cyan-900/10"
                 initial={{ opacity: 0, x: -10 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 whileHover={{ x: 4 }}
@@ -252,14 +299,14 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
 
             {/* Footer CTA */}
             <motion.div 
-              className="mt-auto flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-700"
+              className="mt-auto flex items-center justify-between border-t border-slate-200 pt-4 dark:border-slate-700"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">View Full Details</span>
+              <span className="text-sm font-semibold text-slate-700 transition group-hover:text-primary-700 dark:text-slate-300 dark:group-hover:text-primary-300">View Full Details</span>
               <motion.div
-                className="text-slate-400 dark:text-slate-500"
+                className="rounded-full bg-primary-50 p-2 text-primary-600 dark:bg-primary-900/50 dark:text-primary-300"
                 animate={{ x: [0, 4, 0] }}
                 transition={{ duration: 1.5, repeat: Infinity }}
               >

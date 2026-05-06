@@ -40,6 +40,7 @@ const initialForm: RecruiterForm = {
 export const RecruiterRegister = () => {
   const { register, loading } = useAuth();
   const navigate = useNavigate();
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [formData, setFormData] = useState<RecruiterForm>(initialForm);
   const [submitting, setSubmitting] = useState(false);
 
@@ -91,7 +92,7 @@ export const RecruiterRegister = () => {
     setSubmitting(true);
 
     try {
-      const registeredUser = await register({
+      let payload: FormData | Record<string, unknown> = {
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
@@ -105,7 +106,16 @@ export const RecruiterRegister = () => {
         companyAddress: formData.companyAddress.trim(),
         industryType: formData.industryType.trim(),
         websiteUrl: formData.websiteUrl.trim(),
-      });
+      };
+
+      if (logoFile) {
+        const form = new FormData();
+        Object.entries(payload).forEach(([k, v]) => form.append(k, String(v)));
+        form.append('companyLogo', logoFile, logoFile.name);
+        payload = form;
+      }
+
+      const registeredUser = await register(payload as any);
 
       toast.success('Recruiter account created successfully');
       navigate(getRedirectPath(registeredUser.role));
@@ -115,6 +125,19 @@ export const RecruiterRegister = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    if (!file) return setLogoFile(null);
+
+    const allowed = new Set(['image/png', 'image/jpg', 'image/jpeg']);
+    if (!allowed.has(file.type)) {
+      toast.error('Only JPG, JPEG or PNG logo files are allowed');
+      return setLogoFile(null);
+    }
+
+    setLogoFile(file);
   };
 
   const disabled = submitting || loading;
@@ -237,6 +260,11 @@ export const RecruiterRegister = () => {
               <Globe className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input name="websiteUrl" value={formData.websiteUrl} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="https://techcorp.com" />
             </div>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Company Logo (optional)</label>
+            <input type="file" accept=".png,.jpg,.jpeg" onChange={handleLogoChange} className="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-cyan-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-cyan-700" />
           </div>
 
           <div className="md:col-span-2 mt-2 space-y-3">

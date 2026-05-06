@@ -11,7 +11,7 @@ const RecruiterProfile = React.lazy(() => import("../pages/Recruiter/RecruiterPr
 const JobPost = React.lazy(() => import("../pages/Recruiter/JobPost"));
 const MyJob = React.lazy(() => import("@/pages/Recruiter/MyJob"));
 const RecruiterApplications = React.lazy(() => import("@/pages/Recruiter/RecruiterApplications"));
-const CandidateRanker = React.lazy(() => import("../pages/Candidate/CandidateRanker"));
+// Candidate ranking removed from recruiter sidebar
 
 interface ISidebarItem {
   title: string;
@@ -51,12 +51,7 @@ export const recruiterSidebarItems: ISidebarItem[] = [
         icon: FileText,
         component: RecruiterApplications,
       },
-      {
-        title: "Rank Candidates",
-        url: "/recruiter/rank-candidates",
-        icon: FileText,
-        component: CandidateRanker,
-      },
+      
     ],
   },
   {

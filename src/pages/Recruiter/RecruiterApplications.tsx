@@ -231,6 +231,7 @@ const RecruiterApplications: React.FC = () => {
                               <Edit2 className="h-3.5 w-3.5" />
                               <span className="hidden sm:inline">Change</span>
                             </Button>
+
                           </div>
                         </td>
                       </tr>
@@ -251,6 +252,10 @@ const RecruiterApplications: React.FC = () => {
         currentInterviewScheduledAt={selectedApplicationForModal?.interviewScheduledAt || ''}
         loading={isPending}
         onConfirm={(newStatus, interviewScheduledAt) => {
+          if (!selectedApplicationForModal) {
+            return;
+          }
+
           updateStatus({
             id: selectedApplicationForModal._id,
             status: newStatus,

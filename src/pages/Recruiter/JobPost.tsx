@@ -73,29 +73,7 @@ export default function JobPost() {
   const { mutate: updateJob, isPending: isUpdating } = useUpdateJob();
   const { data: existingJob, isLoading: isLoadingJob, error: existingJobError } = useJob(jobId);
 
-  // State for logo upload
-  // Removed unused logoFile state
-  const [logoUrl, setLogoUrl] = useState<string>("");
-  // Handle logo file selection and upload
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setLogoUrl(URL.createObjectURL(file));
-  };
 
-  // Set logoUrl if editing
-  useEffect(() => {
-    if (
-      isEditMode &&
-      existingJob &&
-      existingJob.company !== null &&
-      typeof existingJob.company === "object" &&
-      'logo' in existingJob.company &&
-      (existingJob.company as { logo?: string }).logo
-    ) {
-      setLogoUrl((existingJob.company as { logo?: string }).logo ?? "");
-    }
-  }, [isEditMode, existingJob]);
 
   const {
     register,
@@ -384,7 +362,7 @@ export default function JobPost() {
       return "mid-level";
     };
 
-    const payload = {
+    const basePayload = {
       title: data.title.trim(),
       description: data.description.trim(),
       jobContext: data.jobContext.trim(),
@@ -409,21 +387,13 @@ export default function JobPost() {
       businessAreas: cleanedBusinessAreas,
       responsibilities: finalResponsibilities,
       status: "active" as JobStatus,
-      company: existingJob && typeof existingJob.company === "object"
-        ? { ...existingJob.company, logo: logoUrl }
-        : logoUrl
+      company: companyId,
     };
 
-    (payload as { requirement?: string[] }).requirement = finalRequirements;
-    (payload as { responsibility?: string[] }).responsibility = finalResponsibilities;
-
-    if (companyId) {
-      if (typeof payload.company === "object") {
-        payload.company._id = companyId;
-      } else {
-        (payload as { company?: string }).company = companyId;
-      }
-    }
+    const payload = {
+      ...basePayload,
+      company: companyId,
+    };
 
     if (isEditMode && jobId) {
       updateJob(
@@ -507,21 +477,6 @@ export default function JobPost() {
             <div className="rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-xl backdrop-blur-sm">
               <h2 className="text-xl font-bold text-gray-900 mb-5">Job Details</h2>
               <p className="mb-4 text-sm text-gray-500">Enter a clear title, work location, salary range, and a short role description.</p>
-
-              <div className="mb-5 rounded-xl border border-cyan-100 bg-cyan-50/70 p-4">
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Company Logo</label>
-                {logoUrl && (
-                  <div className="mb-2">
-                    <img src={logoUrl} alt="Company Logo" className="h-16 rounded-lg border border-slate-200 bg-white p-1" />
-                  </div>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoChange}
-                  className="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-cyan-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-cyan-700"
-                />
-              </div>
 
               <div className="mb-3">
                 <label className="mb-1.5 block text-sm font-semibold text-gray-700">Job Title *</label>

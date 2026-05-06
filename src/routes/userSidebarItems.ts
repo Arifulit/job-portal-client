@@ -2,7 +2,7 @@
 // ========== userSidebarItems.tsx ==========
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import { LayoutDashboard, User, Briefcase, FileText, Bookmark, Zap } from "lucide-react";
+import { LayoutDashboard, User, Briefcase, FileText, Bookmark } from "lucide-react";
 // import Jobs from "@/pages/Jobs/Jobs";
 
 const CandidateDashboard = React.lazy(() =>

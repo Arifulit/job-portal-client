@@ -4,6 +4,16 @@ import { ApiResponse, CompanyProfileData, CompanyReview, Job } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { api, handleApiError } from '../utils/api';
 
+export interface CompanyListItem {
+  _id: string;
+  name: string;
+  logo?: string;
+  industry?: string;
+  website?: string;
+  location?: string;
+  description?: string;
+}
+
 type AnyRecord = Record<string, unknown>;
 
 const toNumber = (value: unknown, fallback: number): number => {
@@ -77,6 +87,29 @@ const normalizeReview = (raw: unknown): CompanyReview | undefined => {
   };
 };
 
+const normalizeCompanyListItem = (raw: unknown): CompanyListItem | undefined => {
+  if (!raw || typeof raw !== 'object') {
+    return undefined;
+  }
+
+  const item = raw as AnyRecord;
+  const id = String(item._id || item.id || '');
+
+  if (!id) {
+    return undefined;
+  }
+
+  return {
+    _id: id,
+    name: String(item.name || 'Unnamed Company'),
+    logo: typeof item.logo === 'string' ? item.logo : undefined,
+    industry: typeof item.industry === 'string' ? item.industry : undefined,
+    website: typeof item.website === 'string' ? item.website : undefined,
+    location: typeof item.location === 'string' ? item.location : undefined,
+    description: typeof item.description === 'string' ? item.description : undefined,
+  };
+};
+
 const normalizeCompanyProfile = (payload: unknown): CompanyProfileData => {
   const response = (payload || {}) as {
     success?: boolean;
@@ -93,6 +126,7 @@ const normalizeCompanyProfile = (payload: unknown): CompanyProfileData => {
 
   const data = (response.data || {}) as AnyRecord;
   const companyRaw =
+    (data.overview as AnyRecord | undefined) ||
     (data.company as AnyRecord | undefined) ||
     ((response.company as AnyRecord | undefined) || data);
 
@@ -142,12 +176,57 @@ export const useCompanyProfile = (
         throw new Error('Company ID is required');
       }
 
-      const response = await api.get(
-        `/company/${companyId}/profile?page=${page}&limit=${limit}&reviewsLimit=${reviewsLimit}`
-      );
-      return normalizeCompanyProfile(response.data);
+      // Try multiple endpoints with fallback strategy
+      const endpoints = [
+        `/company/${companyId}/profile?page=${page}&limit=${limit}&reviewsLimit=${reviewsLimit}`,
+        `/company/${companyId}?page=${page}&limit=${limit}&reviewsLimit=${reviewsLimit}`,
+        `/company/${companyId}`,
+      ];
+
+      let lastError: unknown;
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await api.get(endpoint);
+          return normalizeCompanyProfile(response.data);
+        } catch (error) {
+          lastError = error;
+          // Continue to next endpoint on error
+          continue;
+        }
+      }
+
+      // If all endpoints fail, throw the last error
+      throw lastError || new Error('Failed to fetch company profile');
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 5,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
+};
+
+export const useCompanies = () => {
+  return useQuery({
+    queryKey: ['companies'],
+    queryFn: async () => {
+      const response = await api.get('/company');
+      const payload = response.data as {
+        success?: boolean;
+        message?: string;
+        data?: unknown;
+      };
+
+      if (payload.success === false) {
+        throw new Error(payload.message || 'Failed to fetch companies');
+      }
+
+      const list = Array.isArray(payload.data) ? payload.data : [];
+      return list
+        .map(normalizeCompanyListItem)
+        .filter((company): company is CompanyListItem => !!company);
+    },
   });
 };
 

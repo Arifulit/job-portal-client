@@ -393,10 +393,13 @@ const DashboardLayout: React.FC = () => {
                 <Search className="h-5 w-5" />
               </Button>
 
-              <Button variant="ghost" size="sm" className="hidden md:inline-flex" onClick={() => navigate('/')}>
+              <Link
+                to="/"
+                className="hidden md:inline-flex items-center rounded-md border border-transparent px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
                 <Compass className="mr-1.5 h-4 w-4" />
                 Visit Site
-              </Button>
+              </Link>
 
               <Button
                 variant="ghost"
