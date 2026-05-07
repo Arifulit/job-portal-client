@@ -10,7 +10,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Eye, EyeOff, Briefcase, Mail, Lock, ArrowRight } from "lucide-react";
 
-const API_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
+const API_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api/v1";
 
 export function Login() {
   const navigate = useNavigate();

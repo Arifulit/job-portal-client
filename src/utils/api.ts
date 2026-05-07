@@ -5,7 +5,7 @@ import Cookies from 'js-cookie';
 const API_URL =
   import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_API_BASE_URL ||
-  'http://localhost:5000/api/v1';
+  'http://localhost:5001/api/v1';
 
 export const api = axios.create({
   baseURL: API_URL,

@@ -55,7 +55,7 @@ const getPasswordStrength = (value: string) => {
 export const Register = () => {
   const navigate = useNavigate();
   const { register, loading } = useAuth();
-  const API_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
+  const API_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api/v1';
   const googleLoginUrl = `${API_BASE}/auth/google?redirect=${encodeURIComponent(window.location.origin + '/auth/google/success?redirect=/')}`;
   const [formData, setFormData] = useState<CandidateRegisterForm>(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
