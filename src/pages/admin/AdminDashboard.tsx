@@ -89,7 +89,7 @@ export const AdminDashboard = () => {
               </Link>
               <Link
                 to="/admin/jobs"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/60 px-4 py-2.5 text-sm font-semibold text-white"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#4b2d8f] shadow-sm"
               >
                 Moderate Jobs
               </Link>

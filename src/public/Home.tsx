@@ -488,25 +488,25 @@ const HomePage: React.FC = () => {
               })}
             </div>
 
-            <div className="mt-8 rounded-[1.5rem] border border-slate-200 bg-white p-3 shadow-[0_20px_45px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:bg-slate-900">
-              <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_240px_160px]">
+            <div className="mt-7 rounded-[1.35rem] border border-slate-200 bg-white p-2.5 shadow-[0_20px_45px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:bg-slate-900">
+              <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="grid grid-cols-1 gap-2.5 lg:grid-cols-[1fr_220px_140px]">
                 <label className="relative">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                     placeholder="Search by keyword"
-                    className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-base outline-none transition-all placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/40"
+                    className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/40"
                   />
                 </label>
 
                 <label className="relative">
-                  <Landmark className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                  <Landmark className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <select
                     value={jobTypeFilter}
                     onChange={(e) => setJobTypeFilter(e.target.value)}
-                    className="h-14 w-full appearance-none rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-10 text-base text-slate-600 outline-none transition-all focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/40"
+                    className="h-11 w-full appearance-none rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-10 text-sm text-slate-600 outline-none transition-all focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/40"
                   >
                     <option value="">Job Type</option>
                     <option value="full-time">Full-time</option>
@@ -521,20 +521,20 @@ const HomePage: React.FC = () => {
                 <Button
                   type="submit"
                   onClick={handleSearch}
-                  className="h-14 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-700 to-cyan-700 text-base font-semibold text-white shadow-lg transition-all hover:shadow-xl active:scale-[0.98]"
+                  className="h-11 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-700 to-cyan-700 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl active:scale-[0.98]"
                 >
                   Search
                 </Button>
               </form>
             </div>
 
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mt-4 flex flex-wrap gap-2.5">
               {(cityTags.length > 0 ? cityTags : ["Bangladesh (0)"]).map((city) => (
                 <button
                   key={city}
                   type="button"
                   onClick={() => navigate(`/jobs?location=${encodeURIComponent(city.split(" (")[0])}`)}
-                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-200 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-700 dark:hover:text-indigo-300"
+                  className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-200 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-700 dark:hover:text-indigo-300"
                 >
                   {city}
                 </button>
@@ -939,24 +939,30 @@ const HomePage: React.FC = () => {
 
    
 
-      <section className="mx-auto max-w-[1320px] px-4 pb-14 pt-8 md:px-6">
-        <div className="rounded-[1.75rem] bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 p-8 text-white shadow-[0_24px_60px_rgba(15,23,42,0.2)] md:flex md:items-center md:justify-between">
-          <div>
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em]">
+      <section className="mx-auto max-w-[1320px] px-4 py-8 md:px-6">
+        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] md:flex md:items-center md:justify-between md:gap-6 md:p-6 dark:border-slate-700 dark:bg-slate-900">
+          <div className="max-w-3xl">
+            <p className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
               <GraduationCap className="h-4 w-4" />
               For Freshers & Professionals
             </p>
-            <h3 className="mt-3 text-3xl font-extrabold tracking-tight" style={{ fontFamily: "Montserrat, sans-serif" }}>
+            <h3 className="mt-3 max-w-2xl text-2xl font-extrabold tracking-tight md:text-3xl" style={{ fontFamily: "Montserrat, sans-serif" }}>
               Build your profile, get discovered, and land your next role
             </h3>
-            <p className="mt-2 text-slate-300">Join thousands of candidates and recruiters in one trusted platform.</p>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+              Join thousands of candidates and recruiters in one trusted platform.
+            </p>
           </div>
-          <div className="mt-5 flex gap-3 md:mt-0">
+          <div className="mt-5 flex flex-wrap gap-3 md:mt-0">
             <Link to="/register/candidate">
-              <Button className="h-11 rounded-2xl bg-white px-5 font-semibold text-slate-950 hover:bg-slate-100">Join As Candidate</Button>
+              <Button className="h-10 rounded-2xl bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100">
+                Join As Candidate
+              </Button>
             </Link>
             <Link to="/register/recruiter">
-              <Button className="h-11 rounded-2xl border border-white/35 bg-white/10 px-5 font-semibold text-white shadow-none hover:bg-white/20">Hire Talent</Button>
+              <Button className="h-10 rounded-2xl bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100">
+                Hire Talent
+              </Button>
             </Link>
           </div>
         </div>

@@ -177,7 +177,7 @@ export const CandidateDashboard = () => {
               </Link>
               <Link
                 to="/candidate/profile"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/60 px-4 py-2.5 text-sm font-semibold text-white"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#124f8d] shadow-sm"
               >
                 Update Profile
               </Link>
@@ -322,11 +322,11 @@ export const CandidateDashboard = () => {
               ) : (
                 <div className="p-12 text-center">
                   <FileText className="mx-auto mb-4 h-16 w-16 text-slate-300" />
-                  <p className="text-slate-700">No applications yet</p>
-                  <p className="mt-1 text-sm text-slate-500">Start applying to jobs and track your progress from here.</p>
+                  <p className="text-slate-900 font-semibold">No applications yet</p>
+                  <p className="mt-1 text-sm text-slate-600">Start applying to jobs and track your progress from here.</p>
                   <Link
                     to="/candidate/jobs"
-                    className="mt-4 inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+                    className="mt-4 inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
                   >
                     Browse Jobs
                   </Link>
@@ -452,19 +452,19 @@ export const CandidateDashboard = () => {
               <div className="space-y-3">
                 <Link
                   to="/candidate/jobs"
-                  className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white"
+                  className="inline-flex w-full bg-slate-900 items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold text-white"
                 >
                   Browse Jobs
                 </Link>
                 <Link
                   to="/candidate/profile"
-                  className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700"
+                  className="mt-4 inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
                 >
                   Update Profile
                 </Link>
                 <Link
                   to="/candidate/applications"
-                  className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700"
+                  className="mt-4 inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
                 >
                   Track Applications
                 </Link>

@@ -35,12 +35,12 @@ const MyApplications: React.FC = () => {
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white p-10 rounded-2xl shadow-xl border border-gray-200 text-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="bg-white p-10 rounded-2xl shadow-xl border border-gray-200 text-center max-w-md">
           <p className="text-red-600 text-xl font-bold mb-4">Failed to load applications</p>
           <button
             onClick={() => refetch()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
           >
             Try Again
           </button>
@@ -61,12 +61,12 @@ const MyApplications: React.FC = () => {
         </div>
 
         {applications.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 text-center py-14">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 text-center py-14 px-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">No applications yet</h2>
-            <p className="text-gray-600 mb-6">Start applying to jobs and track your status here.</p>
+            <p className="text-gray-700 mb-6">Start applying to jobs and track your status here.</p>
             <Link
               to="/candidate/jobs"
-              className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+              className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700"
             >
               Browse Jobs
             </Link>

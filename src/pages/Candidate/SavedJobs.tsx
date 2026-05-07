@@ -51,7 +51,7 @@ const SavedJobs: React.FC = () => {
             <p className="mt-2 text-sm text-slate-600">Save jobs while browsing and they will appear here.</p>
             <Link
               to="/candidate/jobs"
-              className="mt-6 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700"
             >
               Browse Jobs
             </Link>

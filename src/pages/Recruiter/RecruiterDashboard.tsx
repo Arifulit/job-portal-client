@@ -98,13 +98,13 @@ export const RecruiterDashboard = () => {
           <div className="pointer-events-none absolute -bottom-16 left-28 h-44 w-44 rounded-full bg-emerald-300/20 blur-2xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100">
+            <div className="max-w-2xl">
+              <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-50">
                 <Sparkles className="h-3.5 w-3.5" />
                 Recruiter Workspace
               </p>
-              <h1 className="mt-3 text-2xl font-black sm:text-3xl">Hire Faster With Better Pipeline Visibility</h1>
-              <p className="mt-2 max-w-2xl text-sm text-emerald-100 sm:text-base">
+              <h1 className="mt-3 text-2xl font-black leading-tight text-white drop-shadow-sm sm:text-3xl">Hire Faster With Better Pipeline Visibility</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-emerald-50 sm:text-base">
                 Manage jobs, monitor candidate flow, and optimize hiring outcomes from one dashboard.
               </p>
             </div>
@@ -112,14 +112,14 @@ export const RecruiterDashboard = () => {
             <div className="flex flex-wrap gap-3">
               <Link
                 to="/recruiter/jobs/create"
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#15543f] shadow-sm"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#15543f] shadow-sm hover:bg-emerald-50"
               >
                 Post New Job
                 <ArrowUpRight className="h-4 w-4" />
               </Link>
               <Link
                 to="/recruiter/profile"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/60 px-4 py-2.5 text-sm font-semibold text-white"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#15543f] shadow-sm hover:bg-emerald-50"
               >
                 Company Profile
               </Link>
@@ -331,7 +331,7 @@ export const RecruiterDashboard = () => {
               <div className="space-y-3">
                 <Link
                   to="/recruiter/jobs/create"
-                  className="inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white"
+                  className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700"
                 >
                   Post New Job
                 </Link>
