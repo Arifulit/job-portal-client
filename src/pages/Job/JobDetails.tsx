@@ -184,6 +184,8 @@ const JobDetails = () => {
     canApply &&
     !!jobId &&
     (myApplicationsData?.data || []).some((application) => {
+      if (String(application.status || '').toLowerCase() === 'withdrawn') return false;
+
       const applicationCandidateId = String(application.candidateId || application.candidate?._id || '');
       if (!applicationCandidateId || applicationCandidateId !== currentUserId) return false;
 

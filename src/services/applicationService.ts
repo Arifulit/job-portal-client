@@ -12,6 +12,7 @@ const allowedStatuses: ApplicationStatus[] = [
   'accepted',
   'hired',
   'rejected',
+  'withdrawn',
 ];
 
 const normalizeApplicationStatus = (status: unknown): ApplicationStatus => {
@@ -251,6 +252,31 @@ export const useUpdateApplicationStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['recruiter-all-applications'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Application status updated!');
+    },
+    onError: (error) => {
+      toast.error(handleApiError(error));
+    },
+  });
+};
+
+export const useWithdrawApplication = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.delete<ApiResponse<Application>>(`/applications/${id}`);
+
+      if (!response.data.data) {
+        throw new Error(response.data.message || 'Failed to delete application');
+      }
+
+      return normalizeApplication(response.data.data as Application);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      queryClient.invalidateQueries({ queryKey: ['my-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success('Application deleted successfully!');
     },
     onError: (error) => {
       toast.error(handleApiError(error));

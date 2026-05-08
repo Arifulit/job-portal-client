@@ -59,7 +59,8 @@ export type ApplicationStatus =
   | 'interview'
   | 'accepted'
   | 'hired'
-  | 'rejected';
+  | 'rejected'
+  | 'withdrawn';
 
 export interface User {
   _id: string;

@@ -24,6 +24,7 @@ const statusBadgeClassMap: Record<ApplicationStatus, string> = {
   accepted: 'bg-green-100 text-green-700 border border-green-200',
   hired: 'bg-green-100 text-green-700 border border-green-200',
   rejected: 'bg-rose-100 text-rose-700 border border-rose-200',
+  withdrawn: 'bg-slate-100 text-slate-700 border border-slate-200',
 };
 
 const toTitleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);

@@ -2,8 +2,8 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { Loader2, ExternalLink } from 'lucide-react';
-import { useMyApplications } from '../../services/applicationService';
+import { Loader2, ExternalLink, Trash2 } from 'lucide-react';
+import { useMyApplications, useWithdrawApplication } from '../../services/applicationService';
 import { ApplicationStatus } from '../../types';
 
 const statusBadgeClassMap: Record<ApplicationStatus, string> = {
@@ -14,6 +14,7 @@ const statusBadgeClassMap: Record<ApplicationStatus, string> = {
   accepted: 'bg-green-100 text-green-700 border border-green-200',
   hired: 'bg-green-100 text-green-700 border border-green-200',
   rejected: 'bg-rose-100 text-rose-700 border border-rose-200',
+  withdrawn: 'bg-slate-100 text-slate-700 border border-slate-200',
 };
 
 const toTitleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
@@ -25,7 +26,16 @@ const toPreviewResumeUrl = (url?: string) => {
 
 const MyApplications: React.FC = () => {
   const { data, isLoading, isError, refetch } = useMyApplications();
-  const applications = data?.data || [];
+  const { mutate: deleteApplication, isPending: isDeleting } = useWithdrawApplication();
+  const applications = (data?.data || []).filter((application) => String(application.status || '').toLowerCase() !== 'withdrawn');
+
+  const handleDelete = (applicationId: string) => {
+    deleteApplication(applicationId, {
+      onSuccess: () => {
+        refetch();
+      },
+    });
+  };
 
   if (isLoading) {
     return (
@@ -86,6 +96,7 @@ const MyApplications: React.FC = () => {
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Resume</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Applied At</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Action</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -134,6 +145,17 @@ const MyApplications: React.FC = () => {
                           >
                             {toTitleCase(application.status)}
                           </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(application._id)}
+                            disabled={isDeleting}
+                            className="inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </button>
                         </td>
                       </tr>
                     );

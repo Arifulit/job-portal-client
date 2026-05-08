@@ -37,6 +37,7 @@ const statusClassMap: Record<string, string> = {
   accepted: 'bg-green-100 text-green-700 border border-green-200',
   hired: 'bg-green-100 text-green-700 border border-green-200',
   rejected: 'bg-rose-100 text-rose-700 border border-rose-200',
+  withdrawn: 'bg-slate-100 text-slate-700 border border-slate-200',
 };
 
 const toTitleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
@@ -91,9 +92,12 @@ export const CandidateDashboard = () => {
   if (statsLoading || appsLoading) return <Loader />;
 
   const applications = applicationsData?.data || [];
+  const activeApplications = applications.filter(
+    (item) => String(item.status || '').toLowerCase() !== 'withdrawn'
+  );
   const now = Date.now();
   const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
-  const recentApplications = [...applications]
+  const recentApplications = [...activeApplications]
     .sort(
       (a, b) =>
         getDateValue(b.appliedAt || b.createdAt || b.updatedAt) -
@@ -101,19 +105,19 @@ export const CandidateDashboard = () => {
     )
     .slice(0, 5);
 
-  const appliedCount = applications.length;
-  const interviewPipelineCount = applications.filter((item) =>
+  const appliedCount = activeApplications.length;
+  const interviewPipelineCount = activeApplications.filter((item) =>
     ['reviewed', 'shortlisted', 'interview', 'hired'].includes(String(item.status || '').toLowerCase())
   ).length;
-  const rejectedCount = applications.filter(
+  const rejectedCount = activeApplications.filter(
     (item) => String(item.status || '').toLowerCase() === 'rejected'
   ).length;
-  const weeklyApplications = applications.filter(
+  const weeklyApplications = activeApplications.filter(
     (item) => getDateValue(item.appliedAt || item.createdAt || item.updatedAt) >= sevenDaysAgo
   ).length;
   const pendingCount =
     stats?.pendingApplications ??
-    applications.filter((item) => ['applied', 'reviewed'].includes(String(item.status || '').toLowerCase())).length;
+    activeApplications.filter((item) => ['applied', 'reviewed'].includes(String(item.status || '').toLowerCase())).length;
   const totalApplications = stats?.totalApplications ?? appliedCount;
   const availableJobs = stats?.availableJobs ?? stats?.totalJobs ?? 0;
   const totalNotifications = stats?.totalNotifications ?? 0;
@@ -123,7 +127,7 @@ export const CandidateDashboard = () => {
   const weeklyTarget = 5;
   const weeklyProgress = Math.min(100, Math.round((weeklyApplications / weeklyTarget) * 100));
 
-  const statusCountMap = applications.reduce<Record<string, number>>((acc, application) => {
+  const statusCountMap = activeApplications.reduce<Record<string, number>>((acc, application) => {
     const key = String(application.status || 'applied').toLowerCase();
     acc[key] = (acc[key] || 0) + 1;
     return acc;
