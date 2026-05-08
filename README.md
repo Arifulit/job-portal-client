@@ -1,6 +1,6 @@
 # Career-Code Job Portal Client
 
-A modern role-based job portal frontend built with React, TypeScript, and Vite. The application supports complete workflows for candidates, recruiters, and administrators, including authentication, job discovery, job posting, application management, and admin oversight.
+A modern role-based job portal frontend built with React, TypeScript, and Vite. The application supports complete workflows for candidates, recruiters, and administrators, including authentication, job discovery, job posting, application management, and admin oversight and overview.
 
 ## Table of Contents
 
