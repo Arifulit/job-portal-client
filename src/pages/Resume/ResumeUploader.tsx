@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useToast } from '../../hooks/use-toast';
-import { uploadResume } from '../../lib/resumeService';
+import { uploadToCloudinary, api } from '../../utils/api';
 
 type AnalysisResult = {
   success: boolean;
@@ -16,6 +16,7 @@ type AnalysisResult = {
 export default function ResumeUploader() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState<number>(0);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const { toast } = useToast();
 
@@ -28,14 +29,29 @@ export default function ResumeUploader() {
   const handleUpload = async () => {
     if (!file) return toast({ title: 'Error', description: 'Please choose a file first', variant: 'destructive' });
     setLoading(true);
+    setProgress(0);
     try {
-      const data = await uploadResume(file);
-      setResult(data as AnalysisResult);
+      // 1) Upload directly to Cloudinary (unsigned preset)
+      const cloudUrl = await uploadToCloudinary(file, (p) => setProgress(p));
+
+      // 2) Trigger analysis on backend using filePath query (backend will fetch the file)
+      const mimetype = file.type || 'application/pdf';
+      const resp = await api.get('/resume/analyze', {
+        params: { filePath: cloudUrl, mimetype },
+      });
+
+      if (!resp?.data?.success) {
+        throw new Error(resp?.data?.message || 'Analysis failed');
+      }
+
+      setResult(resp.data.data as AnalysisResult);
+      toast({ title: 'Success', description: 'Resume analyzed', variant: 'default' });
     } catch (err: any) {
       console.error(err);
       toast({ title: 'Error', description: err.message || 'Upload failed', variant: 'destructive' });
     } finally {
       setLoading(false);
+      setProgress(0);
     }
   };
 
@@ -55,6 +71,14 @@ export default function ResumeUploader() {
           </button>
           {file && <div className="text-sm text-slate-600">Selected: {file.name}</div>}
         </div>
+        {loading && (
+          <div className="mt-2 w-full">
+            <div className="h-2 bg-slate-100 rounded overflow-hidden">
+              <div className="h-2 bg-blue-600" style={{ width: `${progress}%` }} />
+            </div>
+            <div className="text-xs text-slate-500 mt-1">Uploading: {progress}%</div>
+          </div>
+        )}
       </div>
 
       {result && (
