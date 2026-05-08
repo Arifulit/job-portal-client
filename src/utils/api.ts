@@ -156,7 +156,6 @@ export const uploadResumeToBackend = async (
   onProgress?: (progress: number) => void
 ): Promise<string> => {
   const formData = new FormData();
-  formData.append('file', file);
   formData.append('resume', file);
 
   try {

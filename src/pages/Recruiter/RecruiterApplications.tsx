@@ -28,6 +28,11 @@ const statusBadgeClassMap: Record<ApplicationStatus, string> = {
 
 const toTitleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
+const toPreviewResumeUrl = (url?: string) => {
+  if (!url) return '';
+  return url.replace('/fl_attachment/', '/');
+};
+
 const RecruiterApplications: React.FC = () => {
   const {
     data: applications = [],
@@ -195,9 +200,9 @@ const RecruiterApplications: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 text-gray-700">{jobTitle}</td>
                         <td className="px-6 py-4">
-                          {application.resume ? (
+                          {toPreviewResumeUrl(application.resume || application.downloadUrl) ? (
                             <a
-                              href={application.resume}
+                              href={toPreviewResumeUrl(application.resume || application.downloadUrl)}
                               target="_blank"
                               rel="noreferrer"
                               className="text-blue-600 hover:underline"

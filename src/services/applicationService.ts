@@ -1,6 +1,6 @@
 // এই ফাইলটি API call এবং server data operation এর service layer হিসেবে কাজ করে।
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, handleApiError } from '../utils/api';
+import { api, handleApiError, uploadResumeToBackend } from '../utils/api';
 import { Application, ApplicationStatus, ApiResponse, PaginatedResponse } from '../types';
 import { toast } from 'sonner';
 
@@ -44,10 +44,10 @@ const normalizeApplication = (application: Partial<Application> & Record<string,
     recruiterId: normalizedRecruiterId,
     resume:
       application.resume ||
-      application.downloadUrl ||
       application.resumeUrl ||
       application.resumeURL ||
       application.resume_file ||
+      application.downloadUrl ||
       '',
     downloadUrl:
       application.downloadUrl ||
@@ -160,19 +160,22 @@ export const useApplyJob = () => {
       let response;
 
       if (data.resumeFile) {
-        const formData = new FormData();
-        formData.append('jobId', data.jobId);
-        formData.append('resume', data.resumeFile);
+        const uploadedResumeUrl = await uploadResumeToBackend(data.resumeFile);
+
+        const payload: Record<string, unknown> = {
+          jobId: data.jobId,
+          resumeUrl: uploadedResumeUrl,
+        };
 
         if (data.coverLetter) {
-          formData.append('coverLetter', data.coverLetter);
+          payload.coverLetter = data.coverLetter;
         }
 
         if (typeof data.expectedSalary === 'number' && Number.isFinite(data.expectedSalary)) {
-          formData.append('expectedSalary', String(data.expectedSalary));
+          payload.expectedSalary = data.expectedSalary;
         }
 
-        response = await api.post<ApiResponse<Application>>('/applications', formData);
+        response = await api.post<ApiResponse<Application>>('/applications', payload);
       } else {
         if (!data.resumeUrl) {
           throw new Error('Resume is required');

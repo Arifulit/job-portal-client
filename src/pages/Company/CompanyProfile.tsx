@@ -195,8 +195,14 @@ const CompanyProfile: React.FC = () => {
     );
   }
 
-  const companyName = data.name || 'Company Profile';
-  const totalPages = data.openPositions.totalPages || 1;
+  if (!data) {
+    return null;
+  }
+
+  const companyData = data;
+
+  const companyName = companyData.name || 'Company Profile';
+  const totalPages = companyData.openPositions.totalPages || 1;
   const companyInitials = companyName
     .split(' ')
     .filter(Boolean)
@@ -212,8 +218,8 @@ const CompanyProfile: React.FC = () => {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 flex items-start gap-4">
               <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
-                {data.logo ? (
-                  <img src={data.logo} alt={companyName} className="h-full w-full object-contain p-2" />
+                {companyData.logo ? (
+                  <img src={companyData.logo} alt={companyName} className="h-full w-full object-contain p-2" />
                 ) : (
                   <span className="text-lg font-black uppercase text-slate-500">{companyInitials || 'CP'}</span>
                 )}
@@ -221,29 +227,29 @@ const CompanyProfile: React.FC = () => {
               <div className="min-w-0">
                 <h1 className="text-3xl font-black text-slate-900">{companyName}</h1>
               <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-600">
-                {data.industry ? (
+                {companyData.industry ? (
                   <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5">
                     <Building2 className="h-4 w-4" />
-                    {data.industry}
+                    {companyData.industry}
                   </span>
                 ) : null}
-                {data.location ? (
+                {companyData.location ? (
                   <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5">
                     <MapPin className="h-4 w-4" />
-                    {data.location}
+                    {companyData.location}
                   </span>
                 ) : null}
                 <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-amber-700">
                   <Star className="h-4 w-4" />
-                  {averageRating > 0 ? averageRating.toFixed(1) : 'N/A'} ({data.reviews.length} reviews)
+                  {averageRating > 0 ? averageRating.toFixed(1) : 'N/A'} ({companyData.reviews.length} reviews)
                 </span>
               </div>
-              {data.description ? <p className="mt-4 max-w-3xl text-sm text-slate-700">{data.description}</p> : null}
+              {companyData.description ? <p className="mt-4 max-w-3xl text-sm text-slate-700">{companyData.description}</p> : null}
               </div>
             </div>
-            {data.website ? (
+            {companyData.website ? (
               <a
-                href={data.website}
+                href={companyData.website}
                 target="_blank"
                 rel="noreferrer"
                 className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
@@ -259,17 +265,17 @@ const CompanyProfile: React.FC = () => {
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-xl font-bold text-slate-900">Open Positions</h2>
               <p className="text-sm text-slate-600">
-                Total {data.openPositions.total} | Page {data.openPositions.page} of {totalPages}
+                Total {companyData.openPositions.total} | Page {companyData.openPositions.page} of {totalPages}
               </p>
             </div>
 
-            {data.openPositions.jobs.length === 0 ? (
+            {companyData.openPositions.jobs.length === 0 ? (
               <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
                 No open positions available right now.
               </p>
             ) : (
               <div className="space-y-3">
-                {data.openPositions.jobs.map((job) => (
+                {companyData.openPositions.jobs.map((job) => (
                   <Link
                     key={job._id}
                     to={`/jobs/${job._id}`}
@@ -311,10 +317,10 @@ const CompanyProfile: React.FC = () => {
               <h2 className="text-xl font-bold text-slate-900">Reviews</h2>
 
               <div className="mt-4 space-y-3">
-                {data.reviews.length === 0 ? (
+                {companyData.reviews.length === 0 ? (
                   <p className="text-sm text-slate-600">No reviews yet.</p>
                 ) : (
-                  data.reviews.map((item) => (
+                  companyData.reviews.map((item) => (
                     <article key={item._id} className="rounded-xl border border-slate-200 p-3">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-sm font-semibold text-slate-900">{item.user?.name || 'Anonymous User'}</p>

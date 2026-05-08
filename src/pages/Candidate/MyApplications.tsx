@@ -18,6 +18,11 @@ const statusBadgeClassMap: Record<ApplicationStatus, string> = {
 
 const toTitleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
+const toPreviewResumeUrl = (url?: string) => {
+  if (!url) return '';
+  return url.replace('/fl_attachment/', '/');
+};
+
 const MyApplications: React.FC = () => {
   const { data, isLoading, isError, refetch } = useMyApplications();
   const applications = data?.data || [];
@@ -87,7 +92,7 @@ const MyApplications: React.FC = () => {
                   {applications.map((application) => {
                     const jobData = application.job;
                     const jobTitle = jobData?.title || 'Untitled Job';
-                    const resumeLink = application.downloadUrl || application.resume;
+                    const resumeLink = toPreviewResumeUrl(application.resume || application.downloadUrl);
                     const appliedDate =
                       application.createdAt ||
                       application.appliedAt ||
@@ -112,10 +117,6 @@ const MyApplications: React.FC = () => {
                               href={resumeLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              onClick={(event) => {
-                                event.preventDefault();
-                                window.open(resumeLink, '_blank', 'noopener,noreferrer');
-                              }}
                               className="text-blue-600 hover:underline"
                             >
                               View Resume

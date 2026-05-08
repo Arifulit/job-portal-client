@@ -134,63 +134,42 @@ const Jobs = () => {
   const paginationItems = getPaginationItems(currentPage, totalPages);
 
   const handleLimitChange = (value: number) => {
-    setFilters((prev) => {
-      const newFilters = { ...prev, limit: value, page: 1 };
-      const params = new URLSearchParams(searchParams);
-      params.set('limit', String(value));
-      params.set('page', '1');
-      setSearchParams(params);
-      return newFilters;
-    });
+    const params = new URLSearchParams(searchParams);
+    params.set('limit', String(value));
+    params.set('page', '1');
+    setSearchParams(params);
+    setFilters((prev) => ({ ...prev, limit: value, page: 1 }));
   };
 
   const handleSearchChange = debounce((value: string) => {
-    setFilters((prev) => {
-      const newFilters = { ...prev, keyword: value, page: 1 };
-      
-      // Update URL
-      const params = new URLSearchParams(searchParams);
-      if (value) {
-        params.set('search', value);
-      } else {
-        params.delete('search');
-      }
-      params.set('page', '1');
-      setSearchParams(params);
-
-      return newFilters;
-    });
+    const params = new URLSearchParams(searchParams);
+    if (value) {
+      params.set('search', value);
+    } else {
+      params.delete('search');
+    }
+    params.set('page', '1');
+    setSearchParams(params);
+    setFilters((prev) => ({ ...prev, keyword: value, page: 1 }));
   }, 500);
 
   const handleFilterChange = (key: keyof JobFilters, value: string) => {
-    setFilters((prev) => {
-      const newFilters = { ...prev, [key]: value, page: 1 };
-      
-      // Update URL
-      const params = new URLSearchParams(searchParams);
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
-      params.set('page', '1');
-      setSearchParams(params);
-      
-      return newFilters;
-    });
+    const params = new URLSearchParams(searchParams);
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    params.set('page', '1');
+    setSearchParams(params);
+    setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
   };
 
   const handlePageChange = (newPage: number) => {
-    setFilters((prev) => {
-      const newFilters = { ...prev, page: newPage };
-      
-      // Update URL
-      const params = new URLSearchParams(searchParams);
-      params.set('page', String(newPage));
-      setSearchParams(params);
-      
-      return newFilters;
-    });
+    const params = new URLSearchParams(searchParams);
+    params.set('page', String(newPage));
+    setSearchParams(params);
+    setFilters((prev) => ({ ...prev, page: newPage }));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -409,11 +388,11 @@ const Jobs = () => {
                       {filters.keyword && (
                         <button
                           onClick={() => {
-                            setFilters((prev) => ({ ...prev, keyword: '', page: 1 }));
                             const params = new URLSearchParams(searchParams);
                             params.delete('search');
                             params.set('page', '1');
                             setSearchParams(params);
+                            setFilters((prev) => ({ ...prev, keyword: '', page: 1 }));
                           }}
                           className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
                         >
@@ -424,11 +403,11 @@ const Jobs = () => {
                       {filters.location && (
                         <button
                           onClick={() => {
-                            setFilters((prev) => ({ ...prev, location: '', page: 1 }));
                             const params = new URLSearchParams(searchParams);
                             params.delete('location');
                             params.set('page', '1');
                             setSearchParams(params);
+                            setFilters((prev) => ({ ...prev, location: '', page: 1 }));
                           }}
                           className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
                         >
