@@ -11,7 +11,7 @@ const Footer: React.FC = () => {
 
   const recruiterLinks = [
     { label: "Recruiter Registration", to: "/register/recruiter" },
-    { label: "Recruiter Login", to: "/login" },
+    { label: "Recruiter Sign In", to: "/login" },
     { label: "Post a Job", to: "/recruiter/jobs/create" },
   ];
 
@@ -22,7 +22,7 @@ const Footer: React.FC = () => {
     { label: "Contact", to: "/contact" },
   ];
 
-  const linkClass = "text-sm text-slate-300 transition-colors hover:text-white";
+  const linkClass = "text-sm text-cyan-300 transition-colors hover:text-cyan-300 visited:text-cyan-300";
 
   return (
     <footer className="relative mt-16 overflow-hidden border-t border-slate-700/70 bg-slate-950 text-slate-100">
@@ -78,9 +78,29 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-2 border-t border-slate-800 pt-6 text-center text-sm text-slate-400 md:flex-row md:text-left">
+        <div className="mt-10 space-y-3 border-t border-slate-800 pt-6 text-center text-sm text-slate-400 md:text-left">
           <p>&copy; {new Date().getFullYear()} Job Portal. All rights reserved.</p>
-          <p>Built with React, TypeScript, Tailwind CSS.</p>
+          <p>
+            Developed by{' '}
+            <a
+              href="https://www.linkedin.com/in/ariful-islam15/?locale=en"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cyan-300 hover:text-cyan-200"
+            >
+              Ariful Islam
+            </a>{' '}
+            &amp;{' '}
+            <a
+              href="https://www.linkedin.com/in/sazzadmehedi/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cyan-300 hover:text-cyan-200"
+            >
+              Mehedi Hasan
+            </a>
+          </p>
+          <p>Department of CSE • Mawlana Bhashani Science and Technology University</p>
         </div>
       </div>
     </footer>

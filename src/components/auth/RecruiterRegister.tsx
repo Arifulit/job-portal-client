@@ -155,7 +155,7 @@ export const RecruiterRegister = () => {
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Recruiter Name</label>
             <div className="relative">
               <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input name="name" autoComplete="name" value={formData.name} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Recruiter salam" />
+              <input name="name" autoComplete="name" value={formData.name} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Enter your name" />
             </div>
           </div>
 
@@ -163,7 +163,7 @@ export const RecruiterRegister = () => {
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Email</label>
             <div className="relative">
               <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input name="email" type="email" autoComplete="email" value={formData.email} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="salam@gmail.com" />
+              <input name="email" type="email" autoComplete="email" value={formData.email} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Enter your email" />
             </div>
           </div>
 
@@ -171,7 +171,7 @@ export const RecruiterRegister = () => {
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Password</label>
             <div className="relative">
               <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input name="password" type="password" autoComplete="new-password" spellCheck={false} value={formData.password} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="123456" />
+              <input name="password" type="password" autoComplete="new-password" spellCheck={false} value={formData.password} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Enter your password" />
             </div>
           </div>
 
@@ -179,7 +179,7 @@ export const RecruiterRegister = () => {
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Confirm Password</label>
             <div className="relative">
               <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input name="confirmPassword" type="password" autoComplete="new-password" spellCheck={false} value={formData.confirmPassword} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="123456" />
+              <input name="confirmPassword" type="password" autoComplete="new-password" spellCheck={false} value={formData.confirmPassword} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Confirm your password" />
             </div>
           </div>
 
@@ -187,7 +187,7 @@ export const RecruiterRegister = () => {
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Phone</label>
             <div className="relative">
               <Phone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input name="phone" value={formData.phone} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="01812345678" />
+              <input name="phone" value={formData.phone} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Enter your phone number" />
             </div>
           </div>
 
@@ -195,7 +195,7 @@ export const RecruiterRegister = () => {
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Location</label>
             <div className="relative">
               <MapPin className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input name="location" value={formData.location} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Chattogram, Bangladesh" />
+              <input name="location" value={formData.location} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Enter your location" />
             </div>
           </div>
 
@@ -209,7 +209,7 @@ export const RecruiterRegister = () => {
                 onChange={(e) => setFormData((prev) => ({ ...prev, biodata: e.target.value }))}
                 rows={3}
                 className="w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                placeholder="Technical recruiter with 4 years hiring experience."
+                placeholder="Write a short bio about yourself and your company"
               />
             </div>
           </div>
@@ -218,7 +218,7 @@ export const RecruiterRegister = () => {
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Designation</label>
             <div className="relative">
               <Briefcase className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input name="designation" value={formData.designation} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="HR Manager" />
+              <input name="designation" value={formData.designation} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Enter your designation" />
             </div>
           </div>
 
@@ -226,7 +226,7 @@ export const RecruiterRegister = () => {
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Company Name</label>
             <div className="relative">
               <Building2 className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input name="companyName" value={formData.companyName} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Tech Corp" />
+              <input name="companyName" value={formData.companyName} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Enter company name" />
             </div>
           </div>
 
@@ -234,7 +234,7 @@ export const RecruiterRegister = () => {
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Year Of Establishment</label>
             <div className="relative">
               <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input name="yearOfEstablishment" type="number" value={formData.yearOfEstablishment} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="2012" />
+              <input name="yearOfEstablishment" type="number" value={formData.yearOfEstablishment} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Enter year of establishment" />
             </div>
           </div>
 
@@ -242,7 +242,7 @@ export const RecruiterRegister = () => {
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Company Address</label>
             <div className="relative">
               <MapPin className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input name="companyAddress" value={formData.companyAddress} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Banani, Dhaka" />
+              <input name="companyAddress" value={formData.companyAddress} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Enter company address" />
             </div>
           </div>
 
@@ -250,7 +250,7 @@ export const RecruiterRegister = () => {
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Industry Type</label>
             <div className="relative">
               <Building2 className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input name="industryType" value={formData.industryType} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Software" />
+              <input name="industryType" value={formData.industryType} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Enter industry type" />
             </div>
           </div>
 
@@ -258,7 +258,7 @@ export const RecruiterRegister = () => {
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Website URL</label>
             <div className="relative">
               <Globe className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input name="websiteUrl" value={formData.websiteUrl} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="https://techcorp.com" />
+              <input name="websiteUrl" value={formData.websiteUrl} onChange={handleChange} className="h-10 w-full pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Enter website URL" />
             </div>
           </div>
 

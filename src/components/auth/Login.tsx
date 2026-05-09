@@ -96,7 +96,7 @@ export function Login() {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="you@example.com"
+                  placeholder="Enter your email address"
                   className="w-full h-11 pl-10 pr-4 border border-slate-300 dark:border-slate-700 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100"
                 />
               </div>

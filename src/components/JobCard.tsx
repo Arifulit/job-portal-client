@@ -7,7 +7,6 @@ import {
   Calendar,
   Bookmark,
   BookmarkCheck,
-  DollarSign,
   Zap,
   ArrowRight,
 } from 'lucide-react';
@@ -277,12 +276,6 @@ export const JobCard = ({ job, isSaved = false }: JobCardProps) => {
                 whileHover={{ x: 4 }}
                 transition={{ delay: 0.35 }}
               >
-                <motion.div
-                  animate={{ rotateZ: [0, 10, -10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
-                >
-                  <DollarSign className="h-5 w-5 flex-shrink-0 text-indigo-600 dark:text-indigo-400" />
-                </motion.div>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
                     {typeof job.salary === 'object' && salary

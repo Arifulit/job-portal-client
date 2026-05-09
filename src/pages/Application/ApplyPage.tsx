@@ -7,7 +7,7 @@ import { useApplyJob, useMyApplications } from '../../services/applicationServic
 import { useAuth } from '../../context/AuthContext';
 import { Loader } from '../../components/Loader';
 import { Button } from '../../components/ui/button';
-import { ArrowLeft, FileText, Briefcase, MapPin, DollarSign, Mail, Phone, AlertCircle } from 'lucide-react';
+import { ArrowLeft, FileText, Briefcase, MapPin, Mail, Phone, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const allowedTypes = [
@@ -322,7 +322,6 @@ const ApplyPage = () => {
 
                 {(job.salaryMin || job.salaryMax) && (
                   <div className="flex items-start gap-3">
-                    <DollarSign className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600 dark:text-emerald-300" />
                     <div>
                       <p className="text-xs uppercase text-slate-500 dark:text-slate-400">Salary Range</p>
                       <p className="font-medium text-slate-900 dark:text-slate-100">

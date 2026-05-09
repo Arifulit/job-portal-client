@@ -198,7 +198,7 @@ export const Register = () => {
                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Full Name *</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input type="text" name="name" autoComplete="name" value={formData.name} onChange={handleChange} className="w-full h-10 pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="rahim" />
+                  <input type="text" name="name" autoComplete="name" value={formData.name} onChange={handleChange} className="w-full h-10 pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Enter your full name" />
                 </div>
               </div>
 
@@ -206,7 +206,7 @@ export const Register = () => {
                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Email Address *</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input type="email" name="email" autoComplete="email" value={formData.email} onChange={handleChange} className="w-full h-10 pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="rahimcandidate@gmail.com" />
+                  <input type="email" name="email" autoComplete="email" value={formData.email} onChange={handleChange} className="w-full h-10 pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Enter your email address" />
                 </div>
               </div>
 
@@ -215,7 +215,7 @@ export const Register = () => {
                   <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Password *</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type={showPassword ? 'text' : 'password'} name="password" autoComplete="new-password" spellCheck={false} value={formData.password} onChange={handleChange} className="w-full h-10 pl-10 pr-10 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="123456" />
+                    <input type={showPassword ? 'text' : 'password'} name="password" autoComplete="new-password" spellCheck={false} value={formData.password} onChange={handleChange} className="w-full h-10 pl-10 pr-10 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Enter your password" />
                     <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -226,7 +226,7 @@ export const Register = () => {
                   <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Confirm Password *</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" autoComplete="new-password" spellCheck={false} value={formData.confirmPassword} onChange={handleChange} className="w-full h-10 pl-10 pr-10 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="123456" />
+                    <input type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" autoComplete="new-password" spellCheck={false} value={formData.confirmPassword} onChange={handleChange} className="w-full h-10 pl-10 pr-10 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Confirm your password" />
                     <button type="button" onClick={() => setShowConfirmPassword((prev) => !prev)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -249,7 +249,7 @@ export const Register = () => {
                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Phone *</label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full h-10 pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="01712345678" />
+                  <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full h-10 pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Enter your phone number" />
                 </div>
               </div>
 
@@ -257,7 +257,7 @@ export const Register = () => {
                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Location *</label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input type="text" name="location" value={formData.location} onChange={handleChange} className="w-full h-10 pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Dhaka, Bangladesh" />
+                  <input type="text" name="location" value={formData.location} onChange={handleChange} className="w-full h-10 pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="Enter your location" />
                 </div>
               </div>
 
@@ -271,7 +271,7 @@ export const Register = () => {
                     onChange={handleChange}
                     rows={3}
                     className="w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                    placeholder="Junior frontend developer with internship experience."
+                    placeholder="Write a short bio about yourself and your career aspirations"
                   />
                 </div>
               </div>
@@ -293,7 +293,7 @@ export const Register = () => {
                         }
                       }}
                       className="w-full h-10 pl-10 pr-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                      placeholder="JavaScript, React, Node.js"
+                      placeholder="Type a skill and press Enter or click Add"
                     />
                   </div>
                   <button type="button" onClick={addSkill} className="px-4 h-10 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">

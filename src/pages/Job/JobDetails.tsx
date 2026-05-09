@@ -278,7 +278,11 @@ const JobDetails = () => {
   const additionalRequirementsList = toList(job?.additionalRequirements);
   const businessAreasList = toList(job?.businessAreas);
   const jobContext = job?.jobContext?.trim() || '';
-  const genderPreference = job?.genderPreference?.trim() || 'Not specified';
+  const genderPreferenceRaw = job?.genderPreference?.trim();
+  const genderPreference =
+    genderPreferenceRaw && genderPreferenceRaw.toLowerCase() !== 'any'
+      ? genderPreferenceRaw
+      : 'No Preference';
   const preferredIndustryExperience = job?.preferredIndustryExperience?.trim() || '';
   const preferredExperienceYears = typeof job?.preferredExperienceYears === 'number' ? job.preferredExperienceYears : null;
   const ageRange =

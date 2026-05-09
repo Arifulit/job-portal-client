@@ -602,7 +602,7 @@ export default function JobPost() {
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold text-gray-700">Gender Preference</label>
                   <select {...register("genderPreference")} className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3">
-                    <option value="any">Any</option>
+                    <option value="any">No Preference</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
                     <option value="other">Other</option>

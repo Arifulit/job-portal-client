@@ -27,7 +27,7 @@ const NAV_LINKS = [
 ];
 
 const RECRUITER_LINKS = [
-  { label: 'Recruiter Login', href: '/login' },
+  { label: 'Recruiter Sign In', href: '/login' },
   { label: 'Recruiter Register', href: '/register/recruiter' },
 ];
 
