@@ -2,6 +2,11 @@
 
 A modern role-based job portal frontend built with React, TypeScript, and Vite. The application supports complete workflows for candidates, recruiters, and administrators, including authentication, job discovery, job posting, application management, and admin oversight and overview.
 
+## Additional Documents
+
+- Slide deck (text version): `docs/SLIDES.md`
+- Full documentation: `docs/FULL_DOCUMENTATION.md`
+
 ## Table of Contents
 
 1. [Overview](#overview)
